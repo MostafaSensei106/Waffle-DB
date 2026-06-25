@@ -1,4 +1,4 @@
-use sled::{Db, Tree};
+use sled::Tree;
 
 use crate::api::{
     config::WaffleConfig,
@@ -6,7 +6,6 @@ use crate::api::{
 };
 
 pub struct WaffleStorage {
-    db: Db,
     vectors_tree: Tree,
     metadata_tree: Tree,
 }
@@ -23,7 +22,6 @@ impl WaffleStorage {
         let metadata_tree = db.open_tree("m_grid").map_err(|e| e.to_string())?;
 
         Ok(Self {
-            db,
             vectors_tree,
             metadata_tree,
         })
