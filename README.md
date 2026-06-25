@@ -195,11 +195,11 @@ for (var res in results) {
 
 ## ⚡ Performance Benchmarks
 
-The **Waffle-DB** library is meticulously optimized for both blistering speed and strict memory efficiency. We recently achieved a massive milestone by moving all core read operations (like `query`) to **Synchronous FFI calls**, completely eliminating Dart `Future` async scheduling overhead.
+The **Waffle-DB** library is meticulously optimized for both blistering speed and strict memory efficiency.
 
 ### 📊 Pure Rust Scaling Benchmarks (1536-d Vectors)
 
-We stress-tested the core engine scaling up to **100,000** OpenAI-sized embeddings (1536 dimensions). At this scale, the index holds roughly ~600MB of pure vector data.
+Stress tested the core engine scaling up to **100,000** OpenAI-sized embeddings (1536 dimensions). At this scale, the index holds roughly ~600MB of pure vector data.
 
 | Elements (N) | Query Latency | Open/Restore Time | Insert Latency |
 | :--- | :--- | :--- | :--- |
@@ -210,16 +210,18 @@ We stress-tested the core engine scaling up to **100,000** OpenAI-sized embeddin
 
 > **Key Takeaway**: Query performance stays virtually constant around **~2ms** even as the database balloons to 100,000 high-dimensional points. This is workstation-grade performance running natively on your local device.
 
-### 🔬 Detailed Deep Dive & Bottleneck Fixes
+### 📊 End-to-End Dart Performance 
 
-#### 🚀 1. Eliminating the Dart FFI Bottleneck (Sync FFI)
-Previously, a query that took `0.5ms` in Rust would register as taking `14ms` in Dart. This `13.5ms` "FFI Overhead" was actually Dart's `Future` scheduling, Isolate task hopping, and Tokio queuing. By marking our FFI bridge methods with `#[frb(sync)]`, read operations like `query` now block the main thread for just `<1ms` and return instantly, delivering **True Native Speed** directly to the Flutter UI layer.
+Testing the full pipeline from Dart -> Rust -> Dart using **1536-dimensional** vectors. With new `Sync` architecture.
 
-#### 🚀 2. The HNSW Persistence Bottleneck (Binary Graph)
-Starting the database used to require reading all vectors from Sled storage and re-inserting them into the HNSW graph sequentially. We now save the HNSW graph state in raw binary formats (`index.hnsw`) alongside the Sled storage. This results in **startup times shrinking from 1.5 seconds down to ~11ms** for smaller datasets, scaling linearly.
-
-#### 🧽 3. Metadata Stripping & Zero-Copy Bridge
-To prevent Sled Disk I/O bottlenecks during heavy querying, we introduced the `includeMetadata: false` flag. Passing this avoids heavy JSON parsing on the Rust side for simple k-NN requests. Together with synchronous FFI, Dart memory allocations are strictly optimized.
+| Operation | Total End-to-End Latency (Dart) |
+| :--- | :--- |
+| **Query (k=10, N=1,000)** | **~2.59 ms** |
+| **Single Insert** | **~1.28 ms** |
+| **GetVector (By ID)** | **~56.0 µs** |
+| **GetMetadata (By ID)** | **~41.0 µs** |
+| **Delete** | **~786.0 µs** |
+| **Count / GetAllIds** | **~0.1 - 1.1 ms** |
 
 ---
 
