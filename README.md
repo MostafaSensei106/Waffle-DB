@@ -1,11 +1,11 @@
 <h1 align="center">Waffle-DB</h1>
 <p align="center">
-  <img src="https://socialify.git.ci/MostafaSensei106/waffle_db/image?custom_language=Rust&font=KoHo&language=1&logo=https%3A%2F%2Favatars.githubusercontent.com%2Fu%2F138288138%3Fv%3D4&name=1&owner=1&pattern=Floating+Cogs&theme=Light" alt="Banner">
+  <img src="https://socialify.git.ci/MostafaSensei106/Waffle-DB/image?custom_language=Rust&font=KoHo&language=1&logo=https%3A%2F%2Favatars.githubusercontent.com%2Fu%2F138288138%3Fv%3D4&name=1&owner=1&pattern=Floating+Cogs&theme=Light" alt="Banner">
 </p>
 
 <p align="center">
-  <strong>An advanced, high-performance local vector database for Flutter, powered by a blazingly fast Rust core and HNSW graph indexing.</strong><br>
-  Go beyond basic shared preferences. Deliver <i>workstation-grade</i> vector search, <i>1536-bit embedding support</i>, and <i>real-time similarity matching</i> in your local apps.
+  <strong>An advanced, high performance local vector database for Flutter, powered by Rust and HNSW graph indexing.</strong><br>
+  Deliver <i>workstation grade</i> vector search, <i>1536-bit embedding support</i>, and <i>real-time similarity matching</i> in your local apps.
 </p>
 
 <p align="center">
@@ -21,7 +21,7 @@
 
 ## 🤔 Why Choose Waffle-DB?
  
-> In AI apps, a pure Dart vector approximation is often a liability. Your app needs blazingly fast similarity search, not just linear scans.
+> In AI apps. Your app needs fast similarity search, not just linear scans.
 
 Most local databases in Flutter are designed for standard JSON or SQL data. They lack the mathematical context needed for vector similarity and AI embeddings. A developer needs to index vectors, run k-NN queries in real-time, and scale to 100,000+ embeddings without UI stutter. Pure Dart vector parsers struggle with the sheer size of 1536-d volumetric data, leading to memory crashes and frozen screens.
 
