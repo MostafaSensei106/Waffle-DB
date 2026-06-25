@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:waffle_db/waffle_db.dart';
+import 'package:path_provider/path_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -180,10 +181,7 @@ class _BenchmarkPageState extends State<BenchmarkPage>
       } catch (e) {
         _updateOp(
           i,
-          _results[i].copyWith(
-            status: OpStatus.error,
-            error: e.toString(),
-          ),
+          _results[i].copyWith(status: OpStatus.error, error: e.toString()),
         );
       }
       step++;
@@ -193,8 +191,9 @@ class _BenchmarkPageState extends State<BenchmarkPage>
       });
     }
 
+    final dir = await getApplicationDocumentsDirectory();
     final dbPath =
-        '/tmp/waffle_example_${DateTime.now().millisecondsSinceEpoch}';
+        '${dir.path}/waffle_example_${DateTime.now().millisecondsSinceEpoch}';
 
     // 0 — Open DB
     await run(0, () async {
@@ -246,26 +245,22 @@ class _BenchmarkPageState extends State<BenchmarkPage>
         (i) => WaffleRecord(
           id: 'batch-$i',
           vector: _randomVector(i + 100),
-          metadata: Uint8List.fromList(
-            List.generate(32, (j) => (i + j) % 256),
-          ),
+          metadata: Uint8List.fromList(List.generate(32, (j) => (i + j) % 256)),
         ),
       );
       await db.insertBatch(records);
     });
     _updateOp(
       2,
-      _results[2]
-          .copyWith(detail: '${_results[2].detail} ($vectorCount vectors)'),
+      _results[2].copyWith(
+        detail: '${_results[2].detail} ($vectorCount vectors)',
+      ),
     );
 
     // 3 — Count
     await run(3, () async {
       final c = await db.count();
-      _updateOp(
-        3,
-        _results[3].copyWith(detail: '$c vectors'),
-      );
+      _updateOp(3, _results[3].copyWith(detail: '$c vectors'));
     });
 
     // 4 — Query k=5
@@ -283,20 +278,13 @@ class _BenchmarkPageState extends State<BenchmarkPage>
     // 5 — Query k=20
     await run(5, () async {
       final results = await db.query(_randomVector(1), k: 20);
-      _updateOp(
-        5,
-        _results[5].copyWith(detail: '${results.length} results'),
-      );
+      _updateOp(5, _results[5].copyWith(detail: '${results.length} results'));
     });
 
     // 6 — Query k=50 ef=128
     await run(6, () async {
-      final results =
-          await db.query(_randomVector(2), k: 50, efSearch: 128);
-      _updateOp(
-        6,
-        _results[6].copyWith(detail: '${results.length} results'),
-      );
+      final results = await db.query(_randomVector(2), k: 50, efSearch: 128);
+      _updateOp(6, _results[6].copyWith(detail: '${results.length} results'));
     });
 
     // 7 — Get Vector
@@ -304,8 +292,9 @@ class _BenchmarkPageState extends State<BenchmarkPage>
       final v = await db.getVector('batch-0');
       _updateOp(
         7,
-        _results[7]
-            .copyWith(detail: v != null ? 'dim=${v.length}' : 'not found'),
+        _results[7].copyWith(
+          detail: v != null ? 'dim=${v.length}' : 'not found',
+        ),
       );
     });
 
@@ -315,17 +304,15 @@ class _BenchmarkPageState extends State<BenchmarkPage>
       _updateOp(
         8,
         _results[8].copyWith(
-            detail: m != null ? '${m.length} bytes' : 'not found'),
+          detail: m != null ? '${m.length} bytes' : 'not found',
+        ),
       );
     });
 
     // 9 — Get All IDs
     await run(9, () async {
       final ids = await db.getAllIds();
-      _updateOp(
-        9,
-        _results[9].copyWith(detail: '${ids.length} IDs'),
-      );
+      _updateOp(9, _results[9].copyWith(detail: '${ids.length} IDs'));
     });
 
     // 10 — Delete ×5
@@ -334,10 +321,7 @@ class _BenchmarkPageState extends State<BenchmarkPage>
       for (int i = 0; i < 5; i++) {
         if (await db.delete('batch-$i')) deleted++;
       }
-      _updateOp(
-        10,
-        _results[10].copyWith(detail: '$deleted removed'),
-      );
+      _updateOp(10, _results[10].copyWith(detail: '$deleted removed'));
     });
 
     // 11 — Flush
@@ -375,10 +359,7 @@ class _BenchmarkPageState extends State<BenchmarkPage>
       );
       _db = await WaffleDatabase.open(config);
       final c = await _db!.count();
-      _updateOp(
-        13,
-        _results[13].copyWith(detail: 'Reopened, $c vectors'),
-      );
+      _updateOp(13, _results[13].copyWith(detail: 'Reopened, $c vectors'));
     });
 
     // 14 — Query after reopen
@@ -468,13 +449,13 @@ class _BenchmarkPageState extends State<BenchmarkPage>
                   // Stats bar
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFF161B22),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: amber.withValues(alpha: 0.2),
-                      ),
+                      border: Border.all(color: amber.withValues(alpha: 0.2)),
                     ),
                     child: Row(
                       children: [
@@ -484,7 +465,10 @@ class _BenchmarkPageState extends State<BenchmarkPage>
                         const Spacer(),
                         if (_totalTime > Duration.zero)
                           _statChip(
-                              'total', _formatDuration(_totalTime), amber),
+                            'total',
+                            _formatDuration(_totalTime),
+                            amber,
+                          ),
                       ],
                     ),
                   ),
@@ -504,10 +488,7 @@ class _BenchmarkPageState extends State<BenchmarkPage>
                   const SizedBox(height: 8),
                   Text(
                     _statusText,
-                    style: TextStyle(
-                      color: Colors.white60,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: Colors.white60, fontSize: 12),
                   ),
                   const SizedBox(height: 12),
 
@@ -521,9 +502,7 @@ class _BenchmarkPageState extends State<BenchmarkPage>
                           ? const SizedBox(
                               width: 18,
                               height: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                              ),
+                              child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Icon(Icons.play_arrow_rounded, size: 24),
                       label: Text(
@@ -553,10 +532,8 @@ class _BenchmarkPageState extends State<BenchmarkPage>
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
             sliver: SliverList(
               delegate: SliverChildBuilderDelegate(
-                (context, index) => _OpCard(
-                  result: _results[index],
-                  index: index,
-                ),
+                (context, index) =>
+                    _OpCard(result: _results[index], index: index),
                 childCount: _results.length,
               ),
             ),
@@ -656,8 +633,8 @@ class _OpCard extends StatelessWidget {
           color: result.status == OpStatus.running
               ? Colors.blueAccent.withValues(alpha: 0.4)
               : result.status == OpStatus.error
-                  ? const Color(0xFFF85149).withValues(alpha: 0.3)
-                  : Colors.white10,
+              ? const Color(0xFFF85149).withValues(alpha: 0.3)
+              : Colors.white10,
         ),
       ),
       child: Row(
@@ -702,10 +679,7 @@ class _OpCard extends StatelessWidget {
                 if (result.detail.isNotEmpty)
                   Text(
                     result.detail,
-                    style: TextStyle(
-                      color: Colors.white38,
-                      fontSize: 11,
-                    ),
+                    style: TextStyle(color: Colors.white38, fontSize: 11),
                   ),
                 if (result.error != null)
                   Text(
@@ -724,8 +698,7 @@ class _OpCard extends StatelessWidget {
           // Time badge
           if (result.status == OpStatus.done) ...[
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: timeBadgeColor.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(6),
