@@ -158,10 +158,16 @@ void main() {
   group('🚀 Performance Benchmarks', () {
     testWidgets('Single Insert Latency', (tester) async {
       int counter = 0;
+      final vectors = List.generate(
+        iterations + warmup,
+        (i) => randomVector(i),
+      );
+      
       final stats = await benchmark(
         'Single Insert (dim=$dim)',
         () async {
-          await db.insert('bench-insert-${counter++}', randomVector(counter));
+          final idx = counter++;
+          await db.insert('bench-insert-$idx', vectors[idx]);
         },
       );
       // Sanity: p99 should be under 50ms
@@ -197,11 +203,17 @@ void main() {
       );
       await db.insertBatch(records);
 
+      final queries = List.generate(
+        iterations + warmup,
+        (i) => randomVector(i + 1000),
+      );
+
       int qc = 0;
       final stats = await benchmark(
         'Query k=10 (N=1000, dim=$dim)',
         () async {
-          await db.query(randomVector(qc++), k: 10);
+          final idx = qc++;
+          await db.query(queries[idx], k: 10);
         },
       );
       expect(stats.p99, lessThan(100000)); // < 100ms
@@ -214,11 +226,17 @@ void main() {
       );
       await db.insertBatch(records);
 
+      final queries = List.generate(
+        iterations + warmup,
+        (i) => randomVector(i + 2000),
+      );
+
       int qc = 0;
       final stats = await benchmark(
         'Query k=50 (N=1000, dim=$dim)',
         () async {
-          await db.query(randomVector(qc++), k: 50);
+          final idx = qc++;
+          await db.query(queries[idx], k: 50);
         },
       );
       expect(stats.p99, lessThan(200000)); // < 200ms
@@ -264,7 +282,8 @@ void main() {
       final stats = await benchmark(
         'GetVector (N=100, dim=$dim)',
         () async {
-          await db.getVector('gv-${gc % 100}');
+          final idx = gc % 100;
+          await db.getVector('gv-$idx');
           gc++;
         },
       );
@@ -336,9 +355,11 @@ void main() {
     });
 
     testWidgets('GetAllIds Latency', (tester) async {
-      for (int i = 0; i < 500; i++) {
-        await db.insert('ids-$i', randomVector(i));
-      }
+      final records = List.generate(
+        500,
+        (i) => WaffleRecord(id: 'ids-$i', vector: randomVector(i)),
+      );
+      await db.insertBatch(records);
 
       final stats = await benchmark(
         'GetAllIds (N=500)',
@@ -348,6 +369,22 @@ void main() {
         runs: 50,
       );
       expect(stats.p99, lessThan(100000)); // < 100ms
+    });
+
+    testWidgets('Insert Throughput (10K Vectors)', (tester) async {
+      // Pre-generate records to exclude generation time
+      final records = List.generate(
+        10000,
+        (i) => WaffleRecord(id: 'thr-$i', vector: randomVector(i)),
+      );
+      
+      final sw = Stopwatch()..start();
+      await db.insertBatch(records);
+      sw.stop();
+      
+      final opsPerSec = 10000 / (sw.elapsedMicroseconds / 1e6);
+      print('Insert Throughput: ${opsPerSec.toStringAsFixed(0)} vectors/sec');
+      expect(opsPerSec, greaterThan(100)); // Sanity check
     });
 
     testWidgets('Open with rebuild (1000 persisted vectors)', (tester) async {

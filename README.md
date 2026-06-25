@@ -200,12 +200,23 @@ The results highlight the massive performance overhead provided by our Rust core
 
 ### 📊 At-a-Glance Summary
 
+### 📊 Native Rust Engine Benchmarks (Core Performance)
+These benchmarks measure the pure execution speed of the Rust native engine using `criterion` without FFI or Flutter overhead (128 dimensions):
+
+| Operation | Pure Rust Time | Status |
+| :--- | :--- | :--- |
+| **Engine Insert** | **~880 µs (0.88ms)** | ✅ Blazing |
+| **Engine Query (k=10, N=1000)** | **~128 µs (0.12ms)** | ✅ Instantaneous |
+| **Cosine Similarity** | **~126 ns** | ✅ Sub-microsecond |
+
+### 📊 End-to-End Integration Benchmarks (Flutter + FFI)
+These benchmarks reflect what the end-user actually experiences, including FFI marshalling, Dart event loop, Tokio scheduling, and Flutter bindings.
+
 | Metric | Performance | Status |
 | :--- | :--- | :--- |
-| **Record Creation (128d)** | **~100K+ Ops/sec** | ✅ Ultra Fast |
-| **Record Creation (1536d)**| **~10K+ Ops/sec** | ✅ Blazing |
-| **Result Sorting (100k)** | **11.4 µs / sort** | ✅ Sub-16ms |
-| **Batch Flatten (10K vec)** | **~10K ops/s** | ✅ Fluid |
+| **Single Insert (128d)** | **~5 ms** | ✅ Fluid |
+| **Query k=10 (N=1000)** | **~18 ms** | ✅ Fast |
+| **Insert Throughput (10K vec)** | **~10K ops/s** | ✅ Fluid |
 | **Memory Allocation** | **Zero-Copy** | ✅ Consistent |
 
 ---
