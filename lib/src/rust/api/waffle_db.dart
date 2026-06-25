@@ -49,7 +49,7 @@ Future<void> waffleInsertBatch({
 
 /// K-nearest neighbor search. Returns results sorted by distance (ascending).
 /// `ef_search` overrides the config value if > 0, otherwise uses config default.
-Future<List<WaffleQueryResult>> waffleQuery({
+List<WaffleQueryResult> waffleQuery({
   required BigInt handle,
   required List<double> vector,
   required int k,
@@ -69,25 +69,21 @@ Future<bool> waffleDelete({required BigInt handle, required String id}) =>
     RustLib.instance.api.crateApiWaffleDbWaffleDelete(handle: handle, id: id);
 
 /// Get metadata bytes for a vector by ID.
-Future<Uint8List?> waffleGetMetadata({
-  required BigInt handle,
-  required String id,
-}) => RustLib.instance.api.crateApiWaffleDbWaffleGetMetadata(
-  handle: handle,
-  id: id,
-);
+Uint8List? waffleGetMetadata({required BigInt handle, required String id}) =>
+    RustLib.instance.api.crateApiWaffleDbWaffleGetMetadata(
+      handle: handle,
+      id: id,
+    );
 
 /// Get a stored vector by ID.
-Future<Float32List?> waffleGetVector({
-  required BigInt handle,
-  required String id,
-}) => RustLib.instance.api.crateApiWaffleDbWaffleGetVector(
-  handle: handle,
-  id: id,
-);
+Float32List? waffleGetVector({required BigInt handle, required String id}) =>
+    RustLib.instance.api.crateApiWaffleDbWaffleGetVector(
+      handle: handle,
+      id: id,
+    );
 
 /// Get the number of vectors stored on disk.
-Future<BigInt> waffleCount({required BigInt handle}) =>
+BigInt waffleCount({required BigInt handle}) =>
     RustLib.instance.api.crateApiWaffleDbWaffleCount(handle: handle);
 
 /// Force flush all pending writes to disk.
@@ -95,5 +91,5 @@ Future<void> waffleFlush({required BigInt handle}) =>
     RustLib.instance.api.crateApiWaffleDbWaffleFlush(handle: handle);
 
 /// Get all stored string IDs.
-Future<List<String>> waffleGetAllIds({required BigInt handle}) =>
+List<String> waffleGetAllIds({required BigInt handle}) =>
     RustLib.instance.api.crateApiWaffleDbWaffleGetAllIds(handle: handle);

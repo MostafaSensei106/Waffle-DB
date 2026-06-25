@@ -45,7 +45,7 @@ void main() {
 
       // Query 10 times
       for (int i = 0; i < 10; i++) {
-        await db.query(
+        db.query(
           Float32List.fromList(
             List.generate(128, (j) => Random().nextDouble()),
           ),

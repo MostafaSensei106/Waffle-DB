@@ -153,7 +153,7 @@ abstract class RustLibApi extends BaseApi {
     required int dimension,
   });
 
-  Future<BigInt> crateApiWaffleDbWaffleCount({required BigInt handle});
+  BigInt crateApiWaffleDbWaffleCount({required BigInt handle});
 
   Future<bool> crateApiWaffleDbWaffleDelete({
     required BigInt handle,
@@ -162,16 +162,14 @@ abstract class RustLibApi extends BaseApi {
 
   Future<void> crateApiWaffleDbWaffleFlush({required BigInt handle});
 
-  Future<List<String>> crateApiWaffleDbWaffleGetAllIds({
-    required BigInt handle,
-  });
+  List<String> crateApiWaffleDbWaffleGetAllIds({required BigInt handle});
 
-  Future<Uint8List?> crateApiWaffleDbWaffleGetMetadata({
+  Uint8List? crateApiWaffleDbWaffleGetMetadata({
     required BigInt handle,
     required String id,
   });
 
-  Future<Float32List?> crateApiWaffleDbWaffleGetVector({
+  Float32List? crateApiWaffleDbWaffleGetVector({
     required BigInt handle,
     required String id,
   });
@@ -192,7 +190,7 @@ abstract class RustLibApi extends BaseApi {
 
   Future<BigInt> crateApiWaffleDbWaffleOpen({required WaffleConfig config});
 
-  Future<List<WaffleQueryResult>> crateApiWaffleDbWaffleQuery({
+  List<WaffleQueryResult> crateApiWaffleDbWaffleQuery({
     required BigInt handle,
     required List<double> vector,
     required int k,
@@ -782,18 +780,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<BigInt> crateApiWaffleDbWaffleCount({required BigInt handle}) {
-    return handler.executeNormal(
-      NormalTask(
-        callFfi: (port_) {
+  BigInt crateApiWaffleDbWaffleCount({required BigInt handle}) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_u_64(handle, serializer);
-          pdeCallFfi(
-            generalizedFrbRustBinding,
-            serializer,
-            funcId: 17,
-            port: port_,
-          );
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 17)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_u_64,
@@ -873,20 +866,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(debugName: "waffle_flush", argNames: ["handle"]);
 
   @override
-  Future<List<String>> crateApiWaffleDbWaffleGetAllIds({
-    required BigInt handle,
-  }) {
-    return handler.executeNormal(
-      NormalTask(
-        callFfi: (port_) {
+  List<String> crateApiWaffleDbWaffleGetAllIds({required BigInt handle}) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_u_64(handle, serializer);
-          pdeCallFfi(
-            generalizedFrbRustBinding,
-            serializer,
-            funcId: 20,
-            port: port_,
-          );
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 20)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_list_String,
@@ -906,22 +892,17 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<Uint8List?> crateApiWaffleDbWaffleGetMetadata({
+  Uint8List? crateApiWaffleDbWaffleGetMetadata({
     required BigInt handle,
     required String id,
   }) {
-    return handler.executeNormal(
-      NormalTask(
-        callFfi: (port_) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_u_64(handle, serializer);
           sse_encode_String(id, serializer);
-          pdeCallFfi(
-            generalizedFrbRustBinding,
-            serializer,
-            funcId: 21,
-            port: port_,
-          );
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 21)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_opt_list_prim_u_8_strict,
@@ -941,22 +922,17 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<Float32List?> crateApiWaffleDbWaffleGetVector({
+  Float32List? crateApiWaffleDbWaffleGetVector({
     required BigInt handle,
     required String id,
   }) {
-    return handler.executeNormal(
-      NormalTask(
-        callFfi: (port_) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_u_64(handle, serializer);
           sse_encode_String(id, serializer);
-          pdeCallFfi(
-            generalizedFrbRustBinding,
-            serializer,
-            funcId: 22,
-            port: port_,
-          );
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 22)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_opt_list_prim_f_32_strict,
@@ -1082,28 +1058,23 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(debugName: "waffle_open", argNames: ["config"]);
 
   @override
-  Future<List<WaffleQueryResult>> crateApiWaffleDbWaffleQuery({
+  List<WaffleQueryResult> crateApiWaffleDbWaffleQuery({
     required BigInt handle,
     required List<double> vector,
     required int k,
     required int efSearch,
     required bool includeMetadata,
   }) {
-    return handler.executeNormal(
-      NormalTask(
-        callFfi: (port_) {
+    return handler.executeSync(
+      SyncTask(
+        callFfi: () {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_u_64(handle, serializer);
           sse_encode_list_prim_f_32_loose(vector, serializer);
           sse_encode_u_32(k, serializer);
           sse_encode_u_32(efSearch, serializer);
           sse_encode_bool(includeMetadata, serializer);
-          pdeCallFfi(
-            generalizedFrbRustBinding,
-            serializer,
-            funcId: 26,
-            port: port_,
-          );
+          return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 26)!;
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_list_waffle_query_result,

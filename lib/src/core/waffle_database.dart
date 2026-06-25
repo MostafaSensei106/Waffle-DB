@@ -15,7 +15,7 @@ import '../rust/api/waffle_db.dart' as ffi;
 /// );
 ///
 /// await db.insert('doc1', Float32List.fromList([0.1, 0.2, ...]), metadata: utf8.encode('hello'));
-/// final results = await db.query(Float32List.fromList([0.1, 0.2, ...]), k: 5);
+/// final results = db.query(Float32List.fromList([0.1, 0.2, ...]), k: 5);
 /// await db.close();
 /// ```
 class WaffleDatabase {
@@ -98,12 +98,12 @@ class WaffleDatabase {
   /// * `includeMetadata`: If false, avoids Disk I/O by not fetching metadata. Default is false for speed.
   ///
   /// Returns results sorted by distance (ascending = most similar first).
-  Future<List<WaffleQueryResult>> query(
+  List<WaffleQueryResult> query(
     Float32List vector, {
     int k = 10,
     int efSearch = 0,
     bool includeMetadata = false,
-  }) async {
+  }) {
     _assertOpen();
     return ffi.waffleQuery(
       handle: _handle,
@@ -126,22 +126,22 @@ class WaffleDatabase {
 
   /// Retrieve the metadata bytes for a vector by ID.
   /// Returns `null` if not found.
-  Future<Uint8List?> getMetadata(String id) async {
+  Uint8List? getMetadata(String id) {
     _assertOpen();
     return ffi.waffleGetMetadata(handle: _handle, id: id);
   }
 
   /// Retrieve a stored vector by ID.
   /// Returns `null` if not found.
-  Future<Float32List?> getVector(String id) async {
+  Float32List? getVector(String id) {
     _assertOpen();
     return ffi.waffleGetVector(handle: _handle, id: id);
   }
 
   /// Get the number of vectors stored on disk.
-  Future<int> count() async {
+  int count() {
     _assertOpen();
-    final c = await ffi.waffleCount(handle: _handle);
+    final c = ffi.waffleCount(handle: _handle);
     return c.toInt();
   }
 
@@ -152,7 +152,7 @@ class WaffleDatabase {
   }
 
   /// Get all stored string IDs.
-  Future<List<String>> getAllIds() async {
+  List<String> getAllIds() {
     _assertOpen();
     return ffi.waffleGetAllIds(handle: _handle);
   }

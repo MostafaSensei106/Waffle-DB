@@ -253,6 +253,7 @@ pub fn waffle_insert_batch(
 
 /// K-nearest neighbor search. Returns results sorted by distance (ascending).
 /// `ef_search` overrides the config value if > 0, otherwise uses config default.
+#[flutter_rust_bridge::frb(sync)]
 pub fn waffle_query(
     handle: u64,
     vector: Vec<f32>,
@@ -327,11 +328,13 @@ pub fn waffle_delete(handle: u64, id: String) -> Result<bool, String> {
 }
 
 /// Get metadata bytes for a vector by ID.
+#[flutter_rust_bridge::frb(sync)]
 pub fn waffle_get_metadata(handle: u64, id: String) -> Result<Option<Vec<u8>>, String> {
     with_engine(handle, |engine| engine.storage.read_metadata(&id))
 }
 
 /// Get a stored vector by ID.
+#[flutter_rust_bridge::frb(sync)]
 pub fn waffle_get_vector(handle: u64, id: String) -> Result<Option<Vec<f32>>, String> {
     with_engine(handle, |engine| {
         let dim = engine.config.dimension as usize;
@@ -340,6 +343,7 @@ pub fn waffle_get_vector(handle: u64, id: String) -> Result<Option<Vec<f32>>, St
 }
 
 /// Get the number of vectors stored on disk.
+#[flutter_rust_bridge::frb(sync)]
 pub fn waffle_count(handle: u64) -> Result<u64, String> {
     with_engine(handle, |engine| Ok(engine.storage.count()))
 }
@@ -357,6 +361,7 @@ pub fn waffle_flush(handle: u64) -> Result<(), String> {
 }
 
 /// Get all stored string IDs.
+#[flutter_rust_bridge::frb(sync)]
 pub fn waffle_get_all_ids(handle: u64) -> Result<Vec<String>, String> {
     with_engine(handle, |engine| engine.storage.get_all_ids())
 }

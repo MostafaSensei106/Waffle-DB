@@ -84,28 +84,28 @@ void main() {
 
   group('Insert', () {
     testWidgets('single insert increases count', (tester) async {
-      expect(await db.count(), 0);
+      expect(db.count(), 0);
       await db.insert('v1', randomVector(1));
-      expect(await db.count(), 1);
+      expect(db.count(), 1);
     });
 
     testWidgets('insert multiple vectors', (tester) async {
       for (int i = 0; i < 10; i++) {
         await db.insert('v$i', randomVector(i));
       }
-      expect(await db.count(), 10);
+      expect(db.count(), 10);
     });
 
     testWidgets('insert with metadata', (tester) async {
       final meta = Uint8List.fromList([10, 20, 30, 40]);
       await db.insert('vm1', randomVector(42), metadata: meta);
-      final retrieved = await db.getMetadata('vm1');
+      final retrieved = db.getMetadata('vm1');
       expect(retrieved, isNotNull);
     });
 
     testWidgets('insert without metadata stores empty', (tester) async {
       await db.insert('vm2', randomVector(99));
-      expect(await db.count(), 1);
+      expect(db.count(), 1);
     });
   });
 
@@ -120,7 +120,7 @@ void main() {
         (i) => WaffleRecord(id: 'batch-$i', vector: randomVector(i)),
       );
       await db.insertBatch(records);
-      expect(await db.count(), 50);
+      expect(db.count(), 50);
     });
 
     testWidgets('batch insert with metadata', (tester) async {
@@ -133,12 +133,12 @@ void main() {
         ),
       );
       await db.insertBatch(records);
-      expect(await db.count(), 10);
+      expect(db.count(), 10);
     });
 
     testWidgets('empty batch is a no-op', (tester) async {
       await db.insertBatch([]);
-      expect(await db.count(), 0);
+      expect(db.count(), 0);
     });
   });
 
@@ -154,7 +154,7 @@ void main() {
         await db.insert('other-$i', randomVector(i + 100));
       }
 
-      final results = await db.query(v, k: 1);
+      final results = db.query(v, k: 1);
       expect(results, isNotEmpty);
       expect(results.first.id, 'target');
       expect(results.first.distance, closeTo(0.0, 0.01));
@@ -165,8 +165,8 @@ void main() {
         await db.insert('qk-$i', randomVector(i));
       }
 
-      final results5 = await db.query(randomVector(0), k: 5);
-      final results10 = await db.query(randomVector(0), k: 10);
+      final results5 = db.query(randomVector(0), k: 5);
+      final results10 = db.query(randomVector(0), k: 10);
 
       expect(results5.length, 5);
       expect(results10.length, 10);
@@ -177,7 +177,7 @@ void main() {
         await db.insert('sorted-$i', randomVector(i));
       }
 
-      final results = await db.query(randomVector(0), k: 10);
+      final results = db.query(randomVector(0), k: 10);
       for (int i = 1; i < results.length; i++) {
         expect(
           results[i].distance,
@@ -191,16 +191,16 @@ void main() {
         await db.insert('ef-$i', randomVector(i));
       }
 
-      final resultsLow = await db.query(randomVector(0), k: 5, efSearch: 8);
+      final resultsLow = db.query(randomVector(0), k: 5, efSearch: 8);
       final resultsHigh =
-          await db.query(randomVector(0), k: 5, efSearch: 128);
+          db.query(randomVector(0), k: 5, efSearch: 128);
 
       expect(resultsLow.length, 5);
       expect(resultsHigh.length, 5);
     });
 
     testWidgets('query empty database returns empty', (tester) async {
-      final results = await db.query(randomVector(0), k: 5);
+      final results = db.query(randomVector(0), k: 5);
       expect(results, isEmpty);
     });
   });
@@ -213,7 +213,7 @@ void main() {
     testWidgets('getVector retrieves stored vector', (tester) async {
       final v = randomVector(42);
       await db.insert('gv-1', v);
-      final retrieved = await db.getVector('gv-1');
+      final retrieved = db.getVector('gv-1');
 
       expect(retrieved, isNotNull);
       expect(retrieved!.length, dim);
@@ -223,7 +223,7 @@ void main() {
     });
 
     testWidgets('getVector returns null for missing ID', (tester) async {
-      final result = await db.getVector('nonexistent');
+      final result = db.getVector('nonexistent');
       expect(result, isNull);
     });
   });
@@ -236,12 +236,12 @@ void main() {
     testWidgets('getMetadata retrieves stored metadata', (tester) async {
       final meta = Uint8List.fromList([100, 200, 42]);
       await db.insert('gm-1', randomVector(1), metadata: meta);
-      final retrieved = await db.getMetadata('gm-1');
+      final retrieved = db.getMetadata('gm-1');
       expect(retrieved, isNotNull);
     });
 
     testWidgets('getMetadata returns null for missing ID', (tester) async {
-      final result = await db.getMetadata('nonexistent');
+      final result = db.getMetadata('nonexistent');
       expect(result, isNull);
     });
   });
@@ -253,11 +253,11 @@ void main() {
   group('Delete', () {
     testWidgets('delete removes from storage', (tester) async {
       await db.insert('del-1', randomVector(1));
-      expect(await db.count(), 1);
+      expect(db.count(), 1);
 
       final removed = await db.delete('del-1');
       expect(removed, isTrue);
-      expect(await db.count(), 0);
+      expect(db.count(), 0);
     });
 
     testWidgets('delete nonexistent returns false', (tester) async {
@@ -268,7 +268,7 @@ void main() {
     testWidgets('getVector returns null after delete', (tester) async {
       await db.insert('del-2', randomVector(2));
       await db.delete('del-2');
-      final result = await db.getVector('del-2');
+      final result = db.getVector('del-2');
       expect(result, isNull);
     });
   });
@@ -279,16 +279,16 @@ void main() {
 
   group('Count', () {
     testWidgets('count starts at 0', (tester) async {
-      expect(await db.count(), 0);
+      expect(db.count(), 0);
     });
 
     testWidgets('count reflects inserts and deletes', (tester) async {
       await db.insert('c1', randomVector(1));
       await db.insert('c2', randomVector(2));
-      expect(await db.count(), 2);
+      expect(db.count(), 2);
 
       await db.delete('c1');
-      expect(await db.count(), 1);
+      expect(db.count(), 1);
     });
   });
 
@@ -302,13 +302,13 @@ void main() {
       await db.insert('id-b', randomVector(2));
       await db.insert('id-c', randomVector(3));
 
-      final ids = await db.getAllIds();
+      final ids = db.getAllIds();
       expect(ids.length, 3);
       expect(ids, containsAll(['id-a', 'id-b', 'id-c']));
     });
 
     testWidgets('getAllIds on empty db returns empty', (tester) async {
-      final ids = await db.getAllIds();
+      final ids = db.getAllIds();
       expect(ids, isEmpty);
     });
   });
@@ -425,17 +425,17 @@ void main() {
       final col = WaffleCollection(db, 'ns');
       await col.add('item', randomVector(1));
 
-      final allIds = await db.getAllIds();
+      final allIds = db.getAllIds();
       expect(allIds, contains('ns::item'));
     });
 
     testWidgets('delete from collection', (tester) async {
       final col = WaffleCollection(db, 'del');
       await col.add('x', randomVector(1));
-      expect(await db.count(), 1);
+      expect(db.count(), 1);
 
       await col.delete('x');
-      expect(await db.count(), 0);
+      expect(db.count(), 0);
     });
 
     testWidgets('batch add to collection', (tester) async {
@@ -445,7 +445,7 @@ void main() {
         (i) => WaffleRecord(id: 'b-$i', vector: randomVector(i)),
       );
       await col.addBatch(records);
-      expect(await db.count(), 10);
+      expect(db.count(), 10);
     });
 
     testWidgets('getMetadata in collection', (tester) async {
@@ -514,19 +514,19 @@ void main() {
       );
       db = await WaffleDatabase.open(config);
 
-      expect(await db.count(), 2);
+      expect(db.count(), 2);
 
-      final ids = await db.getAllIds();
+      final ids = db.getAllIds();
       expect(ids, containsAll(['persist-1', 'persist-2']));
 
-      final retrieved = await db.getVector('persist-1');
+      final retrieved = db.getVector('persist-1');
       expect(retrieved, isNotNull);
       for (int i = 0; i < dim; i++) {
         expect(retrieved![i], closeTo(v[i], 0.001));
       }
 
       // Query should still work (HNSW rebuilt from disk)
-      final results = await db.query(v, k: 1);
+      final results = db.query(v, k: 1);
       expect(results, isNotEmpty);
       expect(results.first.id, 'persist-1');
     });

@@ -756,16 +756,15 @@ fn wire__crate__api__config__waffle_config_write_heavy_profile_impl(
     )
 }
 fn wire__crate__api__waffle_db__waffle_count_impl(
-    port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
     data_len_: i32,
-) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
         flutter_rust_bridge::for_generated::TaskInfo {
             debug_name: "waffle_count",
-            port: Some(port_),
-            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
         },
         move || {
             let message = unsafe {
@@ -779,12 +778,10 @@ fn wire__crate__api__waffle_db__waffle_count_impl(
                 flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_handle = <u64>::sse_decode(&mut deserializer);
             deserializer.end();
-            move |context| {
-                transform_result_sse::<_, String>((move || {
-                    let output_ok = crate::api::waffle_db::waffle_count(api_handle)?;
-                    Ok(output_ok)
-                })())
-            }
+            transform_result_sse::<_, String>((move || {
+                let output_ok = crate::api::waffle_db::waffle_count(api_handle)?;
+                Ok(output_ok)
+            })())
         },
     )
 }
@@ -856,16 +853,15 @@ fn wire__crate__api__waffle_db__waffle_flush_impl(
     )
 }
 fn wire__crate__api__waffle_db__waffle_get_all_ids_impl(
-    port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
     data_len_: i32,
-) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
         flutter_rust_bridge::for_generated::TaskInfo {
             debug_name: "waffle_get_all_ids",
-            port: Some(port_),
-            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
         },
         move || {
             let message = unsafe {
@@ -879,26 +875,23 @@ fn wire__crate__api__waffle_db__waffle_get_all_ids_impl(
                 flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_handle = <u64>::sse_decode(&mut deserializer);
             deserializer.end();
-            move |context| {
-                transform_result_sse::<_, String>((move || {
-                    let output_ok = crate::api::waffle_db::waffle_get_all_ids(api_handle)?;
-                    Ok(output_ok)
-                })())
-            }
+            transform_result_sse::<_, String>((move || {
+                let output_ok = crate::api::waffle_db::waffle_get_all_ids(api_handle)?;
+                Ok(output_ok)
+            })())
         },
     )
 }
 fn wire__crate__api__waffle_db__waffle_get_metadata_impl(
-    port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
     data_len_: i32,
-) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
         flutter_rust_bridge::for_generated::TaskInfo {
             debug_name: "waffle_get_metadata",
-            port: Some(port_),
-            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
         },
         move || {
             let message = unsafe {
@@ -913,26 +906,23 @@ fn wire__crate__api__waffle_db__waffle_get_metadata_impl(
             let api_handle = <u64>::sse_decode(&mut deserializer);
             let api_id = <String>::sse_decode(&mut deserializer);
             deserializer.end();
-            move |context| {
-                transform_result_sse::<_, String>((move || {
-                    let output_ok = crate::api::waffle_db::waffle_get_metadata(api_handle, api_id)?;
-                    Ok(output_ok)
-                })())
-            }
+            transform_result_sse::<_, String>((move || {
+                let output_ok = crate::api::waffle_db::waffle_get_metadata(api_handle, api_id)?;
+                Ok(output_ok)
+            })())
         },
     )
 }
 fn wire__crate__api__waffle_db__waffle_get_vector_impl(
-    port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
     data_len_: i32,
-) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
         flutter_rust_bridge::for_generated::TaskInfo {
             debug_name: "waffle_get_vector",
-            port: Some(port_),
-            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
         },
         move || {
             let message = unsafe {
@@ -947,12 +937,10 @@ fn wire__crate__api__waffle_db__waffle_get_vector_impl(
             let api_handle = <u64>::sse_decode(&mut deserializer);
             let api_id = <String>::sse_decode(&mut deserializer);
             deserializer.end();
-            move |context| {
-                transform_result_sse::<_, String>((move || {
-                    let output_ok = crate::api::waffle_db::waffle_get_vector(api_handle, api_id)?;
-                    Ok(output_ok)
-                })())
-            }
+            transform_result_sse::<_, String>((move || {
+                let output_ok = crate::api::waffle_db::waffle_get_vector(api_handle, api_id)?;
+                Ok(output_ok)
+            })())
         },
     )
 }
@@ -1072,16 +1060,15 @@ fn wire__crate__api__waffle_db__waffle_open_impl(
     )
 }
 fn wire__crate__api__waffle_db__waffle_query_impl(
-    port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
     data_len_: i32,
-) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
         flutter_rust_bridge::for_generated::TaskInfo {
             debug_name: "waffle_query",
-            port: Some(port_),
-            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+            port: None,
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
         },
         move || {
             let message = unsafe {
@@ -1099,18 +1086,16 @@ fn wire__crate__api__waffle_db__waffle_query_impl(
             let api_ef_search = <u32>::sse_decode(&mut deserializer);
             let api_include_metadata = <bool>::sse_decode(&mut deserializer);
             deserializer.end();
-            move |context| {
-                transform_result_sse::<_, String>((move || {
-                    let output_ok = crate::api::waffle_db::waffle_query(
-                        api_handle,
-                        api_vector,
-                        api_k,
-                        api_ef_search,
-                        api_include_metadata,
-                    )?;
-                    Ok(output_ok)
-                })())
-            }
+            transform_result_sse::<_, String>((move || {
+                let output_ok = crate::api::waffle_db::waffle_query(
+                    api_handle,
+                    api_vector,
+                    api_k,
+                    api_ef_search,
+                    api_include_metadata,
+                )?;
+                Ok(output_ok)
+            })())
         },
     )
 }
@@ -1447,24 +1432,13 @@ fn pde_ffi_dispatcher_primary_impl(
             rust_vec_len,
             data_len,
         ),
-        17 => wire__crate__api__waffle_db__waffle_count_impl(port, ptr, rust_vec_len, data_len),
         18 => wire__crate__api__waffle_db__waffle_delete_impl(port, ptr, rust_vec_len, data_len),
         19 => wire__crate__api__waffle_db__waffle_flush_impl(port, ptr, rust_vec_len, data_len),
-        20 => {
-            wire__crate__api__waffle_db__waffle_get_all_ids_impl(port, ptr, rust_vec_len, data_len)
-        }
-        21 => {
-            wire__crate__api__waffle_db__waffle_get_metadata_impl(port, ptr, rust_vec_len, data_len)
-        }
-        22 => {
-            wire__crate__api__waffle_db__waffle_get_vector_impl(port, ptr, rust_vec_len, data_len)
-        }
         23 => wire__crate__api__waffle_db__waffle_insert_impl(port, ptr, rust_vec_len, data_len),
         24 => {
             wire__crate__api__waffle_db__waffle_insert_batch_impl(port, ptr, rust_vec_len, data_len)
         }
         25 => wire__crate__api__waffle_db__waffle_open_impl(port, ptr, rust_vec_len, data_len),
-        26 => wire__crate__api__waffle_db__waffle_query_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -1477,6 +1451,11 @@ fn pde_ffi_dispatcher_sync_impl(
 ) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
     // Codec=Pde (Serialization + dispatch), see doc to use other codecs
     match func_id {
+        17 => wire__crate__api__waffle_db__waffle_count_impl(ptr, rust_vec_len, data_len),
+        20 => wire__crate__api__waffle_db__waffle_get_all_ids_impl(ptr, rust_vec_len, data_len),
+        21 => wire__crate__api__waffle_db__waffle_get_metadata_impl(ptr, rust_vec_len, data_len),
+        22 => wire__crate__api__waffle_db__waffle_get_vector_impl(ptr, rust_vec_len, data_len),
+        26 => wire__crate__api__waffle_db__waffle_query_impl(ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }

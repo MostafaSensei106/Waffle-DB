@@ -259,13 +259,13 @@ class _BenchmarkPageState extends State<BenchmarkPage>
 
     // 3 — Count
     await run(3, () async {
-      final c = await db.count();
+      final c = db.count();
       _updateOp(3, _results[3].copyWith(detail: '$c vectors'));
     });
 
     // 4 — Query k=5
     await run(4, () async {
-      final results = await db.query(_randomVector(0), k: 5);
+      final results = db.query(_randomVector(0), k: 5);
       _updateOp(
         4,
         _results[4].copyWith(
@@ -277,19 +277,19 @@ class _BenchmarkPageState extends State<BenchmarkPage>
 
     // 5 — Query k=20
     await run(5, () async {
-      final results = await db.query(_randomVector(1), k: 20);
+      final results = db.query(_randomVector(1), k: 20);
       _updateOp(5, _results[5].copyWith(detail: '${results.length} results'));
     });
 
     // 6 — Query k=50 ef=128
     await run(6, () async {
-      final results = await db.query(_randomVector(2), k: 50, efSearch: 128);
+      final results = db.query(_randomVector(2), k: 50, efSearch: 128);
       _updateOp(6, _results[6].copyWith(detail: '${results.length} results'));
     });
 
     // 7 — Get Vector
     await run(7, () async {
-      final v = await db.getVector('batch-0');
+      final v = db.getVector('batch-0');
       _updateOp(
         7,
         _results[7].copyWith(
@@ -300,7 +300,7 @@ class _BenchmarkPageState extends State<BenchmarkPage>
 
     // 8 — Get Metadata
     await run(8, () async {
-      final m = await db.getMetadata('batch-0');
+      final m = db.getMetadata('batch-0');
       _updateOp(
         8,
         _results[8].copyWith(
@@ -311,7 +311,7 @@ class _BenchmarkPageState extends State<BenchmarkPage>
 
     // 9 — Get All IDs
     await run(9, () async {
-      final ids = await db.getAllIds();
+      final ids = db.getAllIds();
       _updateOp(9, _results[9].copyWith(detail: '${ids.length} IDs'));
     });
 
@@ -358,13 +358,13 @@ class _BenchmarkPageState extends State<BenchmarkPage>
         workerThreads: 4,
       );
       _db = await WaffleDatabase.open(config);
-      final c = await _db!.count();
+      final c = _db!.count();
       _updateOp(13, _results[13].copyWith(detail: 'Reopened, $c vectors'));
     });
 
     // 14 — Query after reopen
     await run(14, () async {
-      final results = await _db!.query(_randomVector(0), k: 5);
+      final results = _db!.query(_randomVector(0), k: 5);
       _updateOp(
         14,
         _results[14].copyWith(

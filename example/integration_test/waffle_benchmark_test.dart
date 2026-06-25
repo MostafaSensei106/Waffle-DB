@@ -213,7 +213,7 @@ void main() {
         'Query k=10 (N=1000, dim=$dim)',
         () async {
           final idx = qc++;
-          await db.query(queries[idx], k: 10);
+          db.query(queries[idx], k: 10);
         },
       );
       expect(stats.p99, lessThan(100000)); // < 100ms
@@ -236,7 +236,7 @@ void main() {
         'Query k=50 (N=1000, dim=$dim)',
         () async {
           final idx = qc++;
-          await db.query(queries[idx], k: 50);
+          db.query(queries[idx], k: 50);
         },
       );
       expect(stats.p99, lessThan(200000)); // < 200ms
@@ -253,7 +253,7 @@ void main() {
       final stats = await benchmark(
         'Query k=10 ef=256 (N=1000, dim=$dim)',
         () async {
-          await db.query(randomVector(qc++), k: 10, efSearch: 256);
+          db.query(randomVector(qc++), k: 10, efSearch: 256);
         },
       );
       expect(stats.p99, lessThan(500000)); // < 500ms
@@ -267,7 +267,7 @@ void main() {
       final stats = await benchmark(
         'Count (N=100)',
         () async {
-          await db.count();
+          db.count();
         },
       );
       expect(stats.p99, lessThan(10000)); // < 10ms
@@ -283,7 +283,7 @@ void main() {
         'GetVector (N=100, dim=$dim)',
         () async {
           final idx = gc % 100;
-          await db.getVector('gv-$idx');
+          db.getVector('gv-$idx');
           gc++;
         },
       );
@@ -303,7 +303,7 @@ void main() {
       final stats = await benchmark(
         'GetMetadata (N=100)',
         () async {
-          await db.getMetadata('gm-${mc % 100}');
+          db.getMetadata('gm-${mc % 100}');
           mc++;
         },
       );
@@ -364,7 +364,7 @@ void main() {
       final stats = await benchmark(
         'GetAllIds (N=500)',
         () async {
-          await db.getAllIds();
+          db.getAllIds();
         },
         runs: 50,
       );
