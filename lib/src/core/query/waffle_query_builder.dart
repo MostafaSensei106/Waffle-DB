@@ -74,7 +74,7 @@ class WaffleQueryBuilder {
       );
     }
 
-    var results = await _db.query(_vector!, k: _limit, efSearch: _efSearch);
+    var results = _db.query(_vector!, k: _limit, efSearch: _efSearch);
 
     // Apply distance threshold filter
     if (_threshold > 0.0) {

@@ -43,11 +43,7 @@ class WaffleCollection {
   /// [id] is the user-facing ID (will be namespaced internally).
   /// [vector] must match the configured dimension.
   /// [metadata] is optional arbitrary bytes.
-  Future<void> add(
-    String id,
-    Float32List vector, {
-    Uint8List? metadata,
-  }) async {
+  Future<void> add(String id, Float32List vector, {Uint8List? metadata}) async {
     await _db.insert(_prefixId(id), vector, metadata: metadata);
   }
 
@@ -75,7 +71,7 @@ class WaffleCollection {
     int topK = 10,
     int efSearch = 0,
   }) async {
-    final results = await _db.query(queryVector, k: topK, efSearch: efSearch);
+    final results = _db.query(queryVector, k: topK, efSearch: efSearch);
     // Filter to only this collection's results and strip prefix
     return results
         .where((r) => r.id.startsWith('$name::'))

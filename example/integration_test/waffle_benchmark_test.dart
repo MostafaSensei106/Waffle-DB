@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
@@ -16,8 +18,8 @@ class BenchmarkStats {
   final int count;
 
   BenchmarkStats(this.name, List<double> raw)
-      : latenciesUs = List<double>.from(raw)..sort(),
-        count = raw.length;
+    : latenciesUs = List<double>.from(raw)..sort(),
+      count = raw.length;
 
   double get min => latenciesUs.first;
   double get max => latenciesUs.last;
@@ -32,13 +34,12 @@ class BenchmarkStats {
     final m = avg;
     final variance =
         latenciesUs.map((x) => (x - m) * (x - m)).reduce((a, b) => a + b) /
-            count;
+        count;
     return sqrt(variance);
   }
 
   /// Throughput in operations per second.
-  double get opsPerSec =>
-      count / (latenciesUs.reduce((a, b) => a + b) / 1e6);
+  double get opsPerSec => count / (latenciesUs.reduce((a, b) => a + b) / 1e6);
 
   double _percentile(int p) {
     final index = ((p / 100) * (count - 1)).round();
@@ -114,7 +115,6 @@ void main() {
     }
 
     final stats = BenchmarkStats(name, latencies);
-    // ignore: avoid_print
     print(stats);
     return stats;
   }
@@ -162,14 +162,11 @@ void main() {
         iterations + warmup,
         (i) => randomVector(i),
       );
-      
-      final stats = await benchmark(
-        'Single Insert (dim=$dim)',
-        () async {
-          final idx = counter++;
-          await db.insert('bench-insert-$idx', vectors[idx]);
-        },
-      );
+
+      final stats = await benchmark('Single Insert (dim=$dim)', () async {
+        final idx = counter++;
+        await db.insert('bench-insert-$idx', vectors[idx]);
+      });
       // Sanity: p99 should be under 50ms
       expect(stats.p99, lessThan(50000));
     });
@@ -209,13 +206,10 @@ void main() {
       );
 
       int qc = 0;
-      final stats = await benchmark(
-        'Query k=10 (N=1000, dim=$dim)',
-        () async {
-          final idx = qc++;
-          db.query(queries[idx], k: 10);
-        },
-      );
+      final stats = await benchmark('Query k=10 (N=1000, dim=$dim)', () async {
+        final idx = qc++;
+        db.query(queries[idx], k: 10);
+      });
       expect(stats.p99, lessThan(100000)); // < 100ms
     });
 
@@ -232,13 +226,10 @@ void main() {
       );
 
       int qc = 0;
-      final stats = await benchmark(
-        'Query k=50 (N=1000, dim=$dim)',
-        () async {
-          final idx = qc++;
-          db.query(queries[idx], k: 50);
-        },
-      );
+      final stats = await benchmark('Query k=50 (N=1000, dim=$dim)', () async {
+        final idx = qc++;
+        db.query(queries[idx], k: 50);
+      });
       expect(stats.p99, lessThan(200000)); // < 200ms
     });
 
@@ -264,12 +255,9 @@ void main() {
         await db.insert('cnt-$i', randomVector(i));
       }
 
-      final stats = await benchmark(
-        'Count (N=100)',
-        () async {
-          db.count();
-        },
-      );
+      final stats = await benchmark('Count (N=100)', () async {
+        db.count();
+      });
       expect(stats.p99, lessThan(10000)); // < 10ms
     });
 
@@ -279,14 +267,11 @@ void main() {
       }
 
       int gc = 0;
-      final stats = await benchmark(
-        'GetVector (N=100, dim=$dim)',
-        () async {
-          final idx = gc % 100;
-          db.getVector('gv-$idx');
-          gc++;
-        },
-      );
+      final stats = await benchmark('GetVector (N=100, dim=$dim)', () async {
+        final idx = gc % 100;
+        db.getVector('gv-$idx');
+        gc++;
+      });
       expect(stats.p99, lessThan(10000)); // < 10ms
     });
 
@@ -300,13 +285,10 @@ void main() {
       }
 
       int mc = 0;
-      final stats = await benchmark(
-        'GetMetadata (N=100)',
-        () async {
-          db.getMetadata('gm-${mc % 100}');
-          mc++;
-        },
-      );
+      final stats = await benchmark('GetMetadata (N=100)', () async {
+        db.getMetadata('gm-${mc % 100}');
+        mc++;
+      });
       expect(stats.p99, lessThan(10000)); // < 10ms
     });
 
@@ -316,12 +298,9 @@ void main() {
       }
 
       int dc = 0;
-      final stats = await benchmark(
-        'Delete',
-        () async {
-          await db.delete('del-${dc++}');
-        },
-      );
+      final stats = await benchmark('Delete', () async {
+        await db.delete('del-${dc++}');
+      });
       expect(stats.p99, lessThan(10000)); // < 10ms
     });
 
@@ -330,13 +309,9 @@ void main() {
         await db.insert('fl-$i', randomVector(i));
       }
 
-      final stats = await benchmark(
-        'Flush (N=50)',
-        () async {
-          await db.flush();
-        },
-        runs: 50,
-      );
+      final stats = await benchmark('Flush (N=50)', () async {
+        await db.flush();
+      }, runs: 50);
       expect(stats.p99, lessThan(100000)); // < 100ms
     });
 
@@ -344,13 +319,9 @@ void main() {
       final a = List<double>.generate(dim, (i) => i * 0.01);
       final b = List<double>.generate(dim, (i) => (dim - i) * 0.01);
 
-      final stats = await benchmark(
-        'Cosine Similarity (dim=$dim)',
-        () async {
-          await cosineSimilarity(a: a, b: b);
-        },
-        runs: 500,
-      );
+      final stats = await benchmark('Cosine Similarity (dim=$dim)', () async {
+        await cosineSimilarity(a: a, b: b);
+      }, runs: 500);
       expect(stats.p99, lessThan(5000)); // < 5ms
     });
 
@@ -361,13 +332,9 @@ void main() {
       );
       await db.insertBatch(records);
 
-      final stats = await benchmark(
-        'GetAllIds (N=500)',
-        () async {
-          db.getAllIds();
-        },
-        runs: 50,
-      );
+      final stats = await benchmark('GetAllIds (N=500)', () async {
+        db.getAllIds();
+      }, runs: 50);
       expect(stats.p99, lessThan(100000)); // < 100ms
     });
 
@@ -377,11 +344,11 @@ void main() {
         10000,
         (i) => WaffleRecord(id: 'thr-$i', vector: randomVector(i)),
       );
-      
+
       final sw = Stopwatch()..start();
       await db.insertBatch(records);
       sw.stop();
-      
+
       final opsPerSec = 10000 / (sw.elapsedMicroseconds / 1e6);
       print('Insert Throughput: ${opsPerSec.toStringAsFixed(0)} vectors/sec');
       expect(opsPerSec, greaterThan(100)); // Sanity check
