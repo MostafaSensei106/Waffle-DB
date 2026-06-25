@@ -2,7 +2,7 @@ use std::time::Instant;
 use rand::Rng;
 use std::fs;
 use std::path::PathBuf;
-use waffle_db::api::config::{WaffleConfig, WaffleGraphConfig, WaffleMetric};
+use waffle_db::api::config::WaffleConfig;
 use waffle_db::api::waffle_db::{waffle_close, waffle_insert, waffle_open, waffle_query};
 
 fn generate_random_vector(dim: usize) -> Vec<f32> {
@@ -26,8 +26,14 @@ fn bench_profile(profile_name: &str, mut cfg: WaffleConfig) {
     let insert_vectors: Vec<Vec<f32>> = (0..(warmup + iterations)).map(|_| generate_random_vector(dim)).collect();
     
     // Warmup insert
-    for i in 0..warmup {
-        waffle_insert(handle, format!("w_insert_{}", i), insert_vectors[i].clone(), vec![]).unwrap();
+    for (i, vec) in insert_vectors.iter().enumerate().take(warmup) {
+        waffle_insert(
+            handle,
+            format!("bench-insert-{}", i),
+            vec.clone(),
+            Vec::new(),
+        )
+        .unwrap();
     }
     
     // Bench Insert
@@ -48,8 +54,8 @@ fn bench_profile(profile_name: &str, mut cfg: WaffleConfig) {
     let query_vectors: Vec<Vec<f32>> = (0..(warmup + iterations)).map(|_| generate_random_vector(dim)).collect();
 
     // Warmup query
-    for i in 0..warmup {
-        waffle_query(handle, query_vectors[i].clone(), 10, 0, false).unwrap();
+    for vec in query_vectors.iter().take(warmup) {
+        waffle_query(handle, vec.clone(), 10, 0, false).unwrap();
     }
 
     // Bench query
@@ -62,13 +68,22 @@ fn bench_profile(profile_name: &str, mut cfg: WaffleConfig) {
     }
     let avg_query_us = total_query_us as f64 / iterations as f64;
 
+    // Test restore speed
+    let start_close = Instant::now();
     waffle_close(handle).unwrap();
-    let _ = fs::remove_dir_all(&path);
+    let _close_us = start_close.elapsed().as_micros();
+
+    let start_open = Instant::now();
+    let _handle2 = waffle_open(cfg).unwrap();
+    let restore_us = start_open.elapsed().as_micros();
+    waffle_close(_handle2).unwrap();
 
     println!(
-        "{{\"profile\": \"{}\", \"insert_us\": {}, \"query_us\": {}}}",
-        profile_name, avg_insert_us, avg_query_us
+        "JSON_RESULT: {{\"profile\": \"{}\", \"insert_us\": {}, \"query_us\": {}, \"restore_us\": {}}}",
+        profile_name, avg_insert_us, avg_query_us, restore_us
     );
+    
+    let _ = fs::remove_dir_all(&path);
 }
 
 fn main() {

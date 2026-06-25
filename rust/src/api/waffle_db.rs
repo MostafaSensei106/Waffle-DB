@@ -58,7 +58,7 @@ where
 pub fn waffle_open(config: WaffleConfig) -> Result<u64, String> {
     let storage = WaffleStorage::init(&config)?;
 
-    let index_file = Path::new(&config.path).join("index.hnsw.hnsw.graph");
+    let _index_file = Path::new(&config.path).join("index.hnsw.hnsw.graph");
     let map_file = Path::new(&config.path).join("id_map.json");
 
     let mut id_map: HashMap<usize, String> = HashMap::new();

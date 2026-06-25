@@ -19,7 +19,7 @@ pub enum HnswIndex {
 impl HnswIndex {
     pub fn new(
         max_elements: usize,
-        dimension: usize,
+        _dimension: usize,
         m: usize,
         ef_construction: usize,
         metric: &WaffleMetric,
@@ -37,7 +37,7 @@ impl HnswIndex {
         }
     }
 
-    pub fn insert(&self, data: &Vec<f32>, id: usize) {
+    pub fn insert(&self, data: &[f32], id: usize) {
         match self {
             HnswIndex::Cosine(h) => h.insert((data, id)),
             HnswIndex::Euclidean(h) => h.insert((data, id)),

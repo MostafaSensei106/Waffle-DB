@@ -45,17 +45,20 @@ def main():
     print("="*80 + "\n")
     
     for profile in profiles:
-        rust = rust_results.get(profile, {'insert_us': 0, 'query_us': 0})
-        dart = dart_results.get(profile, {'insert_us': 0, 'query_us': 0})
+        rust = rust_results.get(profile, {'insert_us': 0, 'query_us': 0, 'restore_us': 0})
+        dart = dart_results.get(profile, {'insert_us': 0, 'query_us': 0, 'restore_us': 0})
         
-        rust_ins = rust['insert_us'] / 1000.0
-        rust_query = rust['query_us'] / 1000.0
+        rust_ins = rust.get('insert_us', 0) / 1000.0
+        rust_query = rust.get('query_us', 0) / 1000.0
+        rust_restore = rust.get('restore_us', 0) / 1000.0
         
-        dart_ins = dart['insert_us'] / 1000.0
-        dart_query = dart['query_us'] / 1000.0
+        dart_ins = dart.get('insert_us', 0) / 1000.0
+        dart_query = dart.get('query_us', 0) / 1000.0
+        dart_restore = dart.get('restore_us', 0) / 1000.0
         
         ffi_ins = dart_ins - rust_ins
         ffi_query = dart_query - rust_query
+        ffi_restore = dart_restore - rust_restore
         
         print(f"🌟 PROFILE: {profile.upper()}")
         print(f"{'Metric':<20} | {'Pure Rust Time':<15} | {'FFI/Dart Overhead':<18} | {'Total End-to-End Time':<15}")

@@ -2,7 +2,7 @@ use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use rand::Rng;
 use std::fs;
 use std::path::PathBuf;
-use waffle_db::api::config::{WaffleConfig, WaffleGraphConfig, WaffleMetric};
+use waffle_db::api::config::WaffleConfig;
 use waffle_db::api::waffle_db::{waffle_close, waffle_insert, waffle_open, waffle_query};
 
 fn generate_random_vector(dim: usize) -> Vec<f32> {
@@ -50,7 +50,7 @@ fn bench_profile(c: &mut Criterion, profile_name: &str, config: WaffleConfig) {
         b.iter_with_setup(
             || generate_random_vector(dim),
             |vec| {
-                black_box(waffle_query(handle, vec, 10, 0).unwrap());
+                black_box(waffle_query(handle, vec, 10, 0, false).unwrap());
             },
         )
     });

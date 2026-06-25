@@ -1,9 +1,6 @@
 use sled::{Db, Tree};
 
-use crate::api::{
-    config::WaffleConfig,
-    models::{ArchivedVectorMetadata, VectorMetadata},
-};
+use crate::api::{config::WaffleConfig, models::VectorMetadata};
 
 pub struct WaffleStorage {
     db: Db,
@@ -49,7 +46,7 @@ impl WaffleStorage {
         let v_bytes = unsafe {
             std::slice::from_raw_parts(
                 vector.as_ptr() as *const u8,
-                vector.len() * std::mem::size_of::<f32>(),
+                std::mem::size_of_val(vector),
             )
         };
         self.vectors_tree
@@ -125,8 +122,8 @@ impl WaffleStorage {
 
         for item in self.vectors_tree.iter() {
             let (key, value) = item.map_err(|e| e.to_string())?;
-            let id = String::from_utf8(key.to_vec())
-                .map_err(|e| format!("Invalid UTF-8 key: {}", e))?;
+            let id =
+                String::from_utf8(key.to_vec()).map_err(|e| format!("Invalid UTF-8 key: {}", e))?;
 
             if value.len() != expected_bytes {
                 continue; // skip corrupted entries
@@ -139,7 +136,10 @@ impl WaffleStorage {
             batch.push((id, floats));
 
             if batch.len() >= batch_size {
-                f(std::mem::replace(&mut batch, Vec::with_capacity(batch_size)))?;
+                f(std::mem::replace(
+                    &mut batch,
+                    Vec::with_capacity(batch_size),
+                ))?;
             }
         }
 
@@ -155,8 +155,8 @@ impl WaffleStorage {
         let mut ids = Vec::new();
         for item in self.vectors_tree.iter() {
             let (key, _) = item.map_err(|e| e.to_string())?;
-            let id = String::from_utf8(key.to_vec())
-                .map_err(|e| format!("Invalid UTF-8 key: {}", e))?;
+            let id =
+                String::from_utf8(key.to_vec()).map_err(|e| format!("Invalid UTF-8 key: {}", e))?;
             ids.push(id);
         }
         Ok(ids)
