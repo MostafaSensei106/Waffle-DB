@@ -39,3 +39,28 @@ class VectorMetadata {
           category == other.category &&
           payload == other.payload;
 }
+
+/// Result returned from a KNN query, bridgeable by FRB.
+class WaffleQueryResult {
+  final String id;
+  final double distance;
+  final Uint8List? metadata;
+
+  const WaffleQueryResult({
+    required this.id,
+    required this.distance,
+    this.metadata,
+  });
+
+  @override
+  int get hashCode => id.hashCode ^ distance.hashCode ^ metadata.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WaffleQueryResult &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          distance == other.distance &&
+          metadata == other.metadata;
+}

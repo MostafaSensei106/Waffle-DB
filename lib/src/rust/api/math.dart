@@ -6,6 +6,10 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `HnswIndex`
+// These functions are ignored (category: IgnoreBecauseOwnerTyShouldIgnore): `get_nb_point`, `insert_slice`, `insert`, `new`, `search`
+
+/// Standalone cosine similarity for Dart FFI use.
 Future<double> cosineSimilarity({
   required List<double> a,
   required List<double> b,

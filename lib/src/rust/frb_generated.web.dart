@@ -10,6 +10,7 @@ import 'api/config.dart';
 import 'api/math.dart';
 import 'api/models.dart';
 import 'api/storage.dart';
+import 'api/waffle_db.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'frb_generated.dart';
@@ -64,6 +65,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   int dco_decode_i_32(dynamic raw);
 
   @protected
+  List<String> dco_decode_list_String(dynamic raw);
+
+  @protected
+  List<Uint8List> dco_decode_list_list_prim_u_8_strict(dynamic raw);
+
+  @protected
   List<double> dco_decode_list_prim_f_32_loose(dynamic raw);
 
   @protected
@@ -76,7 +83,22 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
 
   @protected
+  List<(String, Float32List)>
+  dco_decode_list_record_string_list_prim_f_32_strict(dynamic raw);
+
+  @protected
+  List<WaffleQueryResult> dco_decode_list_waffle_query_result(dynamic raw);
+
+  @protected
+  Float32List? dco_decode_opt_list_prim_f_32_strict(dynamic raw);
+
+  @protected
   Uint8List? dco_decode_opt_list_prim_u_8_strict(dynamic raw);
+
+  @protected
+  (String, Float32List) dco_decode_record_string_list_prim_f_32_strict(
+    dynamic raw,
+  );
 
   @protected
   int dco_decode_u_32(dynamic raw);
@@ -104,6 +126,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   WaffleMetric dco_decode_waffle_metric(dynamic raw);
+
+  @protected
+  WaffleQueryResult dco_decode_waffle_query_result(dynamic raw);
 
   @protected
   WaffleStorage
@@ -146,6 +171,14 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   int sse_decode_i_32(SseDeserializer deserializer);
 
   @protected
+  List<String> sse_decode_list_String(SseDeserializer deserializer);
+
+  @protected
+  List<Uint8List> sse_decode_list_list_prim_u_8_strict(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   List<double> sse_decode_list_prim_f_32_loose(SseDeserializer deserializer);
 
   @protected
@@ -158,7 +191,28 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
 
   @protected
+  List<(String, Float32List)>
+  sse_decode_list_record_string_list_prim_f_32_strict(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  List<WaffleQueryResult> sse_decode_list_waffle_query_result(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  Float32List? sse_decode_opt_list_prim_f_32_strict(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   Uint8List? sse_decode_opt_list_prim_u_8_strict(SseDeserializer deserializer);
+
+  @protected
+  (String, Float32List) sse_decode_record_string_list_prim_f_32_strict(
+    SseDeserializer deserializer,
+  );
 
   @protected
   int sse_decode_u_32(SseDeserializer deserializer);
@@ -188,6 +242,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   WaffleMetric sse_decode_waffle_metric(SseDeserializer deserializer);
+
+  @protected
+  WaffleQueryResult sse_decode_waffle_query_result(
+    SseDeserializer deserializer,
+  );
 
   @protected
   void
@@ -235,6 +294,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_i_32(int self, SseSerializer serializer);
 
   @protected
+  void sse_encode_list_String(List<String> self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_list_list_prim_u_8_strict(
+    List<Uint8List> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_list_prim_f_32_loose(
     List<double> self,
     SseSerializer serializer,
@@ -256,8 +324,32 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_list_record_string_list_prim_f_32_strict(
+    List<(String, Float32List)> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_waffle_query_result(
+    List<WaffleQueryResult> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_opt_list_prim_f_32_strict(
+    Float32List? self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_opt_list_prim_u_8_strict(
     Uint8List? self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_record_string_list_prim_f_32_strict(
+    (String, Float32List) self,
     SseSerializer serializer,
   );
 
@@ -293,6 +385,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_waffle_metric(WaffleMetric self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_waffle_query_result(
+    WaffleQueryResult self,
+    SseSerializer serializer,
+  );
 }
 
 // Section: wire_class
