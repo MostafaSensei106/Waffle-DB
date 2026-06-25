@@ -66,7 +66,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.12.0';
 
   @override
-  int get rustContentHash => 1091508807;
+  int get rustContentHash => 170532783;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -92,6 +92,13 @@ abstract class RustLibApi extends BaseApi {
     required String id,
     required List<double> vector,
     required VectorMetadata metadata,
+  });
+
+  Future<void> crateApiStorageWaffleStorageWriteRecord({
+    required WaffleStorage that,
+    required String id,
+    required List<double> vector,
+    required List<int> metadata,
   });
 
   Future<WaffleConfig> crateApiConfigWaffleConfigDefault();
@@ -249,6 +256,48 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<void> crateApiStorageWaffleStorageWriteRecord({
+    required WaffleStorage that,
+    required String id,
+    required List<double> vector,
+    required List<int> metadata,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWaffleStorage(
+            that,
+            serializer,
+          );
+          sse_encode_String(id, serializer);
+          sse_encode_list_prim_f_32_loose(vector, serializer);
+          sse_encode_list_prim_u_8_loose(metadata, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 4,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_String,
+        ),
+        constMeta: kCrateApiStorageWaffleStorageWriteRecordConstMeta,
+        argValues: [that, id, vector, metadata],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStorageWaffleStorageWriteRecordConstMeta =>
+      const TaskConstMeta(
+        debugName: "WaffleStorage_write_record",
+        argNames: ["that", "id", "vector", "metadata"],
+      );
+
+  @override
   Future<WaffleConfig> crateApiConfigWaffleConfigDefault() {
     return handler.executeNormal(
       NormalTask(
@@ -257,7 +306,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 4,
+            funcId: 5,
             port: port_,
           );
         },
@@ -289,7 +338,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 5,
+            funcId: 6,
             port: port_,
           );
         },
@@ -324,7 +373,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 6,
+            funcId: 7,
             port: port_,
           );
         },
@@ -359,7 +408,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 7,
+            funcId: 8,
             port: port_,
           );
         },
@@ -394,7 +443,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 8,
+            funcId: 9,
             port: port_,
           );
         },
@@ -496,6 +545,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Float32List dco_decode_list_prim_f_32_strict(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as Float32List;
+  }
+
+  @protected
+  List<int> dco_decode_list_prim_u_8_loose(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as List<int>;
   }
 
   @protected
@@ -680,6 +735,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var len_ = sse_decode_i_32(deserializer);
     return deserializer.buffer.getFloat32List(len_);
+  }
+
+  @protected
+  List<int> sse_decode_list_prim_u_8_loose(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var len_ = sse_decode_i_32(deserializer);
+    return deserializer.buffer.getUint8List(len_);
   }
 
   @protected
@@ -893,6 +955,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_list_prim_u_8_loose(
+    List<int> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    serializer.buffer.putUint8List(
+      self is Uint8List ? self : Uint8List.fromList(self),
+    );
+  }
+
+  @protected
   void sse_encode_list_prim_u_8_strict(
     Uint8List self,
     SseSerializer serializer,
@@ -1014,6 +1088,17 @@ class WaffleStorageImpl extends RustOpaque implements WaffleStorage {
     required List<double> vector,
     required VectorMetadata metadata,
   }) => RustLib.instance.api.crateApiStorageWaffleStorageWriteMetadata(
+    that: this,
+    id: id,
+    vector: vector,
+    metadata: metadata,
+  );
+
+  Future<void> writeRecord({
+    required String id,
+    required List<double> vector,
+    required List<int> metadata,
+  }) => RustLib.instance.api.crateApiStorageWaffleStorageWriteRecord(
     that: this,
     id: id,
     vector: vector,

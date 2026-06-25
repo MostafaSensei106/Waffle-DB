@@ -20,4 +20,10 @@ abstract class WaffleStorage implements RustOpaqueInterface {
     required List<double> vector,
     required VectorMetadata metadata,
   });
+
+  Future<void> writeRecord({
+    required String id,
+    required List<double> vector,
+    required List<int> metadata,
+  });
 }

@@ -11,8 +11,9 @@ flutter_rust_bridge = "=2.12.0"
 tokio = { version = "1.52.3", features = ["rt-multi-thread", "sync"] }
 sled = { version = "0.34.7" }
 serde = { version = "1.0.228", features = ["derive"] }
-rkyv = "0.8.16"
+rkyv = { version = "0.8.16", features = ["bytecheck"] }
 rayon = "1.12.0"
+num_cpus = "1.16.0"
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(frb_expand)'] }

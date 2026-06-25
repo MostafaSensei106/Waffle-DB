@@ -1,6 +1,9 @@
 use sled::{Db, Tree};
 
-use crate::api::{config::WaffleConfig, models::VectorMetadata};
+use crate::api::{
+    config::WaffleConfig,
+    models::{ArchivedVectorMetadata, VectorMetadata},
+};
 
 pub struct WaffleStorage {
     db: Db,
@@ -29,11 +32,11 @@ impl WaffleStorage {
     pub fn write_metadata(
         &self,
         id: &str,
-        vector: &[f32],
+        _vector: &[f32],
         metadata: VectorMetadata,
     ) -> Result<bool, String> {
-        let serialized =
-            to_bytes::<_, 256>(metadata).map_err(|e| format!("Serialization error: {}", e))?;
+        let serialized = rkyv::to_bytes::<rkyv::rancor::Error>(&metadata)
+            .map_err(|e| format!("Serialization error: {}", e))?;
 
         self.metadata_tree
             .insert(id, serialized.as_slice())
@@ -42,9 +45,25 @@ impl WaffleStorage {
         Ok(true)
     }
 
+    pub fn write_record(&self, id: &str, vector: &[f32], metadata: &[u8]) -> Result<(), String> {
+        let v_bytes = unsafe {
+            std::slice::from_raw_parts(
+                vector.as_ptr() as *const u8,
+                vector.len() * std::mem::size_of::<f32>(),
+            )
+        };
+        self.vectors_tree
+            .insert(id, v_bytes)
+            .map_err(|e| e.to_string())?;
+        self.metadata_tree
+            .insert(id, metadata)
+            .map_err(|e| e.to_string())?;
+        Ok(())
+    }
+
     pub fn read_metadata(&self, id: &str) -> Result<Option<Vec<u8>>, String> {
         if let Some(ivec) = self.metadata_tree.get(id).map_err(|e| e.to_string())? {
-            let archived = unsafe { rkyv::archived_root::<VectorMetadata>(&ivec) };
+            let archived = unsafe { rkyv::access_unchecked::<ArchivedVectorMetadata>(&ivec) };
             println!("Reading archived category directly: {}", archived.category);
             return Ok(Some(ivec.to_vec()));
         }

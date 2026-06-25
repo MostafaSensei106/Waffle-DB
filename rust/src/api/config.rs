@@ -1,5 +1,3 @@
-use num_cpus;
-
 #[derive(Clone, Debug, PartialEq)]
 pub enum WaffleMetric {
     Cosine,
