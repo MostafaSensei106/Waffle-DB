@@ -54,8 +54,8 @@ class WaffleDatabase {
     await ffi.waffleInsert(
       handle: _handle,
       id: id,
-      vector: vector.toList(),
-      metadata: metadata?.toList() ?? [],
+      vector: vector,
+      metadata: metadata ?? Uint8List(0),
     );
   }
 
@@ -69,12 +69,15 @@ class WaffleDatabase {
 
     final ids = <String>[];
     final metadataList = <Uint8List>[];
-    final flatVectors = <double>[];
+    final dim = records.first.vector.length;
+    final flatVectors = Float32List(records.length * dim);
+    int offset = 0;
 
     for (final record in records) {
       ids.add(record.id);
       metadataList.add(record.metadata ?? Uint8List(0));
-      flatVectors.addAll(record.vector);
+      flatVectors.setAll(offset, record.vector);
+      offset += dim;
     }
 
     await ffi.waffleInsertBatch(
@@ -101,7 +104,7 @@ class WaffleDatabase {
     _assertOpen();
     return ffi.waffleQuery(
       handle: _handle,
-      vector: vector.toList(),
+      vector: vector,
       k: k,
       efSearch: efSearch,
     );

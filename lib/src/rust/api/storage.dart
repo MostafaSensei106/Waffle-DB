@@ -8,6 +8,8 @@ import 'config.dart';
 import 'models.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+// These functions are ignored because they have generic arguments: `load_vectors_in_batches`
+
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WaffleStorage>>
 abstract class WaffleStorage implements RustOpaqueInterface {
   Future<BigInt> count();
@@ -18,9 +20,6 @@ abstract class WaffleStorage implements RustOpaqueInterface {
 
   /// Returns all stored string IDs.
   Future<List<String>> getAllIds();
-
-  /// Returns all stored (id, vector) pairs for rebuilding the HNSW index.
-  Future<List<(String, Float32List)>> getAllVectors({required BigInt dim});
 
   static Future<WaffleStorage> init({required WaffleConfig config}) =>
       RustLib.instance.api.crateApiStorageWaffleStorageInit(config: config);

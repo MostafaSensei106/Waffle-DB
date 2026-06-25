@@ -23,13 +23,13 @@ impl HnswIndex {
     ) -> Self {
         match metric {
             WaffleMetric::Cosine => {
-                HnswIndex::Cosine(Hnsw::new(max_elements, dimension, m, ef_construction, DistCosine))
+                HnswIndex::Cosine(Hnsw::new(m, max_elements, 16, ef_construction, DistCosine))
             }
             WaffleMetric::Euclidean => {
-                HnswIndex::Euclidean(Hnsw::new(max_elements, dimension, m, ef_construction, DistL2))
+                HnswIndex::Euclidean(Hnsw::new(m, max_elements, 16, ef_construction, DistL2))
             }
             WaffleMetric::DotProduct => {
-                HnswIndex::DotProduct(Hnsw::new(max_elements, dimension, m, ef_construction, DistDot))
+                HnswIndex::DotProduct(Hnsw::new(m, max_elements, 16, ef_construction, DistDot))
             }
         }
     }

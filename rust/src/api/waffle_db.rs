@@ -66,32 +66,29 @@ pub fn waffle_open(config: WaffleConfig) -> Result<u64, String> {
 
     // Rebuild ID maps and HNSW index from persisted data
     let dim = config.dimension as usize;
-    let all_vectors = storage.get_all_vectors(dim)?;
-
     let mut id_map = HashMap::new();
     let mut reverse_id_map = HashMap::new();
     let mut next_id: u64 = 0;
 
-    if !all_vectors.is_empty() {
-        // Prepare data for parallel insert
-        let mut insert_data: Vec<(Vec<f32>, usize)> = Vec::with_capacity(all_vectors.len());
+    storage.load_vectors_in_batches(dim, 10_000, |batch| {
+        let mut insert_data: Vec<(Vec<f32>, usize)> = Vec::with_capacity(batch.len());
 
-        for (string_id, vec_data) in &all_vectors {
+        for (string_id, vec_data) in batch {
             let internal_id = next_id as usize;
             id_map.insert(internal_id, string_id.clone());
-            reverse_id_map.insert(string_id.clone(), internal_id);
-            insert_data.push((vec_data.clone(), internal_id));
+            reverse_id_map.insert(string_id, internal_id);
+            insert_data.push((vec_data, internal_id));
             next_id += 1;
         }
 
-        // Build refs for parallel_insert
         let refs: Vec<(&Vec<f32>, usize)> = insert_data
             .iter()
             .map(|(v, id)| (v, *id))
             .collect();
 
         index.insert_slice(&refs);
-    }
+        Ok(())
+    })?;
 
     let engine = WaffleEngine {
         index,

@@ -81,10 +81,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
 
   @protected
-  List<(String, Float32List)>
-  dco_decode_list_record_string_list_prim_f_32_strict(dynamic raw);
-
-  @protected
   List<WaffleQueryResult> dco_decode_list_waffle_query_result(dynamic raw);
 
   @protected
@@ -92,11 +88,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   Uint8List? dco_decode_opt_list_prim_u_8_strict(dynamic raw);
-
-  @protected
-  (String, Float32List) dco_decode_record_string_list_prim_f_32_strict(
-    dynamic raw,
-  );
 
   @protected
   int dco_decode_u_32(dynamic raw);
@@ -189,12 +180,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
 
   @protected
-  List<(String, Float32List)>
-  sse_decode_list_record_string_list_prim_f_32_strict(
-    SseDeserializer deserializer,
-  );
-
-  @protected
   List<WaffleQueryResult> sse_decode_list_waffle_query_result(
     SseDeserializer deserializer,
   );
@@ -206,11 +191,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   Uint8List? sse_decode_opt_list_prim_u_8_strict(SseDeserializer deserializer);
-
-  @protected
-  (String, Float32List) sse_decode_record_string_list_prim_f_32_strict(
-    SseDeserializer deserializer,
-  );
 
   @protected
   int sse_decode_u_32(SseDeserializer deserializer);
@@ -322,12 +302,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  void sse_encode_list_record_string_list_prim_f_32_strict(
-    List<(String, Float32List)> self,
-    SseSerializer serializer,
-  );
-
-  @protected
   void sse_encode_list_waffle_query_result(
     List<WaffleQueryResult> self,
     SseSerializer serializer,
@@ -342,12 +316,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_opt_list_prim_u_8_strict(
     Uint8List? self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_record_string_list_prim_f_32_strict(
-    (String, Float32List) self,
     SseSerializer serializer,
   );
 

@@ -63,8 +63,6 @@ impl WaffleStorage {
 
     pub fn read_metadata(&self, id: &str) -> Result<Option<Vec<u8>>, String> {
         if let Some(ivec) = self.metadata_tree.get(id).map_err(|e| e.to_string())? {
-            let archived = unsafe { rkyv::access_unchecked::<ArchivedVectorMetadata>(&ivec) };
-            println!("Reading archived category directly: {}", archived.category);
             return Ok(Some(ivec.to_vec()));
         }
         Ok(None)
@@ -112,9 +110,17 @@ impl WaffleStorage {
         Ok(())
     }
 
-    /// Returns all stored (id, vector) pairs for rebuilding the HNSW index.
-    pub fn get_all_vectors(&self, dim: usize) -> Result<Vec<(String, Vec<f32>)>, String> {
-        let mut results = Vec::new();
+    /// Iterates over stored vectors and yields them in batches to save RAM.
+    pub fn load_vectors_in_batches<F>(
+        &self,
+        dim: usize,
+        batch_size: usize,
+        mut f: F,
+    ) -> Result<(), String>
+    where
+        F: FnMut(Vec<(String, Vec<f32>)>) -> Result<(), String>,
+    {
+        let mut batch = Vec::with_capacity(batch_size);
         let expected_bytes = dim * std::mem::size_of::<f32>();
 
         for item in self.vectors_tree.iter() {
@@ -130,10 +136,18 @@ impl WaffleStorage {
                 .chunks_exact(4)
                 .map(|chunk| f32::from_ne_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]))
                 .collect();
-            results.push((id, floats));
+            batch.push((id, floats));
+
+            if batch.len() >= batch_size {
+                f(std::mem::replace(&mut batch, Vec::with_capacity(batch_size)))?;
+            }
         }
 
-        Ok(results)
+        if !batch.is_empty() {
+            f(batch)?;
+        }
+
+        Ok(())
     }
 
     /// Returns all stored string IDs.
