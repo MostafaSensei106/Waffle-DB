@@ -94,12 +94,15 @@ class WaffleDatabase {
   /// [k] is the number of nearest neighbors to return.
   /// [efSearch] overrides the configured ef_search for this query.
   ///   Higher values = more accurate but slower. Pass 0 to use config default.
+  /// * `efSearch`: Overrides the default ef_search if > 0.
+  /// * `includeMetadata`: If false, avoids Disk I/O by not fetching metadata. Default is false for speed.
   ///
   /// Returns results sorted by distance (ascending = most similar first).
   Future<List<WaffleQueryResult>> query(
     Float32List vector, {
     int k = 10,
     int efSearch = 0,
+    bool includeMetadata = false,
   }) async {
     _assertOpen();
     return ffi.waffleQuery(
@@ -107,6 +110,7 @@ class WaffleDatabase {
       vector: vector,
       k: k,
       efSearch: efSearch,
+      includeMetadata: includeMetadata,
     );
   }
 

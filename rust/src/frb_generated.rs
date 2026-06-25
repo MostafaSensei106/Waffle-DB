@@ -1097,6 +1097,7 @@ fn wire__crate__api__waffle_db__waffle_query_impl(
             let api_vector = <Vec<f32>>::sse_decode(&mut deserializer);
             let api_k = <u32>::sse_decode(&mut deserializer);
             let api_ef_search = <u32>::sse_decode(&mut deserializer);
+            let api_include_metadata = <bool>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, String>((move || {
@@ -1105,6 +1106,7 @@ fn wire__crate__api__waffle_db__waffle_query_impl(
                         api_vector,
                         api_k,
                         api_ef_search,
+                        api_include_metadata,
                     )?;
                     Ok(output_ok)
                 })())

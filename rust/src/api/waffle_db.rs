@@ -12,6 +12,8 @@ use crate::api::config::WaffleConfig;
 use crate::api::math::HnswIndex;
 use crate::api::models::WaffleQueryResult;
 use crate::api::storage::WaffleStorage;
+use std::fs;
+use std::path::Path;
 
 /// Internal engine holding both the HNSW index and the sled storage.
 struct WaffleEngine {
@@ -56,39 +58,54 @@ where
 pub fn waffle_open(config: WaffleConfig) -> Result<u64, String> {
     let storage = WaffleStorage::init(&config)?;
 
-    let index = HnswIndex::new(
-        config.max_elements as usize,
-        config.dimension as usize,
-        config.graph_config.m as usize,
-        config.graph_config.ef_construction as usize,
-        &config.graph_config.metric,
-    );
+    let index_file = Path::new(&config.path).join("index.hnsw.hnsw.graph");
+    let map_file = Path::new(&config.path).join("id_map.json");
 
-    // Rebuild ID maps and HNSW index from persisted data
-    let dim = config.dimension as usize;
-    let mut id_map = HashMap::new();
-    let mut reverse_id_map = HashMap::new();
+    let mut id_map: HashMap<usize, String> = HashMap::new();
+    let mut reverse_id_map: HashMap<String, usize> = HashMap::new();
     let mut next_id: u64 = 0;
 
-    storage.load_vectors_in_batches(dim, 10_000, |batch| {
-        let mut insert_data: Vec<(Vec<f32>, usize)> = Vec::with_capacity(batch.len());
-
-        for (string_id, vec_data) in batch {
-            let internal_id = next_id as usize;
-            id_map.insert(internal_id, string_id.clone());
-            reverse_id_map.insert(string_id, internal_id);
-            insert_data.push((vec_data, internal_id));
-            next_id += 1;
+    let index = if map_file.exists() {
+        let map_data = fs::read_to_string(&map_file).map_err(|e| e.to_string())?;
+        id_map = serde_json::from_str(&map_data).map_err(|e| e.to_string())?;
+        for (k, v) in &id_map {
+            reverse_id_map.insert(v.clone(), *k);
+            if *k as u64 >= next_id {
+                next_id = *k as u64 + 1;
+            }
         }
+        HnswIndex::load(Path::new(&config.path), "index.hnsw", &config.graph_config.metric)?
+    } else {
+        let idx = HnswIndex::new(
+            config.max_elements as usize,
+            config.dimension as usize,
+            config.graph_config.m as usize,
+            config.graph_config.ef_construction as usize,
+            &config.graph_config.metric,
+        );
+        let dim = config.dimension as usize;
 
-        let refs: Vec<(&Vec<f32>, usize)> = insert_data
-            .iter()
-            .map(|(v, id)| (v, *id))
-            .collect();
+        storage.load_vectors_in_batches(dim, 10_000, |batch| {
+            let mut insert_data: Vec<(Vec<f32>, usize)> = Vec::with_capacity(batch.len());
 
-        index.insert_slice(&refs);
-        Ok(())
-    })?;
+            for (string_id, vec_data) in batch {
+                let internal_id = next_id as usize;
+                id_map.insert(internal_id, string_id.clone());
+                reverse_id_map.insert(string_id, internal_id);
+                insert_data.push((vec_data, internal_id));
+                next_id += 1;
+            }
+
+            let refs: Vec<(&Vec<f32>, usize)> = insert_data
+                .iter()
+                .map(|(v, id)| (v, *id))
+                .collect();
+
+            idx.insert_slice(&refs);
+            Ok(())
+        })?;
+        idx
+    };
 
     let engine = WaffleEngine {
         index,
@@ -115,6 +132,10 @@ pub fn waffle_close(handle: u64) -> Result<(), String> {
         .map_err(|e| format!("Lock poisoned: {}", e))?;
     if let Some(engine) = reg.remove(&handle) {
         engine.storage.flush()?;
+        let map = engine.id_map.lock().map_err(|e| e.to_string())?;
+        let map_data = serde_json::to_string(&*map).map_err(|e| e.to_string())?;
+        std::fs::write(Path::new(&engine.config.path).join("id_map.json"), map_data).map_err(|e| e.to_string())?;
+        engine.index.save(Path::new(&engine.config.path), "index.hnsw")?;
     }
     Ok(())
 }
@@ -237,6 +258,7 @@ pub fn waffle_query(
     vector: Vec<f32>,
     k: u32,
     ef_search: u32,
+    include_metadata: bool,
 ) -> Result<Vec<WaffleQueryResult>, String> {
     with_engine(handle, |engine| {
         let dim = engine.config.dimension as usize;
@@ -265,8 +287,11 @@ pub fn waffle_query(
                 .cloned()
                 .unwrap_or_else(|| format!("__unknown_{}", internal_id));
 
-            // Optionally fetch metadata
-            let metadata = engine.storage.read_metadata(&string_id)?;
+            let metadata = if include_metadata {
+                engine.storage.read_metadata(&string_id)?
+            } else {
+                None
+            };
 
             results.push(WaffleQueryResult {
                 id: string_id,
@@ -321,7 +346,14 @@ pub fn waffle_count(handle: u64) -> Result<u64, String> {
 
 /// Force flush all pending writes to disk.
 pub fn waffle_flush(handle: u64) -> Result<(), String> {
-    with_engine(handle, |engine| engine.storage.flush())
+    with_engine(handle, |engine| {
+        engine.storage.flush()?;
+        let map = engine.id_map.lock().map_err(|e| e.to_string())?;
+        let map_data = serde_json::to_string(&*map).map_err(|e| e.to_string())?;
+        std::fs::write(Path::new(&engine.config.path).join("id_map.json"), map_data).map_err(|e| e.to_string())?;
+        engine.index.save(Path::new(&engine.config.path), "index.hnsw")?;
+        Ok(())
+    })
 }
 
 /// Get all stored string IDs.

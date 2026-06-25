@@ -49,7 +49,7 @@ fn bench_profile(profile_name: &str, mut cfg: WaffleConfig) {
 
     // Warmup query
     for i in 0..warmup {
-        waffle_query(handle, query_vectors[i].clone(), 10, 0).unwrap();
+        waffle_query(handle, query_vectors[i].clone(), 10, 0, false).unwrap();
     }
 
     // Bench query
@@ -57,7 +57,7 @@ fn bench_profile(profile_name: &str, mut cfg: WaffleConfig) {
     for i in 0..iterations {
         let vec = query_vectors[warmup + i].clone();
         let start = Instant::now();
-        waffle_query(handle, vec, 10, 0).unwrap();
+        waffle_query(handle, vec, 10, 0, false).unwrap();
         total_query_us += start.elapsed().as_micros();
     }
     let avg_query_us = total_query_us as f64 / iterations as f64;

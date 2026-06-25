@@ -54,11 +54,13 @@ Future<List<WaffleQueryResult>> waffleQuery({
   required List<double> vector,
   required int k,
   required int efSearch,
+  required bool includeMetadata,
 }) => RustLib.instance.api.crateApiWaffleDbWaffleQuery(
   handle: handle,
   vector: vector,
   k: k,
   efSearch: efSearch,
+  includeMetadata: includeMetadata,
 );
 
 /// Delete a vector by its string ID. Removes from storage.

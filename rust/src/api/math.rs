@@ -1,6 +1,9 @@
 use flutter_rust_bridge::frb;
 use hnsw_rs::anndists::dist::{DistCosine, DistDot, DistL2};
+use hnsw_rs::api::AnnT;
 use hnsw_rs::hnsw::Hnsw;
+use hnsw_rs::hnswio::HnswIo;
+use std::path::Path;
 
 use crate::api::config::WaffleMetric;
 
@@ -75,6 +78,48 @@ impl HnswIndex {
             HnswIndex::Cosine(h) => h.get_nb_point(),
             HnswIndex::Euclidean(h) => h.get_nb_point(),
             HnswIndex::DotProduct(h) => h.get_nb_point(),
+        }
+    }
+
+    pub fn save(&self, path: &Path, file_basename: &str) -> Result<(), String> {
+        match self {
+            HnswIndex::Cosine(h) => {
+                h.file_dump(path, file_basename)
+                    .map_err(|e| e.to_string())?;
+            }
+            HnswIndex::Euclidean(h) => {
+                h.file_dump(path, file_basename)
+                    .map_err(|e| e.to_string())?;
+            }
+            HnswIndex::DotProduct(h) => {
+                h.file_dump(path, file_basename)
+                    .map_err(|e| e.to_string())?;
+            }
+        }
+        Ok(())
+    }
+
+    pub fn load(path: &Path, file_basename: &str, metric: &WaffleMetric) -> Result<Self, String> {
+        let reloader = Box::leak(Box::new(HnswIo::new(path, file_basename)));
+        match metric {
+            WaffleMetric::Cosine => {
+                let h: Hnsw<'static, f32, DistCosine> = reloader
+                    .load_hnsw::<f32, DistCosine>()
+                    .map_err(|e| e.to_string())?;
+                Ok(HnswIndex::Cosine(h))
+            }
+            WaffleMetric::Euclidean => {
+                let h: Hnsw<'static, f32, DistL2> = reloader
+                    .load_hnsw::<f32, DistL2>()
+                    .map_err(|e| e.to_string())?;
+                Ok(HnswIndex::Euclidean(h))
+            }
+            WaffleMetric::DotProduct => {
+                let h: Hnsw<'static, f32, DistDot> = reloader
+                    .load_hnsw::<f32, DistDot>()
+                    .map_err(|e| e.to_string())?;
+                Ok(HnswIndex::DotProduct(h))
+            }
         }
     }
 }

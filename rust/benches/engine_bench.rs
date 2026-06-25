@@ -13,7 +13,7 @@ fn generate_random_vector(dim: usize) -> Vec<f32> {
 fn bench_profile(c: &mut Criterion, profile_name: &str, config: WaffleConfig) {
     let mut group = c.benchmark_group(format!("Profile_{}", profile_name));
     group.sample_size(10); // Reduce sample size for heavy profiles to finish faster
-    
+
     let path = PathBuf::from(format!("/tmp/waffle_bench_{}", profile_name));
     if path.exists() {
         let _ = fs::remove_dir_all(&path);
@@ -21,7 +21,7 @@ fn bench_profile(c: &mut Criterion, profile_name: &str, config: WaffleConfig) {
 
     let mut cfg = config.clone();
     cfg.path = path.to_str().unwrap().to_string();
-    
+
     let handle = waffle_open(cfg.clone()).unwrap();
     let dim = cfg.dimension as usize;
 
@@ -63,8 +63,16 @@ fn bench_all_profiles(c: &mut Criterion) {
     let dim = 1536; // OpenAI embedding size
     bench_profile(c, "Mobile", WaffleConfig::mobile_profile("tmp", dim as u32));
     bench_profile(c, "Server", WaffleConfig::server_profile("tmp", dim as u32));
-    bench_profile(c, "ReadHeavy", WaffleConfig::read_heavy_profile("tmp", dim as u32));
-    bench_profile(c, "WriteHeavy", WaffleConfig::write_heavy_profile("tmp", dim as u32));
+    bench_profile(
+        c,
+        "ReadHeavy",
+        WaffleConfig::read_heavy_profile("tmp", dim as u32),
+    );
+    bench_profile(
+        c,
+        "WriteHeavy",
+        WaffleConfig::write_heavy_profile("tmp", dim as u32),
+    );
 }
 
 criterion_group!(benches, bench_all_profiles);

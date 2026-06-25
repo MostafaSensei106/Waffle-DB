@@ -197,6 +197,7 @@ abstract class RustLibApi extends BaseApi {
     required List<double> vector,
     required int k,
     required int efSearch,
+    required bool includeMetadata,
   });
 
   RustArcIncrementStrongCountFnType
@@ -1086,6 +1087,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required List<double> vector,
     required int k,
     required int efSearch,
+    required bool includeMetadata,
   }) {
     return handler.executeNormal(
       NormalTask(
@@ -1095,6 +1097,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           sse_encode_list_prim_f_32_loose(vector, serializer);
           sse_encode_u_32(k, serializer);
           sse_encode_u_32(efSearch, serializer);
+          sse_encode_bool(includeMetadata, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
@@ -1107,7 +1110,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_String,
         ),
         constMeta: kCrateApiWaffleDbWaffleQueryConstMeta,
-        argValues: [handle, vector, k, efSearch],
+        argValues: [handle, vector, k, efSearch, includeMetadata],
         apiImpl: this,
       ),
     );
@@ -1116,7 +1119,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   TaskConstMeta get kCrateApiWaffleDbWaffleQueryConstMeta =>
       const TaskConstMeta(
         debugName: "waffle_query",
-        argNames: ["handle", "vector", "k", "efSearch"],
+        argNames: ["handle", "vector", "k", "efSearch", "includeMetadata"],
       );
 
   RustArcIncrementStrongCountFnType
