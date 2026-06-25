@@ -7,8 +7,11 @@ void main() {
     test('constructor creates record with required fields', () {
       final vector = Float32List.fromList([0.1, 0.2, 0.3]);
       final metadata = Uint8List.fromList([1, 2, 3]);
-      final record =
-          WaffleRecord(id: 'test-1', vector: vector, metadata: metadata);
+      final record = WaffleRecord(
+        id: 'test-1',
+        vector: vector,
+        metadata: metadata,
+      );
 
       expect(record.id, 'test-1');
       expect(record.vector, vector);
@@ -39,10 +42,7 @@ void main() {
     });
 
     test('fromList factory with null metadata', () {
-      final record = WaffleRecord.fromList(
-        id: 'test-4',
-        vector: [1.0, 2.0],
-      );
+      final record = WaffleRecord.fromList(id: 'test-4', vector: [1.0, 2.0]);
 
       expect(record.metadata, isNull);
     });
@@ -73,19 +73,13 @@ void main() {
     });
 
     test('toString shows hasMeta as false when no metadata', () {
-      final record = WaffleRecord.fromList(
-        id: 'doc-2',
-        vector: [0.1],
-      );
+      final record = WaffleRecord.fromList(id: 'doc-2', vector: [0.1]);
 
       expect(record.toString(), contains('false'));
     });
 
     test('empty vector is valid', () {
-      final record = WaffleRecord(
-        id: 'empty',
-        vector: Float32List(0),
-      );
+      final record = WaffleRecord(id: 'empty', vector: Float32List(0));
 
       expect(record.vector.length, 0);
     });

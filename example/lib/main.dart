@@ -1,9 +1,7 @@
-// ignore_for_file: deprecated_member_use
-
+import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:waffle_db/waffle_db.dart';
 import 'package:path_provider/path_provider.dart';
@@ -24,7 +22,7 @@ class WaffleApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'WaffleDB Demo',
+      title: 'WaffleDB Benchmark',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.dark,
@@ -33,359 +31,7 @@ class WaffleApp extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'monospace',
       ),
-      home: const HomePage(),
-    );
-  }
-}
-
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
-
-  @override
-  State<HomePage> createState() => _HomePageState();
-}
-
-class _HomePageState extends State<HomePage> {
-  int _currentIndex = 0;
-
-  final List<Widget> _pages = [const ColorSearchPage(), const BenchmarkPage()];
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: _pages[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
-        backgroundColor: const Color(0xFF161B22),
-        selectedItemColor: Theme.of(context).colorScheme.primary,
-        unselectedItemColor: Colors.white54,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.color_lens_rounded),
-            label: 'Color Search',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.speed_rounded),
-            label: 'Benchmark',
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════
-//  Color Search Page
-// ═══════════════════════════════════════════════════════════════════
-
-class ColorSearchPage extends StatefulWidget {
-  const ColorSearchPage({super.key});
-
-  @override
-  State<ColorSearchPage> createState() => _ColorSearchPageState();
-}
-
-class _ColorSearchPageState extends State<ColorSearchPage> {
-  WaffleDatabase? _db;
-  bool _loading = true;
-  String _statusText = 'Initializing database...';
-
-  Color _queryColor = const Color.fromARGB(255, 0, 150, 136); // Teal
-  List<WaffleQueryResult> _results = [];
-  Duration _queryTime = Duration.zero;
-  int _dbSize = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _initDb();
-  }
-
-  Future<void> _initDb() async {
-    final dir = await getApplicationDocumentsDirectory();
-    final dbPath = '${dir.path}/waffle_colors';
-
-    final config = WaffleConfig(
-      dimension: 3,
-      path: dbPath,
-      graphConfig: const WaffleGraphConfig(
-        m: 16,
-        metric: WaffleMetric.euclidean,
-        efConstruction: 64,
-        efSearch: 32,
-      ),
-      maxElements: 100000,
-      useQuantization: false,
-      cacheSizeBytes: BigInt.from(16 * 1024 * 1024),
-      workerThreads: 2,
-    );
-
-    _db = await WaffleDatabase.open(config);
-    _dbSize = _db!.count();
-
-    if (_dbSize == 0) {
-      setState(() => _statusText = 'Generating random colors...');
-
-      // Generate 20,000 random colors to show it's somewhat large
-      final rng = Random();
-      List<WaffleRecord> records = [];
-      for (int i = 0; i < 20000; i++) {
-        final r = rng.nextDouble();
-        final g = rng.nextDouble();
-        final b = rng.nextDouble();
-        records.add(
-          WaffleRecord(
-            id: 'color_$i',
-            vector: Float32List.fromList([r, g, b]),
-            metadata: Uint8List(0),
-          ),
-        );
-      }
-
-      await _db!.insertBatch(records);
-      await _db!.flush();
-      _dbSize = _db!.count();
-    }
-
-    if (mounted) {
-      setState(() => _loading = false);
-      _performQuery();
-    }
-  }
-
-  void _performQuery() {
-    if (_db == null) return;
-
-    final sw = Stopwatch()..start();
-    final queryVector = Float32List.fromList([
-      _queryColor.red / 255.0,
-      _queryColor.green / 255.0,
-      _queryColor.blue / 255.0,
-    ]);
-
-    final results = _db!.query(queryVector, k: 30);
-    sw.stop();
-
-    if (mounted) {
-      setState(() {
-        _results = results;
-        _queryTime = sw.elapsed;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_loading) {
-      return Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const CircularProgressIndicator(),
-              const SizedBox(height: 16),
-              Text(_statusText),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Semantic Color Search',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: const Color(0xFF161B22),
-        elevation: 0,
-      ),
-      body: Column(
-        children: [
-          // Query Color Controls
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: const BoxDecoration(
-              color: Color(0xFF161B22),
-              border: Border(bottom: BorderSide(color: Colors.white10)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 72,
-                      height: 72,
-                      decoration: BoxDecoration(
-                        color: _queryColor,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.white24, width: 2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: _queryColor.withValues(alpha: 0.4),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 20),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Query Color (RGB)',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Found ${_results.length} neighbors in ${_queryTime.inMicroseconds}µs from $_dbSize records',
-                            style: const TextStyle(
-                              color: Colors.white54,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                _buildSlider('R', _queryColor.red.toDouble(), (v) {
-                  setState(
-                    () => _queryColor = Color.fromARGB(
-                      255,
-                      v.toInt(),
-                      _queryColor.green,
-                      _queryColor.blue,
-                    ),
-                  );
-                  _performQuery();
-                }, Colors.redAccent),
-                _buildSlider('G', _queryColor.green.toDouble(), (v) {
-                  setState(
-                    () => _queryColor = Color.fromARGB(
-                      255,
-                      _queryColor.red,
-                      v.toInt(),
-                      _queryColor.blue,
-                    ),
-                  );
-                  _performQuery();
-                }, Colors.greenAccent),
-                _buildSlider('B', _queryColor.blue.toDouble(), (v) {
-                  setState(
-                    () => _queryColor = Color.fromARGB(
-                      255,
-                      _queryColor.red,
-                      _queryColor.green,
-                      v.toInt(),
-                    ),
-                  );
-                  _performQuery();
-                }, Colors.blueAccent),
-              ],
-            ),
-          ),
-
-          // Results Grid
-          Expanded(
-            child: GridView.builder(
-              padding: const EdgeInsets.all(20),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 5,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-              ),
-              itemCount: _results.length,
-              itemBuilder: (context, index) {
-                final result = _results[index];
-                final vector = _db!.getVector(result.id);
-                if (vector == null) return const SizedBox.shrink();
-
-                final color = Color.fromARGB(
-                  255,
-                  (vector[0] * 255).toInt().clamp(0, 255),
-                  (vector[1] * 255).toInt().clamp(0, 255),
-                  (vector[2] * 255).toInt().clamp(0, 255),
-                );
-
-                return Tooltip(
-                  message: 'Distance: ${result.distance.toStringAsFixed(4)}',
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: color,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white24, width: 2),
-                      boxShadow: [
-                        BoxShadow(
-                          color: color.withValues(alpha: 0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSlider(
-    String label,
-    double value,
-    ValueChanged<double> onChanged,
-    Color activeColor,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: activeColor,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
-          Expanded(
-            child: SliderTheme(
-              data: SliderThemeData(
-                activeTrackColor: activeColor,
-                inactiveTrackColor: activeColor.withValues(alpha: 0.2),
-                thumbColor: activeColor,
-                overlayColor: activeColor.withValues(alpha: 0.1),
-                trackHeight: 6,
-              ),
-              child: Slider(
-                value: value,
-                min: 0,
-                max: 255,
-                onChanged: onChanged,
-              ),
-            ),
-          ),
-          SizedBox(
-            width: 36,
-            child: Text(
-              value.toInt().toString(),
-              style: const TextStyle(fontWeight: FontWeight.bold),
-              textAlign: TextAlign.right,
-            ),
-          ),
-        ],
-      ),
+      home: const BenchmarkPage(),
     );
   }
 }
@@ -495,11 +141,9 @@ class _BenchmarkPageState extends State<BenchmarkPage>
   }
 
   void _updateOp(int index, OpResult result) {
-    if (mounted) {
-      setState(() {
-        _results[index] = result;
-      });
-    }
+    setState(() {
+      _results[index] = result;
+    });
   }
 
   Future<void> _runAll() async {
@@ -542,12 +186,10 @@ class _BenchmarkPageState extends State<BenchmarkPage>
         );
       }
       step++;
-      if (mounted) {
-        setState(() {
-          _progress = step / totalSteps;
-          _statusText = 'Step $step / $totalSteps';
-        });
-      }
+      setState(() {
+        _progress = step / totalSteps;
+        _statusText = 'Step $step / $totalSteps';
+      });
     }
 
     final dir = await getApplicationDocumentsDirectory();
@@ -574,12 +216,10 @@ class _BenchmarkPageState extends State<BenchmarkPage>
     });
 
     if (_db == null) {
-      if (mounted) {
-        setState(() {
-          _running = false;
-          _statusText = 'Failed to open DB';
-        });
-      }
+      setState(() {
+        _running = false;
+        _statusText = 'Failed to open DB';
+      });
       return;
     }
     final db = _db!;
@@ -742,13 +382,11 @@ class _BenchmarkPageState extends State<BenchmarkPage>
     });
 
     totalSw.stop();
-    if (mounted) {
-      setState(() {
-        _running = false;
-        _totalTime = totalSw.elapsed;
-        _statusText = 'Done in ${_formatDuration(totalSw.elapsed)}';
-      });
-    }
+    setState(() {
+      _running = false;
+      _totalTime = totalSw.elapsed;
+      _statusText = 'Done in ${_formatDuration(totalSw.elapsed)}';
+    });
   }
 
   String _formatDuration(Duration d) {

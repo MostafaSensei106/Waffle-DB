@@ -192,8 +192,7 @@ void main() {
       }
 
       final resultsLow = db.query(randomVector(0), k: 5, efSearch: 8);
-      final resultsHigh =
-          db.query(randomVector(0), k: 5, efSearch: 128);
+      final resultsHigh = db.query(randomVector(0), k: 5, efSearch: 128);
 
       expect(resultsLow.length, 5);
       expect(resultsHigh.length, 5);
@@ -334,10 +333,9 @@ void main() {
         await db.insert('qb-$i', randomVector(i));
       }
 
-      final results = await WaffleQueryBuilder(db)
-          .withVector(randomVector(0))
-          .limit(5)
-          .execute();
+      final results = await WaffleQueryBuilder(
+        db,
+      ).withVector(randomVector(0)).limit(5).execute();
 
       expect(results.length, 5);
     });
@@ -349,11 +347,9 @@ void main() {
         await db.insert('far-$i', randomVector(i + 500));
       }
 
-      final results = await WaffleQueryBuilder(db)
-          .withVector(target)
-          .limit(20)
-          .threshold(0.01)
-          .execute();
+      final results = await WaffleQueryBuilder(
+        db,
+      ).withVector(target).limit(20).threshold(0.01).execute();
 
       for (final r in results) {
         expect(r.distance, lessThanOrEqualTo(0.01));
@@ -365,11 +361,9 @@ void main() {
         await db.insert('ef-$i', randomVector(i));
       }
 
-      final results = await WaffleQueryBuilder(db)
-          .withVector(randomVector(0))
-          .limit(5)
-          .efSearch(128)
-          .execute();
+      final results = await WaffleQueryBuilder(
+        db,
+      ).withVector(randomVector(0)).limit(5).efSearch(128).execute();
 
       expect(results.length, 5);
     });
@@ -381,11 +375,9 @@ void main() {
         metadata: Uint8List.fromList([1, 2, 3]),
       );
 
-      final results = await WaffleQueryBuilder(db)
-          .withVector(randomVector(1))
-          .limit(1)
-          .includeMetadata(false)
-          .execute();
+      final results = await WaffleQueryBuilder(
+        db,
+      ).withVector(randomVector(1)).limit(1).includeMetadata(false).execute();
 
       expect(results, isNotEmpty);
       expect(results.first.metadata, isNull);
@@ -395,10 +387,9 @@ void main() {
       await db.insert('vl-1', randomVector(1));
 
       final v = randomVector(1);
-      final results = await WaffleQueryBuilder(db)
-          .withVectorList(v.toList().cast<double>())
-          .limit(1)
-          .execute();
+      final results = await WaffleQueryBuilder(
+        db,
+      ).withVectorList(v.toList().cast<double>()).limit(1).execute();
 
       expect(results, isNotEmpty);
     });
@@ -450,8 +441,7 @@ void main() {
 
     testWidgets('getMetadata in collection', (tester) async {
       final col = WaffleCollection(db, 'meta');
-      await col.add('m1', randomVector(1),
-          metadata: Uint8List.fromList([42]));
+      await col.add('m1', randomVector(1), metadata: Uint8List.fromList([42]));
       final meta = await col.getMetadata('m1');
       expect(meta, isNotNull);
     });
@@ -492,8 +482,7 @@ void main() {
   group('Persistence', () {
     testWidgets('data survives close and reopen', (tester) async {
       final v = randomVector(42);
-      await db.insert('persist-1', v,
-          metadata: Uint8List.fromList([1, 2, 3]));
+      await db.insert('persist-1', v, metadata: Uint8List.fromList([1, 2, 3]));
       await db.insert('persist-2', randomVector(43));
       await db.close();
 

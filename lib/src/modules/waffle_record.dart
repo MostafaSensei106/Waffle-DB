@@ -11,11 +11,7 @@ class WaffleRecord {
   /// Optional arbitrary metadata bytes associated with this vector.
   final Uint8List? metadata;
 
-  const WaffleRecord({
-    required this.id,
-    required this.vector,
-    this.metadata,
-  });
+  const WaffleRecord({required this.id, required this.vector, this.metadata});
 
   /// Convenience constructor from a regular `List<double>`.
   factory WaffleRecord.fromList({
