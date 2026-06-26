@@ -121,10 +121,10 @@ Future<void> runVectorStore() async {
   // Example 2: You can also use other profiles like `readHeavyProfile`, 
   // `writeHeavyProfile`, or `serverProfile`. 
   // Need to tweak a specific setting? Use the `copyWith` extension!
-  config = (await WaffleConfig.readHeavyProfile(
+  config = await WaffleConfig.readHeavyProfile(
     path: dbPath,
     dimension: 1536, // OpenAI dimensions
-  )).copyWith(
+  ).copyWith(
     workerThreads: 8, // Tweak only what you need
     cacheSizeBytes: BigInt.from(128 * 1024 * 1024),
   );
