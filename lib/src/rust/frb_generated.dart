@@ -1871,12 +1871,15 @@ class WaffleStorageImpl extends RustOpaque implements WaffleStorage {
         RustLib.instance.api.rust_arc_decrement_strong_count_WaffleStoragePtr,
   );
 
+  /// Count the total number of stored vectors.
   Future<BigInt> count() =>
       RustLib.instance.api.crateApiStorageWaffleStorageCount(that: this);
 
+  /// Delete a record from storage.
   Future<bool> deleteRecord({required String id}) => RustLib.instance.api
       .crateApiStorageWaffleStorageDeleteRecord(that: this, id: id);
 
+  /// Flush pending storage operations to disk.
   Future<void> flush() =>
       RustLib.instance.api.crateApiStorageWaffleStorageFlush(that: this);
 
@@ -1884,9 +1887,11 @@ class WaffleStorageImpl extends RustOpaque implements WaffleStorage {
   Future<List<String>> getAllIds() =>
       RustLib.instance.api.crateApiStorageWaffleStorageGetAllIds(that: this);
 
+  /// Read raw metadata bytes by ID.
   Future<Uint8List?> readMetadata({required String id}) => RustLib.instance.api
       .crateApiStorageWaffleStorageReadMetadata(that: this, id: id);
 
+  /// Read a vector by ID, checking against the expected dimension.
   Future<Float32List?> readVector({required String id, required BigInt dim}) =>
       RustLib.instance.api.crateApiStorageWaffleStorageReadVector(
         that: this,
@@ -1894,6 +1899,7 @@ class WaffleStorageImpl extends RustOpaque implements WaffleStorage {
         dim: dim,
       );
 
+  /// Write only the metadata for a record.
   Future<bool> writeMetadata({
     required String id,
     required List<double> vector,
@@ -1905,6 +1911,7 @@ class WaffleStorageImpl extends RustOpaque implements WaffleStorage {
     metadata: metadata,
   );
 
+  /// Write a full record (vector and metadata bytes) to disk.
   Future<void> writeRecord({
     required String id,
     required List<double> vector,

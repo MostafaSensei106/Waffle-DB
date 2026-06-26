@@ -2,6 +2,7 @@ use sled::{Db, Tree};
 
 use crate::api::{config::WaffleConfig, models::VectorMetadata};
 
+/// Low-level storage backend using Sled.
 pub struct WaffleStorage {
     db: Db,
     vectors_tree: Tree,
@@ -9,6 +10,7 @@ pub struct WaffleStorage {
 }
 
 impl WaffleStorage {
+    /// Initialize the storage using the given configuration.
     pub fn init(config: &WaffleConfig) -> Result<Self, String> {
         let db = sled::Config::new()
             .path(&config.path)
@@ -26,6 +28,7 @@ impl WaffleStorage {
         })
     }
 
+    /// Write only the metadata for a record.
     pub fn write_metadata(
         &self,
         id: &str,
@@ -42,6 +45,7 @@ impl WaffleStorage {
         Ok(true)
     }
 
+    /// Write a full record (vector and metadata bytes) to disk.
     pub fn write_record(&self, id: &str, vector: &[f32], metadata: &[u8]) -> Result<(), String> {
         let v_bytes = unsafe {
             std::slice::from_raw_parts(
@@ -58,6 +62,7 @@ impl WaffleStorage {
         Ok(())
     }
 
+    /// Read raw metadata bytes by ID.
     pub fn read_metadata(&self, id: &str) -> Result<Option<Vec<u8>>, String> {
         if let Some(ivec) = self.metadata_tree.get(id).map_err(|e| e.to_string())? {
             return Ok(Some(ivec.to_vec()));
@@ -65,6 +70,7 @@ impl WaffleStorage {
         Ok(None)
     }
 
+    /// Read a vector by ID, checking against the expected dimension.
     pub fn read_vector(&self, id: &str, dim: usize) -> Result<Option<Vec<f32>>, String> {
         if let Some(ivec) = self.vectors_tree.get(id).map_err(|e| e.to_string())? {
             let expected_bytes = dim * std::mem::size_of::<f32>();
@@ -84,6 +90,7 @@ impl WaffleStorage {
         Ok(None)
     }
 
+    /// Delete a record from storage.
     pub fn delete_record(&self, id: &str) -> Result<bool, String> {
         let v_removed = self
             .vectors_tree
@@ -98,10 +105,12 @@ impl WaffleStorage {
         Ok(v_removed || m_removed)
     }
 
+    /// Count the total number of stored vectors.
     pub fn count(&self) -> u64 {
         self.vectors_tree.len() as u64
     }
 
+    /// Flush pending storage operations to disk.
     pub fn flush(&self) -> Result<(), String> {
         self.db.flush().map_err(|e| e.to_string())?;
         Ok(())

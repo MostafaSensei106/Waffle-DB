@@ -12,28 +12,36 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WaffleStorage>>
 abstract class WaffleStorage implements RustOpaqueInterface {
+  /// Count the total number of stored vectors.
   Future<BigInt> count();
 
+  /// Delete a record from storage.
   Future<bool> deleteRecord({required String id});
 
+  /// Flush pending storage operations to disk.
   Future<void> flush();
 
   /// Returns all stored string IDs.
   Future<List<String>> getAllIds();
 
+  /// Initialize the storage using the given configuration.
   static Future<WaffleStorage> init({required WaffleConfig config}) =>
       RustLib.instance.api.crateApiStorageWaffleStorageInit(config: config);
 
+  /// Read raw metadata bytes by ID.
   Future<Uint8List?> readMetadata({required String id});
 
+  /// Read a vector by ID, checking against the expected dimension.
   Future<Float32List?> readVector({required String id, required BigInt dim});
 
+  /// Write only the metadata for a record.
   Future<bool> writeMetadata({
     required String id,
     required List<double> vector,
     required VectorMetadata metadata,
   });
 
+  /// Write a full record (vector and metadata bytes) to disk.
   Future<void> writeRecord({
     required String id,
     required List<double> vector,

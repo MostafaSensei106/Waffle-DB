@@ -18,9 +18,9 @@ linter:
   rules:
   - public_member_api_docs
 
-# analyzer:
-#   exclude:
-#     - path/to/excluded/files/**
+analyzer:
+  exclude:
+    - "lib/src/rust/**/*.dart"
 
 # For more information about the core and recommended set of lints, see
 # https://dart.dev/go/core-lints
