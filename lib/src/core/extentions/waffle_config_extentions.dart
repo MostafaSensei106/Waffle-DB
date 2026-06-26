@@ -1,6 +1,8 @@
 import '../../rust/api/config.dart';
 
+/// Extension providing a `copyWith` method for `WaffleConfig`.
 extension WaffleConfigCopyWith on WaffleConfig {
+  /// Creates a copy of this `WaffleConfig` but with the given fields replaced with the new values.
   WaffleConfig copyWith({
     int? dimension,
     String? path,
@@ -22,7 +24,9 @@ extension WaffleConfigCopyWith on WaffleConfig {
   }
 }
 
+/// Extension providing a `copyWith` method for `WaffleGraphConfig`.
 extension WaffleGraphConfigCopyWith on WaffleGraphConfig {
+  /// Creates a copy of this `WaffleGraphConfig` but with the given fields replaced with the new values.
   WaffleGraphConfig copyWith({
     int? m,
     WaffleMetric? metric,
@@ -38,6 +42,7 @@ extension WaffleGraphConfigCopyWith on WaffleGraphConfig {
   }
 }
 
+/// Extension providing a `copyWith` method directly on a `Future<WaffleConfig>`.
 extension FutureWaffleConfigCopyWith on Future<WaffleConfig> {
   /// Allows chaining `copyWith` directly on the async profile methods.
   /// Example: `await WaffleConfig.mobileProfile(...).copyWith(...)`

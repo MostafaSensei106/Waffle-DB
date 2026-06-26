@@ -23,6 +23,7 @@ class WaffleQueryBuilder {
   Float32List? _vector;
   bool _includeMetadata = true;
 
+  /// Creates a new query builder bound to the given database instance.
   WaffleQueryBuilder(this._db);
 
   /// Set the query vector (required before [execute]).

@@ -24,6 +24,7 @@ class WaffleCollection {
   /// The name of this collection.
   final String name;
 
+  /// Creates a new logical collection over the given [WaffleDatabase].
   WaffleCollection(this._db, this.name);
 
   /// Prefix an ID with the collection name to avoid collisions.
