@@ -89,7 +89,16 @@ Future<void> main() async {
 
 ### 2. Configuration & Opening the Database
 
-Configure and open your high-speed vector store:
+For a great Developer Experience (DX), WaffleDB comes with built-in configuration profiles tailored to common needs:
+
+| Profile | Description & Tuning Details |
+| :--- | :--- |
+| **`mobileProfile`** | Designed for constrained devices. Uses quantization to save memory, a smaller 16MB cache, lighter graph parameters (`m: 12`), and limits to 50k elements to keep the UI smooth. |
+| **`serverProfile`** | Built for robust backend deployments. Disables quantization for maximum precision, uses a 512MB cache, deeper graph parameters (`m: 32`, `ef_search: 64`), and scales up to 5M elements. |
+| **`readHeavyProfile`** | Optimized for high-recall queries. Maximizes graph search parameters (`ef_construction: 200`, `ef_search: 128`), uses a 2GB cache, uses quantization, and utilizes all CPU cores for up to 10M elements. |
+| **`writeHeavyProfile`** | Perfect for rapid bulk ingestion. Lowers graph construction complexity (`ef_construction: 32`) to speed up writes, skips quantization overhead, and handles up to 20M elements. |
+
+Configure and open your high-speed vector store using a profile (or customize with the `copyWith` extension):
 
 ```dart
 import 'dart:typed_data';
@@ -100,7 +109,29 @@ Future<void> runVectorStore() async {
   final dir = await getApplicationDocumentsDirectory();
   final dbPath = '${dir.path}/my_vectors';
 
-  final config = WaffleConfig(
+  // For a great Developer Experience (DX), WaffleDB comes with built-in 
+  // configuration profiles tailored to common needs:
+  
+  // Example 1: Use a pre-optimized mobile profile
+  var config = await WaffleConfig.mobileProfile(
+    path: dbPath,
+    dimension: 128, // Your vector dimension
+  );
+
+  // Example 2: You can also use other profiles like `readHeavyProfile`, 
+  // `writeHeavyProfile`, or `serverProfile`. 
+  // Need to tweak a specific setting? Use the `copyWith` extension!
+  config = (await WaffleConfig.readHeavyProfile(
+    path: dbPath,
+    dimension: 1536, // OpenAI dimensions
+  )).copyWith(
+    workerThreads: 8, // Tweak only what you need
+    cacheSizeBytes: BigInt.from(128 * 1024 * 1024),
+  );
+
+  // Alternatively, you can define everything manually:
+  /*
+  final manualConfig = WaffleConfig(
     dimension: 128,
     path: dbPath,
     graphConfig: const WaffleGraphConfig(
@@ -114,6 +145,7 @@ Future<void> runVectorStore() async {
     cacheSizeBytes: BigInt.from(32 * 1024 * 1024),
     workerThreads: 4,
   );
+  */
   
   final db = await WaffleDatabase.open(config);
 }

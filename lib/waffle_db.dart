@@ -3,6 +3,7 @@ library;
 // Core
 export 'src/core/waffle_database.dart';
 export 'src/core/query/waffle_query_builder.dart';
+export 'src/core/extentions/waffle_config_extentions.dart';
 
 // Modules
 export 'src/modules/waffle_collection.dart';
