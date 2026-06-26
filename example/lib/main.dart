@@ -49,7 +49,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _runAllTests() async {
     await _initDb();
-    await _testInsertAndCount();
+    await _testInsertStaticIds();
+    await _testInsertDynamicIds();
     await _testQueries();
     await _testDataRetrieval();
     await _testCollection();
@@ -93,7 +94,7 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  Future<void> _testInsertAndCount() async {
+  Future<void> _testInsertStaticIds() async {
     if (_db == null) return _addLog('DB not initialized');
     try {
       await _db!.insert(
@@ -101,19 +102,45 @@ class _MyHomePageState extends State<MyHomePage> {
         Float32List.fromList([0.1, 0.2, 0.3]),
         metadata: utf8.encode('Metadata for item1'),
       );
-      _addLog('Inserted item1');
+      _addLog('Inserted item1 (Static ID)');
 
       final records = [
         WaffleRecord.fromList(id: 'batch1', vector: [0.2, 0.3, 0.4]),
         WaffleRecord.fromList(id: 'batch2', vector: [0.5, 0.1, 0.9]),
       ];
       await _db!.insertBatch(records);
-      _addLog('Batch inserted 2 items');
+      _addLog('Batch inserted 2 items (Static IDs)');
 
       final count = _db!.count();
       _addLog('Total DB count: $count');
     } catch (e) {
-      _addLog('Error inserting: $e');
+      _addLog('Error inserting static: $e');
+    }
+  }
+
+  Future<void> _testInsertDynamicIds() async {
+    if (_db == null) return _addLog('DB not initialized');
+    try {
+      final ts = DateTime.now().millisecondsSinceEpoch;
+      
+      await _db!.insert(
+        'dynamic_item_$ts',
+        Float32List.fromList([0.11, 0.22, 0.33]),
+        metadata: utf8.encode('Metadata for dynamic item'),
+      );
+      _addLog('Inserted dynamic_item_$ts');
+
+      final records = [
+        WaffleRecord.fromList(id: 'dyn_batch1_$ts', vector: [0.22, 0.33, 0.44]),
+        WaffleRecord.fromList(id: 'dyn_batch2_$ts', vector: [0.55, 0.11, 0.99]),
+      ];
+      await _db!.insertBatch(records);
+      _addLog('Batch inserted 2 items (Dynamic IDs)');
+
+      final count = _db!.count();
+      _addLog('Total DB count: $count');
+    } catch (e) {
+      _addLog('Error inserting dynamic: $e');
     }
   }
 
@@ -237,8 +264,12 @@ class _MyHomePageState extends State<MyHomePage> {
                     child: const Text('1. Init DB'),
                   ),
                   ElevatedButton(
-                    onPressed: _testInsertAndCount,
-                    child: const Text('2. Test Insert & Count'),
+                    onPressed: _testInsertStaticIds,
+                    child: const Text('2a. Test Upsert (Static IDs)'),
+                  ),
+                  ElevatedButton(
+                    onPressed: _testInsertDynamicIds,
+                    child: const Text('2b. Test Insert (Dynamic IDs)'),
                   ),
                   ElevatedButton(
                     onPressed: _testQueries,
