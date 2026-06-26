@@ -1,9 +1,7 @@
-// ignore_for_file: deprecated_member_use
-
 import 'dart:math';
 import 'dart:typed_data';
+import 'dart:convert';
 
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:waffle_db/waffle_db.dart';
 import 'package:path_provider/path_provider.dart';
@@ -11,1091 +9,235 @@ import 'package:path_provider/path_provider.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await RustLib.init();
-  runApp(const WaffleApp());
+  runApp(const MyApp());
 }
 
-// ═══════════════════════════════════════════════════════════════════
-//  App & Theme
-// ═══════════════════════════════════════════════════════════════════
-
-class WaffleApp extends StatelessWidget {
-  const WaffleApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'WaffleDB Demo',
-      debugShowCheckedModeBanner: false,
+      title: 'WaffleDB Simple Example',
       theme: ThemeData(
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF0D1117),
-        colorSchemeSeed: const Color(0xFFE8A838),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
-        fontFamily: 'monospace',
       ),
-      home: const HomePage(),
+      home: const MyHomePage(),
     );
   }
 }
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+class MyHomePage extends StatefulWidget {
+  const MyHomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<MyHomePage> createState() => _MyHomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
-  int _currentIndex = 0;
-
-  final List<Widget> _pages = [const ColorSearchPage(), const BenchmarkPage()];
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: _pages[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
-        backgroundColor: const Color(0xFF161B22),
-        selectedItemColor: Theme.of(context).colorScheme.primary,
-        unselectedItemColor: Colors.white54,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.color_lens_rounded),
-            label: 'Color Search',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.speed_rounded),
-            label: 'Benchmark',
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════
-//  Color Search Page
-// ═══════════════════════════════════════════════════════════════════
-
-class ColorSearchPage extends StatefulWidget {
-  const ColorSearchPage({super.key});
-
-  @override
-  State<ColorSearchPage> createState() => _ColorSearchPageState();
-}
-
-class _ColorSearchPageState extends State<ColorSearchPage> {
+class _MyHomePageState extends State<MyHomePage> {
   WaffleDatabase? _db;
-  bool _loading = true;
-  String _statusText = 'Initializing database...';
+  WaffleCollection? _collection;
+  String _log = 'App started...\n';
 
-  Color _queryColor = const Color.fromARGB(255, 0, 150, 136); // Teal
-  List<WaffleQueryResult> _results = [];
-  Duration _queryTime = Duration.zero;
-  int _dbSize = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _initDb();
+  void _addLog(String msg) {
+    setState(() {
+      _log += '$msg\n';
+    });
   }
 
   Future<void> _initDb() async {
-    final dir = await getApplicationDocumentsDirectory();
-    final dbPath = '${dir.path}/waffle_colors';
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      final dbPath = '${dir.path}/waffle_simple_db';
+      
+      final config = WaffleConfig(
+        dimension: 3,
+        path: dbPath,
+        graphConfig: const WaffleGraphConfig(
+          m: 16,
+          metric: WaffleMetric.cosine,
+          efConstruction: 64,
+          efSearch: 32,
+        ),
+        maxElements: 1000,
+        useQuantization: false,
+        cacheSizeBytes: BigInt.from(8 * 1024 * 1024),
+        workerThreads: 2,
+      );
 
-    final config = WaffleConfig(
-      dimension: 3,
-      path: dbPath,
-      graphConfig: const WaffleGraphConfig(
-        m: 32,
-        metric: WaffleMetric.euclidean,
-        efConstruction: 128,
-        efSearch: 64,
-      ),
-      maxElements: 100000,
-      useQuantization: false,
-      cacheSizeBytes: BigInt.from(16 * 1024 * 1024),
-      workerThreads: 2,
-    );
-
-    _db = await WaffleDatabase.open(config);
-    _dbSize = _db!.count();
-
-    if (_dbSize == 0) {
-      setState(() => _statusText = 'Generating random colors...');
-
-      final rng = Random();
-      // Generate 1,000,000 random colors
-      List<WaffleRecord> records = [];
-      for (int i = 0; i < 1000000; i++) {
-        final r = rng.nextDouble();
-        final g = rng.nextDouble();
-        final b = rng.nextDouble();
-        records.add(
-          WaffleRecord(
-            id: 'color_$i',
-            vector: Float32List.fromList([r, g, b]),
-            metadata: Uint8List(0),
-          ),
-        );
-      }
-
-      await _db!.insertBatch(records);
-      await _db!.flush();
-      _dbSize = _db!.count();
-    }
-
-    if (mounted) {
-      setState(() => _loading = false);
-      _performQuery();
+      _db = await WaffleDatabase.open(config);
+      _collection = WaffleCollection(_db!, 'my_collection');
+      _addLog('Database initialized at $dbPath');
+    } catch (e) {
+      _addLog('Error initializing DB: $e');
     }
   }
 
-  void _performQuery() {
-    if (_db == null) return;
+  Future<void> _testInsertAndCount() async {
+    if (_db == null) return _addLog('DB not initialized');
+    try {
+      await _db!.insert(
+        'item1',
+        Float32List.fromList([0.1, 0.2, 0.3]),
+        metadata: utf8.encode('Metadata for item1'),
+      );
+      _addLog('Inserted item1');
+      
+      final records = [
+        WaffleRecord.fromList(id: 'batch1', vector: [0.2, 0.3, 0.4]),
+        WaffleRecord.fromList(id: 'batch2', vector: [0.5, 0.1, 0.9]),
+      ];
+      await _db!.insertBatch(records);
+      _addLog('Batch inserted 2 items');
 
-    final sw = Stopwatch()..start();
-    final queryVector = Float32List.fromList([
-      _queryColor.red / 255.0,
-      _queryColor.green / 255.0,
-      _queryColor.blue / 255.0,
-    ]);
+      final count = _db!.count();
+      _addLog('Total DB count: $count');
+    } catch (e) {
+      _addLog('Error inserting: $e');
+    }
+  }
 
-    final results = _db!.query(queryVector, k: 30);
-    sw.stop();
+  Future<void> _testQueries() async {
+    if (_db == null) return _addLog('DB not initialized');
+    try {
+      // Basic query
+      final results = _db!.query(Float32List.fromList([0.1, 0.2, 0.3]), k: 2);
+      _addLog('Basic Query returned ${results.length} results:');
+      for (var r in results) {
+        _addLog(' - ID: ${r.id}, Distance: ${r.distance}');
+      }
 
-    if (mounted) {
-      setState(() {
-        _results = results;
-        _queryTime = sw.elapsed;
-      });
+      // Query Builder
+      final builderResults = await WaffleQueryBuilder(_db!)
+          .withVectorList([0.5, 0.1, 0.9])
+          .limit(3)
+          .efSearch(64)
+          .includeMetadata(true)
+          .execute();
+          
+      _addLog('Query Builder returned ${builderResults.length} results:');
+      for (var r in builderResults) {
+        _addLog(' - ID: ${r.id}, Distance: ${r.distance}');
+      }
+    } catch (e) {
+      _addLog('Error querying: $e');
+    }
+  }
+
+  Future<void> _testDataRetrieval() async {
+    if (_db == null) return _addLog('DB not initialized');
+    try {
+      final ids = _db!.getAllIds();
+      _addLog('All IDs: $ids');
+
+      if (ids.isNotEmpty) {
+        final firstId = ids.first;
+        final vector = _db!.getVector(firstId);
+        final metaBytes = _db!.getMetadata(firstId);
+        String metaStr = metaBytes != null && metaBytes.isNotEmpty ? utf8.decode(metaBytes) : 'null';
+        _addLog('Data for $firstId: Vector=$vector, Meta=$metaStr');
+      }
+    } catch (e) {
+      _addLog('Error retrieving data: $e');
+    }
+  }
+
+  Future<void> _testCollection() async {
+    if (_collection == null) return _addLog('Collection not initialized');
+    try {
+      await _collection!.add('col_item1', Float32List.fromList([0.9, 0.8, 0.7]));
+      _addLog('Added col_item1 to collection');
+      
+      final results = await _collection!.search(Float32List.fromList([0.9, 0.8, 0.7]), topK: 1);
+      _addLog('Collection search returned ${results.length} results:');
+      for (var r in results) {
+        _addLog(' - ID: ${r.id}, Distance: ${r.distance}');
+      }
+    } catch (e) {
+      _addLog('Error in collection: $e');
+    }
+  }
+
+  Future<void> _testDeleteAndFlush() async {
+    if (_db == null) return _addLog('DB not initialized');
+    try {
+      final ids = _db!.getAllIds();
+      if (ids.isNotEmpty) {
+        final idToRemove = ids.first;
+        final deleted = await _db!.delete(idToRemove);
+        _addLog('Deleted $idToRemove: $deleted');
+      }
+      
+      await _db!.flush();
+      _addLog('Flushed DB to disk');
+    } catch (e) {
+      _addLog('Error deleting/flushing: $e');
+    }
+  }
+
+  Future<void> _closeDb() async {
+    if (_db == null) return _addLog('DB not initialized');
+    try {
+      await _db!.close();
+      _addLog('DB Closed');
+      _db = null;
+      _collection = null;
+    } catch (e) {
+      _addLog('Error closing DB: $e');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
-      return Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const CircularProgressIndicator(),
-              const SizedBox(height: 16),
-              Text(_statusText),
-            ],
-          ),
-        ),
-      );
-    }
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Semantic Color Search',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: const Color(0xFF161B22),
-        elevation: 0,
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        title: const Text('WaffleDB Simple Example'),
       ),
       body: Column(
         children: [
-          // Query Color Controls
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: const BoxDecoration(
-              color: Color(0xFF161B22),
-              border: Border(bottom: BorderSide(color: Colors.white10)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 72,
-                      height: 72,
-                      decoration: BoxDecoration(
-                        color: _queryColor,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.white24, width: 2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: _queryColor.withValues(alpha: 0.4),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 20),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Query Color (RGB)',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Found ${_results.length} neighbors in ${_queryTime.inMicroseconds}µs from $_dbSize records',
-                            style: const TextStyle(
-                              color: Colors.white54,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                _buildSlider('R', _queryColor.red.toDouble(), (v) {
-                  setState(
-                    () => _queryColor = Color.fromARGB(
-                      255,
-                      v.toInt(),
-                      _queryColor.green,
-                      _queryColor.blue,
-                    ),
-                  );
-                  _performQuery();
-                }, Colors.redAccent),
-                _buildSlider('G', _queryColor.green.toDouble(), (v) {
-                  setState(
-                    () => _queryColor = Color.fromARGB(
-                      255,
-                      _queryColor.red,
-                      v.toInt(),
-                      _queryColor.blue,
-                    ),
-                  );
-                  _performQuery();
-                }, Colors.greenAccent),
-                _buildSlider('B', _queryColor.blue.toDouble(), (v) {
-                  setState(
-                    () => _queryColor = Color.fromARGB(
-                      255,
-                      _queryColor.red,
-                      _queryColor.green,
-                      v.toInt(),
-                    ),
-                  );
-                  _performQuery();
-                }, Colors.blueAccent),
-              ],
-            ),
-          ),
-
-          // Results Grid
           Expanded(
-            child: GridView.builder(
-              padding: const EdgeInsets.all(20),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 5,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-              ),
-              itemCount: _results.length,
-              itemBuilder: (context, index) {
-                final result = _results[index];
-                final vector = _db!.getVector(result.id);
-                if (vector == null) return const SizedBox.shrink();
-
-                final color = Color.fromARGB(
-                  255,
-                  (vector[0] * 255).toInt().clamp(0, 255),
-                  (vector[1] * 255).toInt().clamp(0, 255),
-                  (vector[2] * 255).toInt().clamp(0, 255),
-                );
-
-                return Tooltip(
-                  message: 'Distance: ${result.distance.toStringAsFixed(4)}',
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: color,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white24, width: 2),
-                      boxShadow: [
-                        BoxShadow(
-                          color: color.withValues(alpha: 0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSlider(
-    String label,
-    double value,
-    ValueChanged<double> onChanged,
-    Color activeColor,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: activeColor,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
-          Expanded(
-            child: SliderTheme(
-              data: SliderThemeData(
-                activeTrackColor: activeColor,
-                inactiveTrackColor: activeColor.withValues(alpha: 0.2),
-                thumbColor: activeColor,
-                overlayColor: activeColor.withValues(alpha: 0.1),
-                trackHeight: 6,
-              ),
-              child: Slider(
-                value: value,
-                min: 0,
-                max: 255,
-                onChanged: onChanged,
-              ),
-            ),
-          ),
-          SizedBox(
-            width: 36,
-            child: Text(
-              value.toInt().toString(),
-              style: const TextStyle(fontWeight: FontWeight.bold),
-              textAlign: TextAlign.right,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════
-//  Data Model
-// ═══════════════════════════════════════════════════════════════════
-
-enum OpStatus { idle, running, done, error }
-
-class OpResult {
-  final String name;
-  final String icon;
-  final Duration elapsed;
-  final String detail;
-  final OpStatus status;
-  final String? error;
-
-  const OpResult({
-    required this.name,
-    required this.icon,
-    this.elapsed = Duration.zero,
-    this.detail = '',
-    this.status = OpStatus.idle,
-    this.error,
-  });
-
-  OpResult copyWith({
-    Duration? elapsed,
-    String? detail,
-    OpStatus? status,
-    String? error,
-  }) {
-    return OpResult(
-      name: name,
-      icon: icon,
-      elapsed: elapsed ?? this.elapsed,
-      detail: detail ?? this.detail,
-      status: status ?? this.status,
-      error: error,
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════
-//  Benchmark Page
-// ═══════════════════════════════════════════════════════════════════
-
-class BenchmarkPage extends StatefulWidget {
-  const BenchmarkPage({super.key});
-
-  @override
-  State<BenchmarkPage> createState() => _BenchmarkPageState();
-}
-
-class _BenchmarkPageState extends State<BenchmarkPage>
-    with TickerProviderStateMixin {
-  static const int dim = 128;
-  static const int vectorCount = 500;
-
-  WaffleDatabase? _db;
-  bool _running = false;
-  double _progress = 0.0;
-  String _statusText = 'Tap ▶ Run All to start';
-  Duration _totalTime = Duration.zero;
-
-  // All operations
-  late List<OpResult> _results;
-
-  @override
-  void initState() {
-    super.initState();
-    _results = [
-      const OpResult(name: 'Open DB', icon: '🔓'),
-      const OpResult(name: 'Single Insert ×10', icon: '➕'),
-      const OpResult(name: 'Batch Insert ×$vectorCount', icon: '📦'),
-      const OpResult(name: 'Count', icon: '🔢'),
-      const OpResult(name: 'Query k=5', icon: '🔍'),
-      const OpResult(name: 'Query k=20', icon: '🔎'),
-      const OpResult(name: 'Query k=50 ef=128', icon: '🎯'),
-      const OpResult(name: 'Get Vector', icon: '📐'),
-      const OpResult(name: 'Get Metadata', icon: '🏷️'),
-      const OpResult(name: 'Get All IDs', icon: '📋'),
-      const OpResult(name: 'Delete ×5', icon: '🗑️'),
-      const OpResult(name: 'Flush', icon: '💾'),
-      const OpResult(name: 'Cosine Similarity', icon: '📊'),
-      const OpResult(name: 'Close & Reopen', icon: '🔄'),
-      const OpResult(name: 'Query after reopen', icon: '✅'),
-      const OpResult(name: 'Close DB', icon: '🔒'),
-    ];
-  }
-
-  Float32List _randomVector(int seed) {
-    final rng = Random(seed);
-    final v = Float32List(dim);
-    for (int i = 0; i < dim; i++) {
-      v[i] = rng.nextDouble().toDouble();
-    }
-    return v;
-  }
-
-  Future<Duration> _timed(Future<void> Function() fn) async {
-    final sw = Stopwatch()..start();
-    await fn();
-    sw.stop();
-    return sw.elapsed;
-  }
-
-  void _updateOp(int index, OpResult result) {
-    if (mounted) {
-      setState(() {
-        _results[index] = result;
-      });
-    }
-  }
-
-  Future<void> _runAll() async {
-    if (_running) return;
-    setState(() {
-      _running = true;
-      _progress = 0.0;
-      _statusText = 'Running...';
-      _totalTime = Duration.zero;
-      for (int i = 0; i < _results.length; i++) {
-        _results[i] = _results[i].copyWith(
-          elapsed: Duration.zero,
-          detail: '',
-          status: OpStatus.idle,
-          error: null,
-        );
-      }
-    });
-
-    final totalSteps = _results.length;
-    int step = 0;
-    final totalSw = Stopwatch()..start();
-
-    Future<void> run(int i, Future<void> Function() fn) async {
-      _updateOp(i, _results[i].copyWith(status: OpStatus.running));
-      try {
-        final d = await _timed(fn);
-        _updateOp(
-          i,
-          _results[i].copyWith(
-            elapsed: d,
-            status: OpStatus.done,
-            detail: _formatDuration(d),
-          ),
-        );
-      } catch (e) {
-        _updateOp(
-          i,
-          _results[i].copyWith(status: OpStatus.error, error: e.toString()),
-        );
-      }
-      step++;
-      if (mounted) {
-        setState(() {
-          _progress = step / totalSteps;
-          _statusText = 'Step $step / $totalSteps';
-        });
-      }
-    }
-
-    final dir = await getApplicationDocumentsDirectory();
-    final dbPath =
-        '${dir.path}/waffle_example_${DateTime.now().millisecondsSinceEpoch}';
-
-    // 0 — Open DB
-    await run(0, () async {
-      final config = WaffleConfig(
-        dimension: dim,
-        path: dbPath,
-        graphConfig: const WaffleGraphConfig(
-          m: 16,
-          metric: WaffleMetric.cosine,
-          efConstruction: 64,
-          efSearch: 32,
-        ),
-        maxElements: 100000,
-        useQuantization: false,
-        cacheSizeBytes: BigInt.from(32 * 1024 * 1024),
-        workerThreads: Platform.numberOfProcessors,
-      );
-      _db = await WaffleDatabase.open(config);
-    });
-
-    if (_db == null) {
-      if (mounted) {
-        setState(() {
-          _running = false;
-          _statusText = 'Failed to open DB';
-        });
-      }
-      return;
-    }
-    final db = _db!;
-
-    // 1 — Single Insert ×10
-    await run(1, () async {
-      for (int i = 0; i < 10; i++) {
-        await db.insert(
-          'single-$i',
-          _randomVector(i),
-          metadata: Uint8List.fromList([i, i + 1, i + 2]),
-        );
-      }
-    });
-    _updateOp(
-      1,
-      _results[1].copyWith(detail: '${_results[1].detail} (10 vectors)'),
-    );
-
-    // 2 — Batch Insert
-    await run(2, () async {
-      final records = List.generate(
-        vectorCount,
-        (i) => WaffleRecord(
-          id: 'batch-$i',
-          vector: _randomVector(i + 100),
-          metadata: Uint8List.fromList(List.generate(32, (j) => (i + j) % 256)),
-        ),
-      );
-      await db.insertBatch(records);
-    });
-    _updateOp(
-      2,
-      _results[2].copyWith(
-        detail: '${_results[2].detail} ($vectorCount vectors)',
-      ),
-    );
-
-    // 3 — Count
-    await run(3, () async {
-      final c = db.count();
-      _updateOp(3, _results[3].copyWith(detail: '$c vectors'));
-    });
-
-    // 4 — Query k=5
-    await run(4, () async {
-      final results = db.query(_randomVector(0), k: 5);
-      _updateOp(
-        4,
-        _results[4].copyWith(
-          detail:
-              '${results.length} results, best=${results.isNotEmpty ? results.first.distance.toStringAsFixed(4) : "N/A"}',
-        ),
-      );
-    });
-
-    // 5 — Query k=20
-    await run(5, () async {
-      final results = db.query(_randomVector(1), k: 20);
-      _updateOp(5, _results[5].copyWith(detail: '${results.length} results'));
-    });
-
-    // 6 — Query k=50 ef=128
-    await run(6, () async {
-      final results = db.query(_randomVector(2), k: 50, efSearch: 128);
-      _updateOp(6, _results[6].copyWith(detail: '${results.length} results'));
-    });
-
-    // 7 — Get Vector
-    await run(7, () async {
-      final v = db.getVector('batch-0');
-      _updateOp(
-        7,
-        _results[7].copyWith(
-          detail: v != null ? 'dim=${v.length}' : 'not found',
-        ),
-      );
-    });
-
-    // 8 — Get Metadata
-    await run(8, () async {
-      final m = db.getMetadata('batch-0');
-      _updateOp(
-        8,
-        _results[8].copyWith(
-          detail: m != null ? '${m.length} bytes' : 'not found',
-        ),
-      );
-    });
-
-    // 9 — Get All IDs
-    await run(9, () async {
-      final ids = db.getAllIds();
-      _updateOp(9, _results[9].copyWith(detail: '${ids.length} IDs'));
-    });
-
-    // 10 — Delete ×5
-    await run(10, () async {
-      int deleted = 0;
-      for (int i = 0; i < 5; i++) {
-        if (await db.delete('batch-$i')) deleted++;
-      }
-      _updateOp(10, _results[10].copyWith(detail: '$deleted removed'));
-    });
-
-    // 11 — Flush
-    await run(11, () async {
-      await db.flush();
-    });
-
-    // 12 — Cosine Similarity
-    await run(12, () async {
-      final a = List<double>.generate(dim, (i) => i * 0.01);
-      final b = List<double>.generate(dim, (i) => (dim - i) * 0.01);
-      final sim = await cosineSimilarity(a: a, b: b);
-      _updateOp(
-        12,
-        _results[12].copyWith(detail: 'sim=${sim.toStringAsFixed(4)}'),
-      );
-    });
-
-    // 13 — Close & Reopen
-    await run(13, () async {
-      await db.close();
-      final config = WaffleConfig(
-        dimension: dim,
-        path: dbPath,
-        graphConfig: const WaffleGraphConfig(
-          m: 16,
-          metric: WaffleMetric.cosine,
-          efConstruction: 64,
-          efSearch: 32,
-        ),
-        maxElements: 100000,
-        useQuantization: false,
-        cacheSizeBytes: BigInt.from(32 * 1024 * 1024),
-        workerThreads: 4,
-      );
-      _db = await WaffleDatabase.open(config);
-      final c = _db!.count();
-      _updateOp(13, _results[13].copyWith(detail: 'Reopened, $c vectors'));
-    });
-
-    // 14 — Query after reopen
-    await run(14, () async {
-      final results = _db!.query(_randomVector(0), k: 5);
-      _updateOp(
-        14,
-        _results[14].copyWith(
-          detail:
-              '${results.length} results, best=${results.isNotEmpty ? results.first.distance.toStringAsFixed(4) : "N/A"}',
-        ),
-      );
-    });
-
-    // 15 — Close DB
-    await run(15, () async {
-      await _db!.close();
-      _db = null;
-    });
-
-    totalSw.stop();
-    if (mounted) {
-      setState(() {
-        _running = false;
-        _totalTime = totalSw.elapsed;
-        _statusText = 'Done in ${_formatDuration(totalSw.elapsed)}';
-      });
-    }
-  }
-
-  String _formatDuration(Duration d) {
-    if (d.inMilliseconds == 0) return '${d.inMicroseconds}µs';
-    if (d.inMilliseconds < 1000) return '${d.inMilliseconds}ms';
-    return '${(d.inMilliseconds / 1000).toStringAsFixed(2)}s';
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  //  UI
-  // ─────────────────────────────────────────────────────────────
-
-  @override
-  Widget build(BuildContext context) {
-    final amber = Theme.of(context).colorScheme.primary;
-
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          // ── Header ──
-          SliverAppBar(
-            expandedHeight: 140,
-            pinned: true,
-            backgroundColor: const Color(0xFF161B22),
-            flexibleSpace: FlexibleSpaceBar(
-              centerTitle: true,
-              title: Row(
-                mainAxisSize: MainAxisSize.min,
+            flex: 2,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
                 children: [
-                  Text('🧇', style: TextStyle(fontSize: 22)),
-                  const SizedBox(width: 8),
-                  Text(
-                    'WaffleDB',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: amber,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Benchmark',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.white54,
-                      fontWeight: FontWeight.w400,
-                    ),
+                  ElevatedButton(onPressed: _initDb, child: const Text('1. Init DB')),
+                  ElevatedButton(onPressed: _testInsertAndCount, child: const Text('2. Test Insert & Count')),
+                  ElevatedButton(onPressed: _testQueries, child: const Text('3. Test Queries (Basic & Builder)')),
+                  ElevatedButton(onPressed: _testDataRetrieval, child: const Text('4. Test Data Retrieval')),
+                  ElevatedButton(onPressed: _testCollection, child: const Text('5. Test Collection')),
+                  ElevatedButton(onPressed: _testDeleteAndFlush, child: const Text('6. Test Delete & Flush')),
+                  ElevatedButton(onPressed: _closeDb, child: const Text('7. Close DB')),
+                  ElevatedButton(
+                    onPressed: () => setState(() => _log = 'Log cleared...\n'), 
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade100),
+                    child: const Text('Clear Log', style: TextStyle(color: Colors.red)),
                   ),
                 ],
               ),
             ),
           ),
-
-          // ── Progress + Run Button ──
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-              child: Column(
-                children: [
-                  // Stats bar
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF161B22),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: amber.withValues(alpha: 0.2)),
-                    ),
-                    child: Row(
-                      children: [
-                        _statChip('dim', '$dim', amber),
-                        const SizedBox(width: 12),
-                        _statChip('vectors', '$vectorCount', amber),
-                        const Spacer(),
-                        if (_totalTime > Duration.zero)
-                          _statChip(
-                            'total',
-                            _formatDuration(_totalTime),
-                            amber,
-                          ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  // Progress bar
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    child: LinearProgressIndicator(
-                      value: _running ? _progress : (_progress > 0 ? 1.0 : 0),
-                      minHeight: 6,
-                      backgroundColor: const Color(0xFF21262D),
-                      color: amber,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _statusText,
-                    style: TextStyle(color: Colors.white60, fontSize: 12),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Run button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton.icon(
-                      onPressed: _running ? null : _runAll,
-                      icon: _running
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.play_arrow_rounded, size: 24),
-                      label: Text(
-                        _running ? 'Running...' : '▶  Run All Benchmarks',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: amber,
-                        foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                ],
-              ),
-            ),
-          ),
-
-          // ── Results List ──
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) =>
-                    _OpCard(result: _results[index], index: index),
-                childCount: _results.length,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _statChip(String label, String value, Color accent) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: accent.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            '$label: ',
-            style: TextStyle(color: Colors.white38, fontSize: 11),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              color: accent,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════
-//  Operation Card Widget
-// ═══════════════════════════════════════════════════════════════════
-
-class _OpCard extends StatelessWidget {
-  final OpResult result;
-  final int index;
-
-  const _OpCard({required this.result, required this.index});
-
-  @override
-  Widget build(BuildContext context) {
-    final amber = Theme.of(context).colorScheme.primary;
-
-    Color statusColor;
-    IconData statusIcon;
-    switch (result.status) {
-      case OpStatus.idle:
-        statusColor = Colors.white24;
-        statusIcon = Icons.circle_outlined;
-        break;
-      case OpStatus.running:
-        statusColor = Colors.blueAccent;
-        statusIcon = Icons.sync_rounded;
-        break;
-      case OpStatus.done:
-        statusColor = const Color(0xFF3FB950);
-        statusIcon = Icons.check_circle_rounded;
-        break;
-      case OpStatus.error:
-        statusColor = const Color(0xFFF85149);
-        statusIcon = Icons.error_rounded;
-        break;
-    }
-
-    // Time badge color based on speed
-    Color timeBadgeColor = amber;
-    final ms = result.elapsed.inMilliseconds;
-    if (ms < 5) {
-      timeBadgeColor = const Color(0xFF3FB950); // green = fast
-    } else if (ms < 50) {
-      timeBadgeColor = const Color(0xFF58A6FF); // blue = good
-    } else if (ms < 200) {
-      timeBadgeColor = amber; // amber = okay
-    } else {
-      timeBadgeColor = const Color(0xFFF85149); // red = slow
-    }
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: result.status == OpStatus.running
-            ? const Color(0xFF1C2333)
-            : const Color(0xFF161B22),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: result.status == OpStatus.running
-              ? Colors.blueAccent.withValues(alpha: 0.4)
-              : result.status == OpStatus.error
-              ? const Color(0xFFF85149).withValues(alpha: 0.3)
-              : Colors.white10,
-        ),
-      ),
-      child: Row(
-        children: [
-          // Index badge
-          Container(
-            width: 28,
-            height: 28,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: statusColor.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(7),
-            ),
-            child: Text(
-              '${index + 1}',
-              style: TextStyle(
-                color: statusColor,
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-
-          // Icon
-          Text(result.icon, style: const TextStyle(fontSize: 18)),
-          const SizedBox(width: 10),
-
-          // Name + detail
+          const Divider(height: 1),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  result.name,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.9),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                  ),
+            flex: 3,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(8.0),
+              color: Colors.black87,
+              child: SingleChildScrollView(
+                child: Text(
+                  _log,
+                  style: const TextStyle(color: Colors.greenAccent, fontFamily: 'monospace'),
                 ),
-                if (result.detail.isNotEmpty)
-                  Text(
-                    result.detail,
-                    style: TextStyle(color: Colors.white38, fontSize: 11),
-                  ),
-                if (result.error != null)
-                  Text(
-                    result.error!,
-                    style: TextStyle(
-                      color: const Color(0xFFF85149),
-                      fontSize: 11,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-              ],
+              ),
             ),
           ),
-
-          // Time badge
-          if (result.status == OpStatus.done) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: timeBadgeColor.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                _formatDuration(result.elapsed),
-                style: TextStyle(
-                  color: timeBadgeColor,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  fontFamily: 'monospace',
-                ),
-              ),
-            ),
-          ] else if (result.status == OpStatus.running) ...[
-            SizedBox(
-              width: 18,
-              height: 18,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Colors.blueAccent,
-              ),
-            ),
-          ] else ...[
-            Icon(statusIcon, size: 18, color: statusColor),
-          ],
         ],
       ),
     );
-  }
-
-  String _formatDuration(Duration d) {
-    if (d.inMilliseconds == 0) return '${d.inMicroseconds}µs';
-    if (d.inMilliseconds < 1000) return '${d.inMilliseconds}ms';
-    return '${(d.inMilliseconds / 1000).toStringAsFixed(2)}s';
   }
 }

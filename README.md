@@ -87,7 +87,7 @@ Future<void> main() async {
 }
 ```
 
-### 2. Opening the Database and Inserting Vectors
+### 2. Configuration & Opening the Database
 
 Configure and open your high-speed vector store:
 
@@ -116,45 +116,98 @@ Future<void> runVectorStore() async {
   );
   
   final db = await WaffleDatabase.open(config);
-
-  // Insert a single record
-  await db.insert(
-    'item-1',
-    Float32List.fromList(List.filled(128, 0.1)),
-    metadata: Uint8List.fromList([1, 2, 3]),
-  );
-
-  // Query nearest neighbors
-  final results = await db.query(Float32List.fromList(List.filled(128, 0.1)), k: 5);
-  for (var res in results) {
-    print('Found ${res.id} with distance ${res.distance}');
-  }
-
-  await db.close();
 }
+```
+
+### 3. Inserting Data (Single & Batch)
+
+You can insert vectors individually or in batches. Batch insertion is highly recommended for inserting multiple vectors as it uses Rayon-powered parallel processing.
+
+**Single Insert:**
+```dart
+await db.insert(
+  'unique_id_1',
+  Float32List.fromList([0.1, 0.2, ...]),
+  metadata: utf8.encode('{"name": "Item 1"}'), // Optional arbitrary bytes
+);
+```
+
+**Batch Insert:**
+```dart
+final records = [
+  WaffleRecord.fromList(id: 'id_1', vector: [0.1, 0.2, ...]),
+  WaffleRecord.fromList(id: 'id_2', vector: [0.3, 0.4, ...]),
+];
+await db.insertBatch(records);
+```
+
+### 4. Querying & Query Builder
+
+WaffleDB offers two ways to query data: the basic `query` method and the fluent `WaffleQueryBuilder`.
+
+**Basic Query:**
+Returns the `k` nearest neighbors.
+```dart
+final results = db.query(queryVector, k: 5);
+for (var result in results) {
+  print('Found ${result.id} with distance ${result.distance}');
+}
+```
+
+**Query Builder (Advanced filtering):**
+The query builder allows more flexible filtering and tuning per-query.
+```dart
+final results = await WaffleQueryBuilder(db)
+    .withVector(queryVector)
+    .limit(10)          // k nearest neighbors
+    .efSearch(64)       // override efSearch for higher recall
+    .threshold(0.5)     // only return results with distance <= 0.5
+    .includeMetadata(true) // Set to false to avoid disk I/O and speed up queries
+    .execute();
 ```
 
 ---
 
 ## 🔬 Advanced Usage
 
-### Custom Indexing with `WaffleGraphConfig`
+### Namespacing with `WaffleCollection`
 
-You can tune the HNSW index graph parameters for your specific recall vs latency requirements.
+If you want to logically separate data (e.g., "users" vs "documents") inside the same database, you can use Collections. They handle ID namespacing (`collectionName::id`) automatically.
 
 ```dart
-final config = WaffleConfig(
-  dimension: 1536, // Perfect for OpenAI embeddings
-  path: dbPath,
-  graphConfig: const WaffleGraphConfig(
-    m: 24, // Higher means better recall, slower indexing
-    metric: WaffleMetric.cosine,
-    efConstruction: 100, // Search effort during index creation
-    efSearch: 64, // Search effort during query
-  ),
-  maxElements: 500000,
-  useQuantization: true, // Compress vectors to save memory
-);
+final documents = WaffleCollection(db, 'documents');
+
+// Adding to a collection
+await documents.add('doc1', queryVector);
+await documents.addBatch([...]);
+
+// Searching exclusively within a collection
+final searchResults = await documents.search(queryVector, topK: 5);
+```
+
+### Managing Data (CRUD Operations)
+
+WaffleDB provides full support for managing records beyond basic insert and query.
+
+```dart
+// Check total elements
+final count = db.count();
+
+// Retrieve all IDs
+final allIds = db.getAllIds();
+
+// Get the original vector or metadata
+final vector = db.getVector('unique_id_1');
+final metadata = db.getMetadata('unique_id_1');
+
+// Delete a vector
+await db.delete('unique_id_1');
+
+// Force flush all pending writes to disk
+await db.flush();
+
+// Close the database safely
+await db.close();
 ```
 
 ### Dependency Injection (DI) Architecture
