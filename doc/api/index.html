@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, user-scalable=no">
+  <meta name="description" content="waffle_db API docs, for the Dart programming language.">
+  <title>waffle_db - Dart API docs</title>
+
+
+  
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+  
+  <link rel="stylesheet" href="static-assets/github.css?v1">
+  <link rel="stylesheet" href="static-assets/styles.css?v1">
+  <link rel="icon" href="static-assets/favicon.png?v1">
+  
+</head>
+
+<body data-base-href="" data-using-base-href="false" class="light-theme">
+<div id="overlay-under-drawer"></div>
+<header id="title">
+  <span id="sidenav-left-toggle" class="material-symbols-outlined" role="button" tabindex="0">menu</span>
+  <ol class="breadcrumbs gt-separated dark hidden-xs">
+    <li class="self-crumb">waffle_db package</li>
+  </ol>
+  <div class="self-name">waffle_db</div>
+  <form class="search navbar-right" role="search">
+    <input type="text" id="search-box" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+  <button class="toggle" id="theme-button" title="Toggle between light and dark mode" aria-label="Light and dark mode toggle">
+    <span id="dark-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      dark_mode
+    </span>
+    <span id="light-theme-button" class="material-symbols-outlined" aria-hidden="true">
+      light_mode
+    </span>
+  </button>
+</header>
+<main>
+  <div id="dartdoc-main-content" class="main-content">
+      
+<section class="desc markdown">
+  <h1 align="center">Waffle-DB</h1>
+<p align="center">
+  <img src="https://socialify.git.ci/MostafaSensei106/Waffle-DB/image?custom_language=Rust&amp;font=KoHo&amp;language=1&amp;logo=https%3A%2F%2Favatars.githubusercontent.com%2Fu%2F138288138%3Fv%3D4&amp;name=1&amp;owner=1&amp;pattern=Floating+Cogs&amp;theme=Light" alt="Banner">
+</p>
+<p align="center">
+  <strong>An advanced, high performance local vector database for Flutter, powered by Rust and HNSW graph indexing.</strong><br>
+  Deliver <i>workstation grade</i> vector search, <i>1536-bit embedding support</i>, and <i>real-time similarity matching</i> in your local apps.
+</p>
+<p align="center">
+  <a href="#-why-choose-waffle-db">Why?</a> •
+  <a href="#-key-features">Key Features</a> •
+  <a href="#-installation">Installation</a> •
+  <a href="#-basic-usage">Basic Usage</a> •
+  <a href="#-advanced-usage">Advanced Usage</a> •
+  <a href="#-contributing">Contributing</a>
+</p>
+<hr>
+<h2 id="-why-choose-waffle-db">🤔 Why Choose Waffle-DB?</h2>
+<blockquote>
+<p>In AI apps. Your app needs fast similarity search, not just linear scans.</p>
+</blockquote>
+<p>Most local databases in Flutter are designed for standard JSON or SQL data. They lack the mathematical context needed for vector similarity and AI embeddings. A developer needs to index vectors, run k-NN queries in real-time, and scale to 100,000+ embeddings without UI stutter. Pure Dart vector parsers struggle with the sheer size of 1536-d volumetric data, leading to memory crashes and frozen screens.</p>
+<h3 id="-how-we-compare">📊 How we compare</h3>
+<table>
+<thead>
+<tr>
+<th align="left">Feature</th>
+<th align="center">Standard Local DB</th>
+<th align="center">Pure Dart Vector DB</th>
+<th align="left"><strong>Waffle-DB</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left"><strong>Parsing Engine</strong></td>
+<td align="center">SQLite / Hive</td>
+<td align="center">Dart</td>
+<td align="left"><strong>🚀 High-Perf Rust Native Core</strong></td>
+</tr>
+<tr>
+<td align="left"><strong>Indexing Precision</strong></td>
+<td align="center">Linear Scan</td>
+<td align="center">Linear / LSH</td>
+<td align="left"><strong>✅ HNSW Graph (Native)</strong></td>
+</tr>
+<tr>
+<td align="left"><strong>Memory Efficiency</strong></td>
+<td align="center">🔴 High</td>
+<td align="center">🔴 High</td>
+<td align="left"><strong>🔋 Zero-Copy FFI Buffers</strong></td>
+</tr>
+<tr>
+<td align="left"><strong>UI Responsiveness</strong></td>
+<td align="center">✅</td>
+<td align="center">⚠️</td>
+<td align="left"><strong>⚡ Zero UI-Thread Blocking</strong></td>
+</tr>
+<tr>
+<td align="left"><strong>Detailed Metadata</strong></td>
+<td align="center">❌</td>
+<td align="center">✅</td>
+<td align="left"><strong>🩺 Full Metadata Access</strong></td>
+</tr>
+<tr>
+<td align="left"><strong>OpenAI Ready</strong></td>
+<td align="center">❌</td>
+<td align="center">❌</td>
+<td align="left"><strong>📈 Native 1536d / 4096d Support</strong></td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="-installation">📦 Installation</h2>
+<div class="markdown-alert markdown-alert-tip">
+<p class="markdown-alert-title">Tip</p>
+<p><strong>Don't worry about the "Rust Core"!</strong>
+Adding <strong>Waffle-DB</strong> to your project is designed to be as simple as adding any other Flutter package. While it uses a high-performance Rust engine, you don't need to be a Rust expert or manage complex builds manually. You just install the language once, and the library handles all the heavy lifting, compiling itself automatically for whatever platform (Android, iOS, macOS, Windows, Linux) or architecture you are targeting.</p>
+</div>
+<h3 id="1-prerequisites-the-rust-toolchain">1. Prerequisites (The Rust Toolchain)</h3>
+<p>Since this library uses a high-speed bridge to connect Flutter and Rust, you need the Rust compiler installed on your development machine.</p>
+<ul>
+<li><strong>Windows</strong>: Download and run <a href="https://rustup.rs">rustup-init.exe</a>.</li>
+<li><strong>macOS / Linux</strong>: Run the following command in your terminal:
+<pre class="language-bash"><code class="language-bash">curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+</code></pre>
+</li>
+</ul>
+<div class="markdown-alert markdown-alert-important">
+<p class="markdown-alert-title">Important</p>
+<p>Once Rust is installed, the build system will automatically detect your Flutter target and compile the Rust core into a high-performance native shared library. You only need to set this up once!</p>
+</div>
+<h3 id="2-add-the-dependency">2. Add the Dependency</h3>
+<p>Add the package to your <code>pubspec.yaml</code>:</p>
+<pre class="language-yaml"><code class="language-yaml">dependencies:
+  waffle_db: ^0.0.1
+</code></pre>
+<hr>
+<h2 id="-basic-usage">🚀 Basic Usage</h2>
+<h3 id="1-initialization">1. Initialization</h3>
+<p>Initialize the library in your <code>main()</code> function before starting the app.</p>
+<pre class="language-dart"><code class="language-dart">import 'package:flutter/material.dart';
+import 'package:waffle_db/waffle_db.dart';
+
+Future&lt;void&gt; main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  // Load the native Rust binary into memory
+  await RustLib.init();
+  
+  runApp(const MyApp());
+}
+</code></pre>
+<h3 id="2-configuration--opening-the-database">2. Configuration &amp; Opening the Database</h3>
+<p>For a great Developer Experience (DX), WaffleDB comes with built-in configuration profiles tailored to common needs:</p>
+<table>
+<thead>
+<tr>
+<th align="left">Profile</th>
+<th align="left">Description &amp; Tuning Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left"><strong><code>mobileProfile</code></strong></td>
+<td align="left">Designed for constrained devices. Uses quantization to save memory, a smaller 16MB cache, lighter graph parameters (<code>m: 12</code>), and limits to 50k elements to keep the UI smooth.</td>
+</tr>
+<tr>
+<td align="left"><strong><code>serverProfile</code></strong></td>
+<td align="left">Built for robust backend deployments. Disables quantization for maximum precision, uses a 512MB cache, deeper graph parameters (<code>m: 32</code>, <code>ef_search: 64</code>), and scales up to 5M elements.</td>
+</tr>
+<tr>
+<td align="left"><strong><code>readHeavyProfile</code></strong></td>
+<td align="left">Optimized for high-recall queries. Maximizes graph search parameters (<code>ef_construction: 200</code>, <code>ef_search: 128</code>), uses a 2GB cache, uses quantization, and utilizes all CPU cores for up to 10M elements.</td>
+</tr>
+<tr>
+<td align="left"><strong><code>writeHeavyProfile</code></strong></td>
+<td align="left">Perfect for rapid bulk ingestion. Lowers graph construction complexity (<code>ef_construction: 32</code>) to speed up writes, skips quantization overhead, and handles up to 20M elements.</td>
+</tr>
+</tbody>
+</table>
+<p>Configure and open your high-speed vector store using a profile (or customize with the <code>copyWith</code> extension):</p>
+<pre class="language-dart"><code class="language-dart">import 'dart:typed_data';
+import 'package:waffle_db/waffle_db.dart';
+import 'package:path_provider/path_provider.dart';
+
+Future&lt;void&gt; runVectorStore() async {
+  final dir = await getApplicationDocumentsDirectory();
+  final dbPath = '${dir.path}/my_vectors';
+
+  // For a great Developer Experience (DX), WaffleDB comes with built-in 
+  // configuration profiles tailored to common needs:
+  
+  // Example 1: Use a pre-optimized mobile profile
+  var config = await WaffleConfig.mobileProfile(
+    path: dbPath,
+    dimension: 128, // Your vector dimension
+  );
+
+  // Example 2: You can also use other profiles like `readHeavyProfile`, 
+  // `writeHeavyProfile`, or `serverProfile`. 
+  // Need to tweak a specific setting? Use the `copyWith` extension!
+  config = await WaffleConfig.readHeavyProfile(
+    path: dbPath,
+    dimension: 1536, // OpenAI dimensions
+  ).copyWith(
+    workerThreads: 8, // Tweak only what you need
+    cacheSizeBytes: BigInt.from(128 * 1024 * 1024),
+  );
+
+  // Alternatively, you can define everything manually:
+  /*
+  final manualConfig = WaffleConfig(
+    dimension: 128,
+    path: dbPath,
+    graphConfig: const WaffleGraphConfig(
+      m: 16,
+      metric: WaffleMetric.cosine,
+      efConstruction: 64,
+      efSearch: 32,
+    ),
+    maxElements: 100000,
+    useQuantization: false,
+    cacheSizeBytes: BigInt.from(32 * 1024 * 1024),
+    workerThreads: 4,
+  );
+  */
+  
+  final db = await WaffleDatabase.open(config);
+}
+</code></pre>
+<h3 id="3-inserting-data-single--batch">3. Inserting Data (Single &amp; Batch)</h3>
+<p>You can insert vectors individually or in batches. Batch insertion is highly recommended for inserting multiple vectors as it uses Rayon-powered parallel processing.</p>
+<p><strong>Single Insert:</strong></p>
+<pre class="language-dart"><code class="language-dart">await db.insert(
+  'unique_id_1',
+  Float32List.fromList([0.1, 0.2, ...]),
+  metadata: utf8.encode('{"name": "Item 1"}'), // Optional arbitrary bytes
+);
+</code></pre>
+<p><strong>Batch Insert:</strong></p>
+<pre class="language-dart"><code class="language-dart">final records = [
+  WaffleRecord.fromList(id: 'id_1', vector: [0.1, 0.2, ...]),
+  WaffleRecord.fromList(id: 'id_2', vector: [0.3, 0.4, ...]),
+];
+await db.insertBatch(records);
+</code></pre>
+<h3 id="4-querying--query-builder">4. Querying &amp; Query Builder</h3>
+<p>WaffleDB offers two ways to query data: the basic <code>query</code> method and the fluent <code>WaffleQueryBuilder</code>.</p>
+<p><strong>Basic Query:</strong>
+Returns the <code>k</code> nearest neighbors.</p>
+<pre class="language-dart"><code class="language-dart">final results = db.query(queryVector, k: 5);
+for (var result in results) {
+  print('Found ${result.id} with distance ${result.distance}');
+}
+</code></pre>
+<p><strong>Query Builder (Advanced filtering):</strong>
+The query builder allows more flexible filtering and tuning per-query.</p>
+<pre class="language-dart"><code class="language-dart">final results = await WaffleQueryBuilder(db)
+    .withVector(queryVector)
+    .limit(10)          // k nearest neighbors
+    .efSearch(64)       // override efSearch for higher recall
+    .threshold(0.5)     // only return results with distance &lt;= 0.5
+    .includeMetadata(true) // Set to false to avoid disk I/O and speed up queries
+    .execute();
+</code></pre>
+<h4 id="fluent-api-methods-reference">Fluent API Methods Reference</h4>
+<table>
+<thead>
+<tr>
+<th align="left">Method</th>
+<th align="left">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left"><code>withVector(Float32List vector)</code></td>
+<td align="left">Sets the query vector as a <code>Float32List</code>. Required before calling <code>execute()</code>.</td>
+</tr>
+<tr>
+<td align="left"><code>withVectorList(List&lt;double&gt; vector)</code></td>
+<td align="left">Convenience method to set the query vector from a standard Dart <code>List&lt;double&gt;</code>.</td>
+</tr>
+<tr>
+<td align="left"><code>limit(int n)</code></td>
+<td align="left">Sets the maximum number of nearest neighbors to return (default is <code>10</code>).</td>
+</tr>
+<tr>
+<td align="left"><code>threshold(double t)</code></td>
+<td align="left">Sets a maximum distance threshold. Results with a distance greater than <code>t</code> are excluded. Default is <code>0.0</code> (no threshold).</td>
+</tr>
+<tr>
+<td align="left"><code>efSearch(int ef)</code></td>
+<td align="left">Overrides the <code>efSearch</code> config for this query. Higher values increase accuracy (recall) but reduce speed. Pass <code>0</code> to use the default config.</td>
+</tr>
+<tr>
+<td align="left"><code>includeMetadata(bool include)</code></td>
+<td align="left">Defines whether to fetch metadata (default: <code>true</code>). Disabling this speeds up queries by avoiding disk I/O when only IDs and distances are needed.</td>
+</tr>
+<tr>
+<td align="left"><code>execute()</code></td>
+<td align="left">Executes the configured query asynchronously and returns a <code>Future&lt;List&lt;WaffleQueryResult&gt;&gt;</code>.</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="-advanced-usage">🔬 Advanced Usage</h2>
+<h3 id="namespacing-with-wafflecollection">Namespacing with <code>WaffleCollection</code></h3>
+<p>If you want to logically separate data (e.g., "users" vs "documents") inside the same database, you can use Collections. They handle ID namespacing (<code>collectionName::id</code>) automatically.</p>
+<pre class="language-dart"><code class="language-dart">final documents = WaffleCollection(db, 'documents');
+
+// Adding to a collection
+await documents.add('doc1', queryVector);
+await documents.addBatch([...]);
+
+// Searching exclusively within a collection
+final searchResults = await documents.search(queryVector, topK: 5);
+</code></pre>
+<h3 id="managing-data-crud-operations">Managing Data (CRUD Operations)</h3>
+<p>WaffleDB provides full support for managing records beyond basic insert and query.</p>
+<pre class="language-dart"><code class="language-dart">// Check total elements
+final count = db.count();
+
+// Retrieve all IDs
+final allIds = db.getAllIds();
+
+// Get the original vector or metadata
+final vector = db.getVector('unique_id_1');
+final metadata = db.getMetadata('unique_id_1');
+
+// Delete a vector
+await db.delete('unique_id_1');
+
+// Force flush all pending writes to disk
+await db.flush();
+
+// Close the database safely
+await db.close();
+</code></pre>
+<h3 id="dependency-injection-di-architecture">Dependency Injection (DI) Architecture</h3>
+<p>For enterprise apps, inject a custom <code>VectorStoreService</code> to handle different embedding backends (Local, OpenAI, etc.).</p>
+<pre class="language-dart"><code class="language-dart">// 1. Define the service with a specific database instance
+final service = VectorStoreService(db: myWaffleDbInstance);
+
+// 2. Inject into the controller or BLOC
+final controller = SearchController(vectorStore: service);
+</code></pre>
+<h3 id="high-dimensional-filtering--metadata">High-Dimensional Filtering &amp; Metadata</h3>
+<p>If you want to filter search results beyond simple distance metrics, you can store structured data alongside your vectors.</p>
+<pre class="language-dart"><code class="language-dart">// Insert with metadata
+await db.insert(
+  'product-42',
+  vector,
+  metadata: utf8.encode(jsonEncode({'category': 'electronics', 'price': 299})),
+);
+
+// Query and decode
+final results = await db.query(vector, k: 5);
+for (var res in results) {
+  final meta = jsonDecode(utf8.decode(res.metadata));
+  if (meta['category'] == 'electronics') {
+    print('Found electronic item: ${res.id}');
+  }
+}
+</code></pre>
+<hr>
+<h2 id="-performance-benchmarks">⚡ Performance Benchmarks</h2>
+<p>The <strong>Waffle-DB</strong> library is meticulously optimized for both blistering speed and strict memory efficiency.</p>
+<h3 id="-pure-rust-scaling-benchmarks-openai-1536-d-vectors-on-desktopserver">📊 Pure Rust Scaling Benchmarks (OpenAI 1536-d Vectors on Desktop/Server)</h3>
+<p>Stress tested the core engine scaling up to <strong>100,000</strong> OpenAI-sized embeddings (1536 dimensions). At this scale, the index holds roughly ~600MB of pure vector data.</p>
+<table>
+<thead>
+<tr>
+<th align="left">Elements (N)</th>
+<th align="left">Query Latency</th>
+<th align="left">Open/Restore Time</th>
+<th align="left">Insert Latency</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left"><strong>1,000</strong></td>
+<td align="left">~0.76 ms</td>
+<td align="left">~11.64 ms</td>
+<td align="left">~0.97 ms</td>
+</tr>
+<tr>
+<td align="left"><strong>10,000</strong></td>
+<td align="left">~1.71 ms</td>
+<td align="left">~98.38 ms</td>
+<td align="left">~2.60 ms</td>
+</tr>
+<tr>
+<td align="left"><strong>50,000</strong></td>
+<td align="left">~2.17 ms</td>
+<td align="left">~497.96 ms</td>
+<td align="left">~3.63 ms</td>
+</tr>
+<tr>
+<td align="left"><strong>100,000</strong></td>
+<td align="left"><strong>~2.17 ms</strong></td>
+<td align="left"><strong>~1.66 s</strong></td>
+<td align="left"><strong>~4.27 ms</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Key Takeaway</strong>: Query performance stays virtually constant around <strong>~2ms</strong> even as the database balloons to 100,000 high-dimensional points. This is workstation-grade performance running natively on your local device.</p>
+</blockquote>
+<h3 id="-on-device-edge-benchmarks-mobile-snapdragonapple-silicon-128-d-vectors">📱 On-Device Edge Benchmarks (Mobile Snapdragon/Apple Silicon 128-d Vectors)</h3>
+<p>For smaller vector dimensions typical in local mobile models (e.g., MobileNet, lightweight text embeddings), Waffle-DB flies on mobile devices:</p>
+<table>
+<thead>
+<tr>
+<th align="left">Operation</th>
+<th align="left">Total End-to-End Latency (Dart)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left"><strong>Query (k=20, N=500)</strong></td>
+<td align="left"><strong>~396 µs</strong></td>
+</tr>
+<tr>
+<td align="left"><strong>Query (k=50, ef=128)</strong></td>
+<td align="left"><strong>~587 µs</strong></td>
+</tr>
+<tr>
+<td align="left"><strong>Single Insert</strong></td>
+<td align="left"><strong>~200 µs</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="-end-to-end-dart-performance-1536-d-vectors">📊 End-to-End Dart Performance (1536-d Vectors)</h3>
+<p>Testing the full pipeline from Dart -&gt; Rust -&gt; Dart using heavy <strong>1536-dimensional</strong> vectors. With new <code>Sync</code> architecture.</p>
+<table>
+<thead>
+<tr>
+<th align="left">Operation</th>
+<th align="left">Total End-to-End Latency (Dart)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left"><strong>Query (k=10, N=1,000)</strong></td>
+<td align="left"><strong>~2.59 ms</strong></td>
+</tr>
+<tr>
+<td align="left"><strong>Single Insert</strong></td>
+<td align="left"><strong>~1.28 ms</strong></td>
+</tr>
+<tr>
+<td align="left"><strong>GetVector (By ID)</strong></td>
+<td align="left"><strong>~56.0 µs</strong></td>
+</tr>
+<tr>
+<td align="left"><strong>GetMetadata (By ID)</strong></td>
+<td align="left"><strong>~41.0 µs</strong></td>
+</tr>
+<tr>
+<td align="left"><strong>Delete</strong></td>
+<td align="left"><strong>~786.0 µs</strong></td>
+</tr>
+<tr>
+<td align="left"><strong>Count / GetAllIds</strong></td>
+<td align="left"><strong>~0.1 - 1.1 ms</strong></td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="-contributing">🤝 Contributing</h2>
+<p>Contributions are welcome! Here’s how to get started:</p>
+<ol>
+<li>Fork the repository.</li>
+<li>Create a new branch:
+<code>git checkout -b feature/YourFeature</code></li>
+<li>Commit your changes:
+<code>git commit -m "Add amazing feature"</code></li>
+<li>Push to your branch:
+<code>git push origin feature/YourFeature</code></li>
+<li>Open a pull request.</li>
+</ol>
+<hr>
+<h2 id="-license">📜 License</h2>
+<p>This project is licensed under the <strong>GPL-3.0 License</strong>.
+See the <a href="LICENSE">LICENSE</a> file for full details.</p>
+<p align="center">
+Made with ❤️ by <a href="https://github.com/MostafaSensei106">MostafaSensei106</a>
+</p>
+</section>
+
+
+      <section class="summary">
+          <h2>Libraries</h2>
+        <dl>
+          <dt id="waffle_db">
+  <span class="name"><a href="waffle_db/">waffle_db</a></span> 
+
+</dt>
+<dd>
+</dd>
+
+        </dl>
+      </section>
+  </div> <!-- /.main-content -->
+  <div id="dartdoc-sidebar-left" class="sidebar sidebar-offcanvas-left">
+    <!-- The search input and breadcrumbs below are only responsively visible at low resolutions. -->
+<header id="header-search-sidebar" class="hidden-l">
+  <form class="search-sidebar" role="search">
+    <input type="text" id="search-sidebar" autocomplete="off" disabled class="form-control typeahead" placeholder="Loading search...">
+  </form>
+</header>
+<ol class="breadcrumbs gt-separated dark hidden-l" id="sidebar-nav">
+    <li class="self-crumb">waffle_db package</li>
+</ol>
+
+    <h5 class="hidden-xs"><span class="package-name">waffle_db</span> <span class="package-kind">package</span></h5>
+    <ol>
+      <li class="section-title">Libraries</li>
+      <li><a href="waffle_db/">waffle_db</a></li>
+</ol>
+
+  </div>
+  <div id="dartdoc-sidebar-right" class="sidebar sidebar-offcanvas-right">
+  </div>
+</main>
+<footer>
+  <span class="no-break">
+    waffle_db
+      0.0.1
+  </span>
+  
+</footer>
+
+
+<script src="static-assets/highlight.pack.js?v1"></script>
+<script src="static-assets/docs.dart.js"></script>
+
+</body>
+</html>
+
