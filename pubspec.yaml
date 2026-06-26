@@ -6,9 +6,11 @@ repository: https://github.com/MostafaSensei106/Waffle-DB
 license: GPL-version 3.0
 
 topics:
-- dicom
-- medical-imaging
-- radiology
+
+- ffi
+- vector
+- ai
+- databas
 - rust
 
 funding:
