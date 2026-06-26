@@ -14,8 +14,8 @@ class BenchStats {
   final int count;
 
   BenchStats(this.name, List<double> raw)
-    : _sorted = List<double>.from(raw)..sort(),
-      count = raw.length;
+      : _sorted = List<double>.from(raw)..sort(),
+        count = raw.length;
 
   double get min => _sorted.first;
   double get max => _sorted.last;
