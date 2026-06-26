@@ -166,6 +166,18 @@ final results = await WaffleQueryBuilder(db)
     .execute();
 ```
 
+#### Fluent API Methods Reference
+
+| Method | Description |
+| :--- | :--- |
+| `withVector(Float32List vector)` | Sets the query vector as a `Float32List`. Required before calling `execute()`. |
+| `withVectorList(List<double> vector)` | Convenience method to set the query vector from a standard Dart `List<double>`. |
+| `limit(int n)` | Sets the maximum number of nearest neighbors to return (default is `10`). |
+| `threshold(double t)` | Sets a maximum distance threshold. Results with a distance greater than `t` are excluded. Default is `0.0` (no threshold). |
+| `efSearch(int ef)` | Overrides the `efSearch` config for this query. Higher values increase accuracy (recall) but reduce speed. Pass `0` to use the default config. |
+| `includeMetadata(bool include)` | Defines whether to fetch metadata (default: `true`). Disabling this speeds up queries by avoiding disk I/O when only IDs and distances are needed. |
+| `execute()` | Executes the configured query asynchronously and returns a `Future<List<WaffleQueryResult>>`. |
+
 ---
 
 ## 🔬 Advanced Usage

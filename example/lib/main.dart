@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'dart:typed_data';
 import 'dart:convert';
 
@@ -40,7 +39,25 @@ class _MyHomePageState extends State<MyHomePage> {
   WaffleCollection? _collection;
   String _log = 'App started...\n';
 
+  @override
+  void initState() {
+    super.initState();
+    _runAllTests();
+  }
+
+  Future<void> _runAllTests() async {
+    await _initDb();
+    await _testInsertAndCount();
+    await _testQueries();
+    await _testDataRetrieval();
+    await _testCollection();
+    await _testDeleteAndFlush();
+    await _closeDb();
+    print('ALL TESTS COMPLETED SUCCESSFULLY.');
+  }
+
   void _addLog(String msg) {
+    print('LOG: $msg');
     setState(() {
       _log += '$msg\n';
     });
@@ -50,7 +67,7 @@ class _MyHomePageState extends State<MyHomePage> {
     try {
       final dir = await getApplicationDocumentsDirectory();
       final dbPath = '${dir.path}/waffle_simple_db';
-      
+
       final config = WaffleConfig(
         dimension: 3,
         path: dbPath,
@@ -83,7 +100,7 @@ class _MyHomePageState extends State<MyHomePage> {
         metadata: utf8.encode('Metadata for item1'),
       );
       _addLog('Inserted item1');
-      
+
       final records = [
         WaffleRecord.fromList(id: 'batch1', vector: [0.2, 0.3, 0.4]),
         WaffleRecord.fromList(id: 'batch2', vector: [0.5, 0.1, 0.9]),
@@ -115,7 +132,7 @@ class _MyHomePageState extends State<MyHomePage> {
           .efSearch(64)
           .includeMetadata(true)
           .execute();
-          
+
       _addLog('Query Builder returned ${builderResults.length} results:');
       for (var r in builderResults) {
         _addLog(' - ID: ${r.id}, Distance: ${r.distance}');
@@ -135,7 +152,9 @@ class _MyHomePageState extends State<MyHomePage> {
         final firstId = ids.first;
         final vector = _db!.getVector(firstId);
         final metaBytes = _db!.getMetadata(firstId);
-        String metaStr = metaBytes != null && metaBytes.isNotEmpty ? utf8.decode(metaBytes) : 'null';
+        String metaStr = metaBytes != null && metaBytes.isNotEmpty
+            ? utf8.decode(metaBytes)
+            : 'null';
         _addLog('Data for $firstId: Vector=$vector, Meta=$metaStr');
       }
     } catch (e) {
@@ -146,10 +165,16 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> _testCollection() async {
     if (_collection == null) return _addLog('Collection not initialized');
     try {
-      await _collection!.add('col_item1', Float32List.fromList([0.9, 0.8, 0.7]));
+      await _collection!.add(
+        'col_item1',
+        Float32List.fromList([0.9, 0.8, 0.7]),
+      );
       _addLog('Added col_item1 to collection');
-      
-      final results = await _collection!.search(Float32List.fromList([0.9, 0.8, 0.7]), topK: 1);
+
+      final results = await _collection!.search(
+        Float32List.fromList([0.9, 0.8, 0.7]),
+        topK: 1,
+      );
       _addLog('Collection search returned ${results.length} results:');
       for (var r in results) {
         _addLog(' - ID: ${r.id}, Distance: ${r.distance}');
@@ -168,7 +193,7 @@ class _MyHomePageState extends State<MyHomePage> {
         final deleted = await _db!.delete(idToRemove);
         _addLog('Deleted $idToRemove: $deleted');
       }
-      
+
       await _db!.flush();
       _addLog('Flushed DB to disk');
     } catch (e) {
@@ -205,17 +230,43 @@ class _MyHomePageState extends State<MyHomePage> {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  ElevatedButton(onPressed: _initDb, child: const Text('1. Init DB')),
-                  ElevatedButton(onPressed: _testInsertAndCount, child: const Text('2. Test Insert & Count')),
-                  ElevatedButton(onPressed: _testQueries, child: const Text('3. Test Queries (Basic & Builder)')),
-                  ElevatedButton(onPressed: _testDataRetrieval, child: const Text('4. Test Data Retrieval')),
-                  ElevatedButton(onPressed: _testCollection, child: const Text('5. Test Collection')),
-                  ElevatedButton(onPressed: _testDeleteAndFlush, child: const Text('6. Test Delete & Flush')),
-                  ElevatedButton(onPressed: _closeDb, child: const Text('7. Close DB')),
                   ElevatedButton(
-                    onPressed: () => setState(() => _log = 'Log cleared...\n'), 
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade100),
-                    child: const Text('Clear Log', style: TextStyle(color: Colors.red)),
+                    onPressed: _initDb,
+                    child: const Text('1. Init DB'),
+                  ),
+                  ElevatedButton(
+                    onPressed: _testInsertAndCount,
+                    child: const Text('2. Test Insert & Count'),
+                  ),
+                  ElevatedButton(
+                    onPressed: _testQueries,
+                    child: const Text('3. Test Queries (Basic & Builder)'),
+                  ),
+                  ElevatedButton(
+                    onPressed: _testDataRetrieval,
+                    child: const Text('4. Test Data Retrieval'),
+                  ),
+                  ElevatedButton(
+                    onPressed: _testCollection,
+                    child: const Text('5. Test Collection'),
+                  ),
+                  ElevatedButton(
+                    onPressed: _testDeleteAndFlush,
+                    child: const Text('6. Test Delete & Flush'),
+                  ),
+                  ElevatedButton(
+                    onPressed: _closeDb,
+                    child: const Text('7. Close DB'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => setState(() => _log = 'Log cleared...\n'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red.shade100,
+                    ),
+                    child: const Text(
+                      'Clear Log',
+                      style: TextStyle(color: Colors.red),
+                    ),
                   ),
                 ],
               ),
@@ -231,7 +282,10 @@ class _MyHomePageState extends State<MyHomePage> {
               child: SingleChildScrollView(
                 child: Text(
                   _log,
-                  style: const TextStyle(color: Colors.greenAccent, fontFamily: 'monospace'),
+                  style: const TextStyle(
+                    color: Colors.greenAccent,
+                    fontFamily: 'monospace',
+                  ),
                 ),
               ),
             ),
