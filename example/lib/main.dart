@@ -122,7 +122,7 @@ class _MyHomePageState extends State<MyHomePage> {
     if (_db == null) return _addLog('DB not initialized');
     try {
       final ts = DateTime.now().millisecondsSinceEpoch;
-      
+
       await _db!.insert(
         'dynamic_item_$ts',
         Float32List.fromList([0.11, 0.22, 0.33]),
