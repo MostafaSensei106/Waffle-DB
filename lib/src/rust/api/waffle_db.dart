@@ -12,14 +12,29 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 // These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `WaffleEngine`
 
 /// Open (or create) a WaffleDB instance. Returns a handle ID.
+///
+/// Example:
+/// ```dart
+/// final handle = await waffleOpen(config: myConfig);
+/// ```
 Future<BigInt> waffleOpen({required WaffleConfig config}) =>
     RustLib.instance.api.crateApiWaffleDbWaffleOpen(config: config);
 
 /// Close a WaffleDB instance: flush to disk and release resources.
+///
+/// Example:
+/// ```dart
+/// await waffleClose(handle: myHandle);
+/// ```
 Future<void> waffleClose({required BigInt handle}) =>
     RustLib.instance.api.crateApiWaffleDbWaffleClose(handle: handle);
 
 /// Insert a single vector with metadata.
+///
+/// Example:
+/// ```dart
+/// await waffleInsert(handle: myHandle, id: "doc1", vector: [0.1, 0.2], metadata: []);
+/// ```
 Future<void> waffleInsert({
   required BigInt handle,
   required String id,
@@ -35,6 +50,11 @@ Future<void> waffleInsert({
 /// Batch insert multiple vectors. Vectors are passed as a flat f32 array.
 /// `vectors_flat` has length `ids.len() * dimension`.
 /// `metadata_list` has the same length as `ids`.
+///
+/// Example:
+/// ```dart
+/// await waffleInsertBatch(handle: h, ids: ["1"], vectorsFlat: [0.1], metadataList: [[]]);
+/// ```
 Future<void> waffleInsertBatch({
   required BigInt handle,
   required List<String> ids,
@@ -49,6 +69,11 @@ Future<void> waffleInsertBatch({
 
 /// K-nearest neighbor search. Returns results sorted by distance (ascending).
 /// `ef_search` overrides the config value if > 0, otherwise uses config default.
+///
+/// Example:
+/// ```dart
+/// final results = await waffleQuery(handle: h, vector: [0.1], k: 5, efSearch: 0, includeMetadata: true);
+/// ```
 List<WaffleQueryResult> waffleQuery({
   required BigInt handle,
   required List<double> vector,
@@ -65,10 +90,20 @@ List<WaffleQueryResult> waffleQuery({
 
 /// Delete a vector by its string ID. Removes from storage.
 /// Note: HNSW doesn't support true deletion — the index entry remains until rebuild.
+///
+/// Example:
+/// ```dart
+/// final removed = await waffleDelete(handle: h, id: "doc1");
+/// ```
 Future<bool> waffleDelete({required BigInt handle, required String id}) =>
     RustLib.instance.api.crateApiWaffleDbWaffleDelete(handle: handle, id: id);
 
 /// Get metadata bytes for a vector by ID.
+///
+/// Example:
+/// ```dart
+/// final meta = await waffleGetMetadata(handle: h, id: "doc1");
+/// ```
 Uint8List? waffleGetMetadata({required BigInt handle, required String id}) =>
     RustLib.instance.api.crateApiWaffleDbWaffleGetMetadata(
       handle: handle,
@@ -76,6 +111,11 @@ Uint8List? waffleGetMetadata({required BigInt handle, required String id}) =>
     );
 
 /// Get a stored vector by ID.
+///
+/// Example:
+/// ```dart
+/// final vec = await waffleGetVector(handle: h, id: "doc1");
+/// ```
 Float32List? waffleGetVector({required BigInt handle, required String id}) =>
     RustLib.instance.api.crateApiWaffleDbWaffleGetVector(
       handle: handle,
@@ -83,13 +123,28 @@ Float32List? waffleGetVector({required BigInt handle, required String id}) =>
     );
 
 /// Get the number of vectors stored on disk.
+///
+/// Example:
+/// ```dart
+/// final count = await waffleCount(handle: h);
+/// ```
 BigInt waffleCount({required BigInt handle}) =>
     RustLib.instance.api.crateApiWaffleDbWaffleCount(handle: handle);
 
 /// Force flush all pending writes to disk.
+///
+/// Example:
+/// ```dart
+/// await waffleFlush(handle: h);
+/// ```
 Future<void> waffleFlush({required BigInt handle}) =>
     RustLib.instance.api.crateApiWaffleDbWaffleFlush(handle: handle);
 
 /// Get all stored string IDs.
+///
+/// Example:
+/// ```dart
+/// final ids = await waffleGetAllIds(handle: h);
+/// ```
 List<String> waffleGetAllIds({required BigInt handle}) =>
     RustLib.instance.api.crateApiWaffleDbWaffleGetAllIds(handle: handle);

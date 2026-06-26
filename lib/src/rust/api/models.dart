@@ -9,10 +9,18 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 // These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `ArchivedVectorMetadata`, `VectorMetadataResolver`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `check_bytes`, `deserialize`, `fmt`, `resolve`, `serialize`
 
+/// Internal metadata stored alongside vectors for filtering and context.
 class VectorMetadata {
+  /// Optional title for the vector.
   final String title;
+
+  /// Optional description for the vector.
   final String description;
+
+  /// Category or tag for grouping vectors.
   final String category;
+
+  /// Raw payload bytes for arbitrary user data.
   final Uint8List payload;
 
   const VectorMetadata({
@@ -42,8 +50,13 @@ class VectorMetadata {
 
 /// Result returned from a KNN query, bridgeable by FRB.
 class WaffleQueryResult {
+  /// Unique identifier of the returned vector.
   final String id;
+
+  /// Computed distance from the query vector (lower means more similar).
   final double distance;
+
+  /// Optional metadata payload if requested during the search.
   final Uint8List? metadata;
 
   const WaffleQueryResult({

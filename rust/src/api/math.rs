@@ -123,8 +123,16 @@ impl HnswIndex {
         }
     }
 }
-
 /// Standalone cosine similarity for Dart FFI use.
+/// 
+/// Calculates the cosine similarity between two vectors.
+/// Returns a value between -1.0 and 1.0 (1.0 means identical direction).
+/// 
+/// Example:
+/// ```dart
+/// final similarity = await cosineSimilarity(a: [1.0, 0.0], b: [1.0, 0.0]);
+/// print(similarity); // 1.0
+/// ```
 pub fn cosine_similarity(a: Vec<f32>, b: Vec<f32>) -> f32 {
     let mut dot = 0.0f32;
     let mut norm_a = 0.0f32;

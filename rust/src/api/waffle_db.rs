@@ -55,6 +55,11 @@ where
 // ---------------------------------------------------------------------------
 
 /// Open (or create) a WaffleDB instance. Returns a handle ID.
+/// 
+/// Example:
+/// ```dart
+/// final handle = await waffleOpen(config: myConfig);
+/// ```
 pub fn waffle_open(config: WaffleConfig) -> Result<u64, String> {
     let storage = WaffleStorage::init(&config)?;
 
@@ -126,6 +131,11 @@ pub fn waffle_open(config: WaffleConfig) -> Result<u64, String> {
 }
 
 /// Close a WaffleDB instance: flush to disk and release resources.
+/// 
+/// Example:
+/// ```dart
+/// await waffleClose(handle: myHandle);
+/// ```
 pub fn waffle_close(handle: u64) -> Result<(), String> {
     let mut reg = registry()
         .lock()
@@ -141,6 +151,11 @@ pub fn waffle_close(handle: u64) -> Result<(), String> {
 }
 
 /// Insert a single vector with metadata.
+/// 
+/// Example:
+/// ```dart
+/// await waffleInsert(handle: myHandle, id: "doc1", vector: [0.1, 0.2], metadata: []);
+/// ```
 pub fn waffle_insert(
     handle: u64,
     id: String,
@@ -185,6 +200,11 @@ pub fn waffle_insert(
 /// Batch insert multiple vectors. Vectors are passed as a flat f32 array.
 /// `vectors_flat` has length `ids.len() * dimension`.
 /// `metadata_list` has the same length as `ids`.
+/// 
+/// Example:
+/// ```dart
+/// await waffleInsertBatch(handle: h, ids: ["1"], vectorsFlat: [0.1], metadataList: [[]]);
+/// ```
 pub fn waffle_insert_batch(
     handle: u64,
     ids: Vec<String>,
@@ -253,6 +273,11 @@ pub fn waffle_insert_batch(
 
 /// K-nearest neighbor search. Returns results sorted by distance (ascending).
 /// `ef_search` overrides the config value if > 0, otherwise uses config default.
+/// 
+/// Example:
+/// ```dart
+/// final results = await waffleQuery(handle: h, vector: [0.1], k: 5, efSearch: 0, includeMetadata: true);
+/// ```
 #[flutter_rust_bridge::frb(sync)]
 pub fn waffle_query(
     handle: u64,
@@ -310,6 +335,11 @@ pub fn waffle_query(
 
 /// Delete a vector by its string ID. Removes from storage.
 /// Note: HNSW doesn't support true deletion — the index entry remains until rebuild.
+/// 
+/// Example:
+/// ```dart
+/// final removed = await waffleDelete(handle: h, id: "doc1");
+/// ```
 pub fn waffle_delete(handle: u64, id: String) -> Result<bool, String> {
     with_engine(handle, |engine| {
         let removed = engine.storage.delete_record(&id)?;
@@ -328,12 +358,22 @@ pub fn waffle_delete(handle: u64, id: String) -> Result<bool, String> {
 }
 
 /// Get metadata bytes for a vector by ID.
+/// 
+/// Example:
+/// ```dart
+/// final meta = await waffleGetMetadata(handle: h, id: "doc1");
+/// ```
 #[flutter_rust_bridge::frb(sync)]
 pub fn waffle_get_metadata(handle: u64, id: String) -> Result<Option<Vec<u8>>, String> {
     with_engine(handle, |engine| engine.storage.read_metadata(&id))
 }
 
 /// Get a stored vector by ID.
+/// 
+/// Example:
+/// ```dart
+/// final vec = await waffleGetVector(handle: h, id: "doc1");
+/// ```
 #[flutter_rust_bridge::frb(sync)]
 pub fn waffle_get_vector(handle: u64, id: String) -> Result<Option<Vec<f32>>, String> {
     with_engine(handle, |engine| {
@@ -343,12 +383,22 @@ pub fn waffle_get_vector(handle: u64, id: String) -> Result<Option<Vec<f32>>, St
 }
 
 /// Get the number of vectors stored on disk.
+/// 
+/// Example:
+/// ```dart
+/// final count = await waffleCount(handle: h);
+/// ```
 #[flutter_rust_bridge::frb(sync)]
 pub fn waffle_count(handle: u64) -> Result<u64, String> {
     with_engine(handle, |engine| Ok(engine.storage.count()))
 }
 
 /// Force flush all pending writes to disk.
+/// 
+/// Example:
+/// ```dart
+/// await waffleFlush(handle: h);
+/// ```
 pub fn waffle_flush(handle: u64) -> Result<(), String> {
     with_engine(handle, |engine| {
         engine.storage.flush()?;
@@ -361,6 +411,11 @@ pub fn waffle_flush(handle: u64) -> Result<(), String> {
 }
 
 /// Get all stored string IDs.
+/// 
+/// Example:
+/// ```dart
+/// final ids = await waffleGetAllIds(handle: h);
+/// ```
 #[flutter_rust_bridge::frb(sync)]
 pub fn waffle_get_all_ids(handle: u64) -> Result<Vec<String>, String> {
     with_engine(handle, |engine| engine.storage.get_all_ids())

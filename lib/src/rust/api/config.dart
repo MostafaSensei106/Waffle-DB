@@ -8,13 +8,27 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `clone`, `eq`, `fmt`, `fmt`, `fmt`
 
+/// Main configuration for the Waffle Database.
 class WaffleConfig {
+  /// Dimensionality of the vectors to be stored.
   final int dimension;
+
+  /// File path where the database will be persisted.
   final String path;
+
+  /// Configuration for the HNSW graph.
   final WaffleGraphConfig graphConfig;
+
+  /// Maximum number of elements the database can hold.
   final int maxElements;
+
+  /// Whether to use scalar quantization to save memory.
   final bool useQuantization;
+
+  /// Size of the cache in bytes.
   final BigInt cacheSizeBytes;
+
+  /// Number of worker threads for parallel operations.
   final int workerThreads;
 
   const WaffleConfig({
@@ -30,6 +44,12 @@ class WaffleConfig {
   static Future<WaffleConfig> default_() =>
       RustLib.instance.api.crateApiConfigWaffleConfigDefault();
 
+  /// Creates a configuration optimized for mobile devices.
+  ///
+  /// Example:
+  /// ```dart
+  /// final config = await WaffleConfig.mobileProfile(path: 'db', dimension: 128);
+  /// ```
   static Future<WaffleConfig> mobileProfile({
     required String path,
     required int dimension,
@@ -38,6 +58,12 @@ class WaffleConfig {
     dimension: dimension,
   );
 
+  /// Creates a configuration optimized for read-heavy workloads.
+  ///
+  /// Example:
+  /// ```dart
+  /// final config = await WaffleConfig.readHeavyProfile(path: 'db', dimension: 1536);
+  /// ```
   static Future<WaffleConfig> readHeavyProfile({
     required String path,
     required int dimension,
@@ -46,6 +72,12 @@ class WaffleConfig {
     dimension: dimension,
   );
 
+  /// Creates a configuration optimized for server environments.
+  ///
+  /// Example:
+  /// ```dart
+  /// final config = await WaffleConfig.serverProfile(path: 'db', dimension: 1536);
+  /// ```
   static Future<WaffleConfig> serverProfile({
     required String path,
     required int dimension,
@@ -54,6 +86,12 @@ class WaffleConfig {
     dimension: dimension,
   );
 
+  /// Creates a configuration optimized for write-heavy workloads.
+  ///
+  /// Example:
+  /// ```dart
+  /// final config = await WaffleConfig.writeHeavyProfile(path: 'db', dimension: 1536);
+  /// ```
   static Future<WaffleConfig> writeHeavyProfile({
     required String path,
     required int dimension,
@@ -86,10 +124,18 @@ class WaffleConfig {
           workerThreads == other.workerThreads;
 }
 
+/// Configuration for the underlying HNSW graph.
 class WaffleGraphConfig {
+  /// Max number of connections per element in the graph.
   final int m;
+
+  /// Distance metric to use.
   final WaffleMetric metric;
+
+  /// Size of the dynamic list for the nearest neighbors (used during index build).
   final int efConstruction;
+
+  /// Size of the dynamic list for the nearest neighbors (used during search).
   final int efSearch;
 
   const WaffleGraphConfig({
@@ -117,4 +163,14 @@ class WaffleGraphConfig {
           efSearch == other.efSearch;
 }
 
-enum WaffleMetric { cosine, euclidean, dotProduct }
+/// Distance metric used for vector comparisons.
+enum WaffleMetric {
+  /// Cosine similarity (1 - cosine distance). Best for normalized embeddings.
+  cosine,
+
+  /// Euclidean distance (L2 norm). Best for spatial data.
+  euclidean,
+
+  /// Dot product. Use when vectors are not normalized and magnitude matters.
+  dotProduct,
+}

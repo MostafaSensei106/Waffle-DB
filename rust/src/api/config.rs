@@ -1,26 +1,43 @@
+/// Distance metric used for vector comparisons.
 #[derive(Clone, Debug, PartialEq)]
 pub enum WaffleMetric {
+    /// Cosine similarity (1 - cosine distance). Best for normalized embeddings.
     Cosine,
+    /// Euclidean distance (L2 norm). Best for spatial data.
     Euclidean,
+    /// Dot product. Use when vectors are not normalized and magnitude matters.
     DotProduct,
 }
 
+/// Configuration for the underlying HNSW graph.
 #[derive(Clone, Debug)]
 pub struct WaffleGraphConfig {
+    /// Max number of connections per element in the graph.
     pub m: u32,
+    /// Distance metric to use.
     pub metric: WaffleMetric,
+    /// Size of the dynamic list for the nearest neighbors (used during index build).
     pub ef_construction: u32,
+    /// Size of the dynamic list for the nearest neighbors (used during search).
     pub ef_search: u32,
 }
 
+/// Main configuration for the Waffle Database.
 #[derive(Clone, Debug)]
 pub struct WaffleConfig {
+    /// Dimensionality of the vectors to be stored.
     pub dimension: u32,
+    /// File path where the database will be persisted.
     pub path: String,
+    /// Configuration for the HNSW graph.
     pub graph_config: WaffleGraphConfig,
+    /// Maximum number of elements the database can hold.
     pub max_elements: u32,
+    /// Whether to use scalar quantization to save memory.
     pub use_quantization: bool,
+    /// Size of the cache in bytes.
     pub cache_size_bytes: u64,
+    /// Number of worker threads for parallel operations.
     pub worker_threads: u32,
 }
 
@@ -44,6 +61,12 @@ impl Default for WaffleConfig {
 }
 
 impl WaffleConfig {
+    /// Creates a configuration optimized for mobile devices.
+    ///
+    /// Example:
+    /// ```dart
+    /// final config = await WaffleConfig.mobileProfile(path: 'db', dimension: 128);
+    /// ```
     pub fn mobile_profile(path: &str, dimension: u32) -> Self {
         Self {
             dimension,
@@ -61,6 +84,12 @@ impl WaffleConfig {
         }
     }
 
+    /// Creates a configuration optimized for server environments.
+    ///
+    /// Example:
+    /// ```dart
+    /// final config = await WaffleConfig.serverProfile(path: 'db', dimension: 1536);
+    /// ```
     pub fn server_profile(path: &str, dimension: u32) -> Self {
         Self {
             dimension,
@@ -78,6 +107,12 @@ impl WaffleConfig {
         }
     }
 
+    /// Creates a configuration optimized for read-heavy workloads.
+    ///
+    /// Example:
+    /// ```dart
+    /// final config = await WaffleConfig.readHeavyProfile(path: 'db', dimension: 1536);
+    /// ```
     pub fn read_heavy_profile(path: &str, dimension: u32) -> Self {
         Self {
             dimension,
@@ -95,6 +130,12 @@ impl WaffleConfig {
         }
     }
 
+    /// Creates a configuration optimized for write-heavy workloads.
+    ///
+    /// Example:
+    /// ```dart
+    /// final config = await WaffleConfig.writeHeavyProfile(path: 'db', dimension: 1536);
+    /// ```
     pub fn write_heavy_profile(path: &str, dimension: u32) -> Self {
         Self {
             dimension,

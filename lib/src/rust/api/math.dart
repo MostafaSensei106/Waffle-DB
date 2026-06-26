@@ -10,6 +10,15 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 // These functions are ignored (category: IgnoreBecauseOwnerTyShouldIgnore): `get_nb_point`, `insert_slice`, `insert`, `load`, `new`, `save`, `search`
 
 /// Standalone cosine similarity for Dart FFI use.
+///
+/// Calculates the cosine similarity between two vectors.
+/// Returns a value between -1.0 and 1.0 (1.0 means identical direction).
+///
+/// Example:
+/// ```dart
+/// final similarity = await cosineSimilarity(a: [1.0, 0.0], b: [1.0, 0.0]);
+/// print(similarity); // 1.0
+/// ```
 Future<double> cosineSimilarity({
   required List<double> a,
   required List<double> b,
