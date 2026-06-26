@@ -50,13 +50,10 @@ class WaffleConfig {
   /// ```dart
   /// final config = await WaffleConfig.mobileProfile(path: 'db', dimension: 128);
   /// ```
-  static Future<WaffleConfig> mobileProfile({
-    required String path,
-    required int dimension,
-  }) => RustLib.instance.api.crateApiConfigWaffleConfigMobileProfile(
-    path: path,
-    dimension: dimension,
-  );
+  static Future<WaffleConfig> mobileProfile(
+          {required String path, required int dimension}) =>
+      RustLib.instance.api.crateApiConfigWaffleConfigMobileProfile(
+          path: path, dimension: dimension);
 
   /// Creates a configuration optimized for read-heavy workloads.
   ///
@@ -64,13 +61,10 @@ class WaffleConfig {
   /// ```dart
   /// final config = await WaffleConfig.readHeavyProfile(path: 'db', dimension: 1536);
   /// ```
-  static Future<WaffleConfig> readHeavyProfile({
-    required String path,
-    required int dimension,
-  }) => RustLib.instance.api.crateApiConfigWaffleConfigReadHeavyProfile(
-    path: path,
-    dimension: dimension,
-  );
+  static Future<WaffleConfig> readHeavyProfile(
+          {required String path, required int dimension}) =>
+      RustLib.instance.api.crateApiConfigWaffleConfigReadHeavyProfile(
+          path: path, dimension: dimension);
 
   /// Creates a configuration optimized for server environments.
   ///
@@ -78,13 +72,10 @@ class WaffleConfig {
   /// ```dart
   /// final config = await WaffleConfig.serverProfile(path: 'db', dimension: 1536);
   /// ```
-  static Future<WaffleConfig> serverProfile({
-    required String path,
-    required int dimension,
-  }) => RustLib.instance.api.crateApiConfigWaffleConfigServerProfile(
-    path: path,
-    dimension: dimension,
-  );
+  static Future<WaffleConfig> serverProfile(
+          {required String path, required int dimension}) =>
+      RustLib.instance.api.crateApiConfigWaffleConfigServerProfile(
+          path: path, dimension: dimension);
 
   /// Creates a configuration optimized for write-heavy workloads.
   ///
@@ -92,13 +83,10 @@ class WaffleConfig {
   /// ```dart
   /// final config = await WaffleConfig.writeHeavyProfile(path: 'db', dimension: 1536);
   /// ```
-  static Future<WaffleConfig> writeHeavyProfile({
-    required String path,
-    required int dimension,
-  }) => RustLib.instance.api.crateApiConfigWaffleConfigWriteHeavyProfile(
-    path: path,
-    dimension: dimension,
-  );
+  static Future<WaffleConfig> writeHeavyProfile(
+          {required String path, required int dimension}) =>
+      RustLib.instance.api.crateApiConfigWaffleConfigWriteHeavyProfile(
+          path: path, dimension: dimension);
 
   @override
   int get hashCode =>
@@ -173,4 +161,5 @@ enum WaffleMetric {
 
   /// Dot product. Use when vectors are not normalized and magnitude matters.
   dotProduct,
+  ;
 }

@@ -35,16 +35,14 @@ abstract class WaffleStorage implements RustOpaqueInterface {
   Future<Float32List?> readVector({required String id, required BigInt dim});
 
   /// Write only the metadata for a record.
-  Future<bool> writeMetadata({
-    required String id,
-    required List<double> vector,
-    required VectorMetadata metadata,
-  });
+  Future<bool> writeMetadata(
+      {required String id,
+      required List<double> vector,
+      required VectorMetadata metadata});
 
   /// Write a full record (vector and metadata bytes) to disk.
-  Future<void> writeRecord({
-    required String id,
-    required List<double> vector,
-    required List<int> metadata,
-  });
+  Future<void> writeRecord(
+      {required String id,
+      required List<double> vector,
+      required List<int> metadata});
 }

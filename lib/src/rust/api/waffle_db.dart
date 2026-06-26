@@ -35,17 +35,13 @@ Future<void> waffleClose({required BigInt handle}) =>
 /// ```dart
 /// await waffleInsert(handle: myHandle, id: "doc1", vector: [0.1, 0.2], metadata: []);
 /// ```
-Future<void> waffleInsert({
-  required BigInt handle,
-  required String id,
-  required List<double> vector,
-  required List<int> metadata,
-}) => RustLib.instance.api.crateApiWaffleDbWaffleInsert(
-  handle: handle,
-  id: id,
-  vector: vector,
-  metadata: metadata,
-);
+Future<void> waffleInsert(
+        {required BigInt handle,
+        required String id,
+        required List<double> vector,
+        required List<int> metadata}) =>
+    RustLib.instance.api.crateApiWaffleDbWaffleInsert(
+        handle: handle, id: id, vector: vector, metadata: metadata);
 
 /// Batch insert multiple vectors. Vectors are passed as a flat f32 array.
 /// `vectors_flat` has length `ids.len() * dimension`.
@@ -55,17 +51,16 @@ Future<void> waffleInsert({
 /// ```dart
 /// await waffleInsertBatch(handle: h, ids: ["1"], vectorsFlat: [0.1], metadataList: [[]]);
 /// ```
-Future<void> waffleInsertBatch({
-  required BigInt handle,
-  required List<String> ids,
-  required List<double> vectorsFlat,
-  required List<Uint8List> metadataList,
-}) => RustLib.instance.api.crateApiWaffleDbWaffleInsertBatch(
-  handle: handle,
-  ids: ids,
-  vectorsFlat: vectorsFlat,
-  metadataList: metadataList,
-);
+Future<void> waffleInsertBatch(
+        {required BigInt handle,
+        required List<String> ids,
+        required List<double> vectorsFlat,
+        required List<Uint8List> metadataList}) =>
+    RustLib.instance.api.crateApiWaffleDbWaffleInsertBatch(
+        handle: handle,
+        ids: ids,
+        vectorsFlat: vectorsFlat,
+        metadataList: metadataList);
 
 /// K-nearest neighbor search. Returns results sorted by distance (ascending).
 /// `ef_search` overrides the config value if > 0, otherwise uses config default.
@@ -74,19 +69,18 @@ Future<void> waffleInsertBatch({
 /// ```dart
 /// final results = await waffleQuery(handle: h, vector: [0.1], k: 5, efSearch: 0, includeMetadata: true);
 /// ```
-List<WaffleQueryResult> waffleQuery({
-  required BigInt handle,
-  required List<double> vector,
-  required int k,
-  required int efSearch,
-  required bool includeMetadata,
-}) => RustLib.instance.api.crateApiWaffleDbWaffleQuery(
-  handle: handle,
-  vector: vector,
-  k: k,
-  efSearch: efSearch,
-  includeMetadata: includeMetadata,
-);
+List<WaffleQueryResult> waffleQuery(
+        {required BigInt handle,
+        required List<double> vector,
+        required int k,
+        required int efSearch,
+        required bool includeMetadata}) =>
+    RustLib.instance.api.crateApiWaffleDbWaffleQuery(
+        handle: handle,
+        vector: vector,
+        k: k,
+        efSearch: efSearch,
+        includeMetadata: includeMetadata);
 
 /// Delete a vector by its string ID. Removes from storage.
 /// Note: HNSW doesn't support true deletion — the index entry remains until rebuild.
@@ -105,10 +99,8 @@ Future<bool> waffleDelete({required BigInt handle, required String id}) =>
 /// final meta = await waffleGetMetadata(handle: h, id: "doc1");
 /// ```
 Uint8List? waffleGetMetadata({required BigInt handle, required String id}) =>
-    RustLib.instance.api.crateApiWaffleDbWaffleGetMetadata(
-      handle: handle,
-      id: id,
-    );
+    RustLib.instance.api
+        .crateApiWaffleDbWaffleGetMetadata(handle: handle, id: id);
 
 /// Get a stored vector by ID.
 ///
@@ -117,10 +109,8 @@ Uint8List? waffleGetMetadata({required BigInt handle, required String id}) =>
 /// final vec = await waffleGetVector(handle: h, id: "doc1");
 /// ```
 Float32List? waffleGetVector({required BigInt handle, required String id}) =>
-    RustLib.instance.api.crateApiWaffleDbWaffleGetVector(
-      handle: handle,
-      id: id,
-    );
+    RustLib.instance.api
+        .crateApiWaffleDbWaffleGetVector(handle: handle, id: id);
 
 /// Get the number of vectors stored on disk.
 ///

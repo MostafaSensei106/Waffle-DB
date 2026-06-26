@@ -19,7 +19,6 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 /// final similarity = await cosineSimilarity(a: [1.0, 0.0], b: [1.0, 0.0]);
 /// print(similarity); // 1.0
 /// ```
-Future<double> cosineSimilarity({
-  required List<double> a,
-  required List<double> b,
-}) => RustLib.instance.api.crateApiMathCosineSimilarity(a: a, b: b);
+Future<double> cosineSimilarity(
+        {required List<double> a, required List<double> b}) =>
+    RustLib.instance.api.crateApiMathCosineSimilarity(a: a, b: b);
