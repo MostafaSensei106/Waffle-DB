@@ -70,7 +70,7 @@ where
 pub fn waffle_open(config: WaffleConfig) -> Result<u64, String> {
     let storage = WaffleStorage::init(&config)?;
 
-    let _index_file = Path::new(&config.path).join("index.hnsw.hnsw.graph");
+    let index_file = Path::new(&config.path).join("index.hnsw.hnsw.graph");
     let map_file = Path::new(&config.path).join("id_map.json");
 
     let total_count = storage.count() as usize;
@@ -78,7 +78,7 @@ pub fn waffle_open(config: WaffleConfig) -> Result<u64, String> {
     let mut reverse_id_map: HashMap<String, usize> = HashMap::with_capacity(total_count);
     let mut next_id: u64 = 0;
 
-    let index = if map_file.exists() {
+    let index = if map_file.exists() && index_file.exists() {
         let map_data = fs::read_to_string(&map_file).map_err(|e| e.to_string())?;
         id_map = serde_json::from_str(&map_data).map_err(|e| e.to_string())?;
         reverse_id_map = HashMap::with_capacity(id_map.len());
@@ -152,11 +152,13 @@ pub fn waffle_close(handle: u64) -> Result<(), String> {
         .lock()
         .map_err(|e| format!("Lock poisoned: {}", e))?;
     if let Some(engine) = reg.remove(&handle) {
-        engine.storage.flush()?;
-        let registry = engine.id_registry.lock().map_err(|e| e.to_string())?;
-        let map_data = serde_json::to_string(&registry.id_map).map_err(|e| e.to_string())?;
-        std::fs::write(Path::new(&engine.config.path).join("id_map.json"), map_data).map_err(|e| e.to_string())?;
-        engine.index.save(Path::new(&engine.config.path), "index.hnsw")?;
+        engine.storage.flush().map_err(|e| format!("Storage flush failed: {}", e))?;
+        let registry = engine.id_registry.lock().map_err(|e| format!("IdRegistry lock failed: {}", e))?;
+        let map_data = serde_json::to_string(&registry.id_map).map_err(|e| format!("JSON serialization failed: {}", e))?;
+        std::fs::write(Path::new(&engine.config.path).join("id_map.json"), map_data).map_err(|e| format!("Writing id_map.json failed: {}", e))?;
+        if engine.index.get_nb_point() > 0 {
+            engine.index.save(Path::new(&engine.config.path), "index.hnsw").map_err(|e| format!("Hnsw save failed: {}", e))?;
+        }
     }
     Ok(())
 }
@@ -417,7 +419,9 @@ pub fn waffle_flush(handle: u64) -> Result<(), String> {
         let registry = engine.id_registry.lock().map_err(|e| e.to_string())?;
         let map_data = serde_json::to_string(&registry.id_map).map_err(|e| e.to_string())?;
         std::fs::write(Path::new(&engine.config.path).join("id_map.json"), map_data).map_err(|e| e.to_string())?;
-        engine.index.save(Path::new(&engine.config.path), "index.hnsw")?;
+        if engine.index.get_nb_point() > 0 {
+            engine.index.save(Path::new(&engine.config.path), "index.hnsw")?;
+        }
         Ok(())
     })
 }
@@ -431,4 +435,36 @@ pub fn waffle_flush(handle: u64) -> Result<(), String> {
 #[flutter_rust_bridge::frb(sync)]
 pub fn waffle_get_all_ids(handle: u64) -> Result<Vec<String>, String> {
     with_engine(handle, |engine| engine.storage.get_all_ids())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::api::config::{WaffleConfig, WaffleGraphConfig, WaffleMetric};
+
+    #[test]
+    fn test_open_close_rust() {
+        let config = WaffleConfig {
+            dimension: 128,
+            path: "/tmp/waffle_rust_test_db".to_string(),
+            graph_config: WaffleGraphConfig {
+                m: 16,
+                metric: WaffleMetric::Cosine,
+                ef_construction: 64,
+                ef_search: 32,
+            },
+            max_elements: 1000,
+            use_quantization: false,
+            cache_size_bytes: 8 * 1024 * 1024,
+            worker_threads: 2,
+        };
+        // Clean up first
+        let _ = std::fs::remove_dir_all("/tmp/waffle_rust_test_db");
+
+        println!("Running waffle_open in Rust test...");
+        let handle = waffle_open(config).unwrap();
+        println!("Running waffle_close in Rust test...");
+        waffle_close(handle).unwrap();
+        println!("Completed waffle_close in Rust test!");
+    }
 }

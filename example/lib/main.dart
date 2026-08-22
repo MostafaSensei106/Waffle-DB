@@ -1,13 +1,11 @@
-// ignore_for_file: avoid_print
-
+import 'dart:io';
+import 'dart:math';
 import 'dart:typed_data';
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:waffle_db/waffle_db.dart';
 import 'package:path_provider/path_provider.dart';
 
-Future<void> main() async {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await RustLib.init();
   runApp(const MyApp());
@@ -19,9 +17,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'WaffleDB Example',
+      title: 'Waffle-DB Color Search',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.teal,
+          brightness: Brightness.dark,
+        ),
         useMaterial3: true,
       ),
       home: const MyHomePage(),
@@ -38,293 +39,704 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   WaffleDatabase? _db;
-  WaffleCollection? _collection;
-  String _log = 'App started...\n';
+  bool _isInitializing = true;
+  int _totalColors = 0;
+  String? _dbPath;
+
+  // Generation state
+  bool _isGenerating = false;
+  double _generationProgress = 0.0;
+  String _generationMessage = '';
+  int _selectedCount = 1000000; // Default to 1 Million colors
+
+  final List<int> _colorCountOptions = [10000, 100000, 1000000, 12000000];
+
+  // Target search color
+  double _targetRed = 0.0;
+  double _targetGreen = 150.0;
+  double _targetBlue = 255.0;
+  int _k = 150;
+
+  // Results state
+  List<WaffleQueryResult> _searchResults = [];
+  double? _searchTimeMs;
 
   @override
   void initState() {
     super.initState();
-    _runAllTests();
+    _initDatabase();
   }
 
-  Future<void> _runAllTests() async {
-    await _initDb();
-    await _testInsertStaticIds();
-    await _testInsertDynamicIds();
-    await _testQueries();
-    await _testDataRetrieval();
-    await _testCollection();
-    await _testDeleteAndFlush();
-    await _closeDb();
-    print('ALL TESTS COMPLETED SUCCESSFULLY.');
-  }
-
-  void _addLog(String msg) {
-    print('LOG: $msg');
+  Future<void> _initDatabase() async {
     setState(() {
-      _log += '$msg\n';
+      _isInitializing = true;
     });
-  }
 
-  Future<void> _initDb() async {
     try {
       final dir = await getApplicationDocumentsDirectory();
-      final dbPath = '${dir.path}/waffle_simple_db';
+      _dbPath = '${dir.path}/waffle_color_db';
 
       final config = WaffleConfig(
         dimension: 3,
-        path: dbPath,
+        path: _dbPath!,
         graphConfig: const WaffleGraphConfig(
           m: 16,
-          metric: WaffleMetric.cosine,
+          metric: WaffleMetric.euclidean, // Euclidean is perfect for RGB space
           efConstruction: 64,
           efSearch: 32,
         ),
-        maxElements: 1000,
+        maxElements: 13000000, // Support up to 12M+ colors
         useQuantization: false,
-        cacheSizeBytes: BigInt.from(8 * 1024 * 1024),
-        workerThreads: 2,
+        cacheSizeBytes: BigInt.from(64 * 1024 * 1024), // 64 MB cache
+        workerThreads: 4,
       );
 
       _db = await WaffleDatabase.open(config);
-      _collection = WaffleCollection(_db!, 'my_collection');
-      _addLog('Database initialized at $dbPath');
+      _totalColors = _db!.count();
     } catch (e) {
-      _addLog('Error initializing DB: $e');
+      _showErrorSnackBar('Error opening database: $e');
+    } finally {
+      setState(() {
+        _isInitializing = false;
+      });
     }
   }
 
-  Future<void> _testInsertStaticIds() async {
-    if (_db == null) return _addLog('DB not initialized');
+  Future<void> _rebuildDatabase() async {
+    if (_isGenerating || _db == null || _dbPath == null) return;
+
+    setState(() {
+      _isGenerating = true;
+      _generationProgress = 0.0;
+      _generationMessage = 'Preparing directory...';
+    });
+
     try {
-      await _db!.insert(
-        'item1',
-        Float32List.fromList([0.1, 0.2, 0.3]),
-        metadata: utf8.encode('Metadata for item1'),
-      );
-      _addLog('Inserted item1 (Static ID)');
-
-      final records = [
-        WaffleRecord.fromList(id: 'batch1', vector: [0.2, 0.3, 0.4]),
-        WaffleRecord.fromList(id: 'batch2', vector: [0.5, 0.1, 0.9]),
-      ];
-      await _db!.insertBatch(records);
-      _addLog('Batch inserted 2 items (Static IDs)');
-
-      final count = _db!.count();
-      _addLog('Total DB count: $count');
-    } catch (e) {
-      _addLog('Error inserting static: $e');
-    }
-  }
-
-  Future<void> _testInsertDynamicIds() async {
-    if (_db == null) return _addLog('DB not initialized');
-    try {
-      final ts = DateTime.now().millisecondsSinceEpoch;
-
-      await _db!.insert(
-        'dynamic_item_$ts',
-        Float32List.fromList([0.11, 0.22, 0.33]),
-        metadata: utf8.encode('Metadata for dynamic item'),
-      );
-      _addLog('Inserted dynamic_item_$ts');
-
-      final records = [
-        WaffleRecord.fromList(id: 'dyn_batch1_$ts', vector: [0.22, 0.33, 0.44]),
-        WaffleRecord.fromList(id: 'dyn_batch2_$ts', vector: [0.55, 0.11, 0.99]),
-      ];
-      await _db!.insertBatch(records);
-      _addLog('Batch inserted 2 items (Dynamic IDs)');
-
-      final count = _db!.count();
-      _addLog('Total DB count: $count');
-    } catch (e) {
-      _addLog('Error inserting dynamic: $e');
-    }
-  }
-
-  Future<void> _testQueries() async {
-    if (_db == null) return _addLog('DB not initialized');
-    try {
-      // Basic query
-      final results = _db!.query(Float32List.fromList([0.1, 0.2, 0.3]), k: 2);
-      _addLog('Basic Query returned ${results.length} results:');
-      for (var r in results) {
-        _addLog(' - ID: ${r.id}, Distance: ${r.distance}');
-      }
-
-      // Query Builder
-      final builderResults = await WaffleQueryBuilder(_db!)
-          .withVectorList([0.5, 0.1, 0.9])
-          .limit(3)
-          .efSearch(64)
-          .includeMetadata(true)
-          .execute();
-
-      _addLog('Query Builder returned ${builderResults.length} results:');
-      for (var r in builderResults) {
-        _addLog(' - ID: ${r.id}, Distance: ${r.distance}');
-      }
-    } catch (e) {
-      _addLog('Error querying: $e');
-    }
-  }
-
-  Future<void> _testDataRetrieval() async {
-    if (_db == null) return _addLog('DB not initialized');
-    try {
-      final ids = _db!.getAllIds();
-      _addLog('All IDs: $ids');
-
-      if (ids.isNotEmpty) {
-        final firstId = ids.first;
-        final vector = _db!.getVector(firstId);
-        final metaBytes = _db!.getMetadata(firstId);
-        String metaStr = metaBytes != null && metaBytes.isNotEmpty
-            ? utf8.decode(metaBytes)
-            : 'null';
-        _addLog('Data for $firstId: Vector=$vector, Meta=$metaStr');
-      }
-    } catch (e) {
-      _addLog('Error retrieving data: $e');
-    }
-  }
-
-  Future<void> _testCollection() async {
-    if (_collection == null) return _addLog('Collection not initialized');
-    try {
-      await _collection!.add(
-        'col_item1',
-        Float32List.fromList([0.9, 0.8, 0.7]),
-      );
-      _addLog('Added col_item1 to collection');
-
-      final results = await _collection!.search(
-        Float32List.fromList([0.9, 0.8, 0.7]),
-        topK: 1,
-      );
-      _addLog('Collection search returned ${results.length} results:');
-      for (var r in results) {
-        _addLog(' - ID: ${r.id}, Distance: ${r.distance}');
-      }
-    } catch (e) {
-      _addLog('Error in collection: $e');
-    }
-  }
-
-  Future<void> _testDeleteAndFlush() async {
-    if (_db == null) return _addLog('DB not initialized');
-    try {
-      final ids = _db!.getAllIds();
-      if (ids.isNotEmpty) {
-        final idToRemove = ids.first;
-        final deleted = await _db!.delete(idToRemove);
-        _addLog('Deleted $idToRemove: $deleted');
-      }
-
-      await _db!.flush();
-      _addLog('Flushed DB to disk');
-    } catch (e) {
-      _addLog('Error deleting/flushing: $e');
-    }
-  }
-
-  Future<void> _closeDb() async {
-    if (_db == null) return _addLog('DB not initialized');
-    try {
+      // 1. Close current DB
       await _db!.close();
-      _addLog('DB Closed');
       _db = null;
-      _collection = null;
+
+      // 2. Clean directory
+      final dir = Directory(_dbPath!);
+      if (dir.existsSync()) {
+        dir.deleteSync(recursive: true);
+      }
+
+      // 3. Open new clean DB
+      final config = WaffleConfig(
+        dimension: 3,
+        path: _dbPath!,
+        graphConfig: const WaffleGraphConfig(
+          m: 16,
+          metric: WaffleMetric.euclidean,
+          efConstruction: 64,
+          efSearch: 32,
+        ),
+        maxElements: 13000000,
+        useQuantization: false,
+        cacheSizeBytes: BigInt.from(64 * 1024 * 1024),
+        workerThreads: 4,
+      );
+      _db = await WaffleDatabase.open(config);
+
+      // 4. Generate colors in chunks of 25,000 to keep UI responsive
+      final random = Random();
+      final total = _selectedCount;
+      const chunkSize = 25000;
+      int inserted = 0;
+
+      while (inserted < total) {
+        final currentChunk = min(chunkSize, total - inserted);
+        final records = <WaffleRecord>[];
+
+        for (int i = 0; i < currentChunk; i++) {
+          final r = random.nextDouble();
+          final g = random.nextDouble();
+          final b = random.nextDouble();
+
+          final rInt = (r * 255).toInt();
+          final gInt = (g * 255).toInt();
+          final bInt = (b * 255).toInt();
+
+          // Encode RGB in ID to retrieve values instantly on query
+          records.add(
+            WaffleRecord(
+              id: 'color_${rInt}_${gInt}_${bInt}_${inserted + i}',
+              vector: Float32List.fromList([r, g, b]),
+            ),
+          );
+        }
+
+        await _db!.insertBatch(records);
+        inserted += currentChunk;
+
+        setState(() {
+          _generationProgress = inserted / total;
+          _generationMessage =
+              'Generated ${inserted.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')} / ${total.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')} colors...';
+        });
+
+        // Yield execution to allow UI rendering
+        await Future.delayed(Duration.zero);
+      }
+
+      setState(() {
+        _generationMessage = 'Flushing database to disk...';
+      });
+      await _db!.flush();
+      _totalColors = _db!.count();
+      _searchResults = [];
+      _searchTimeMs = null;
     } catch (e) {
-      _addLog('Error closing DB: $e');
+      _showErrorSnackBar('Rebuild failed: $e');
+    } finally {
+      setState(() {
+        _isGenerating = false;
+      });
     }
+  }
+
+  void _searchNearestColors() {
+    if (_db == null || _totalColors == 0) {
+      _showErrorSnackBar('Database is empty! Please generate colors first.');
+      return;
+    }
+
+    final queryVector = Float32List.fromList([
+      _targetRed / 255.0,
+      _targetGreen / 255.0,
+      _targetBlue / 255.0,
+    ]);
+
+    final sw = Stopwatch()..start();
+    final results = _db!.query(
+      queryVector,
+      k: _k,
+      efSearch: 48, // slightly higher search resolution
+      includeMetadata: false,
+    );
+    sw.stop();
+
+    setState(() {
+      _searchResults = results;
+      _searchTimeMs = sw.elapsedMicroseconds / 1000.0;
+    });
+  }
+
+  void _randomizeTargetColor() {
+    final random = Random();
+    setState(() {
+      _targetRed = random.nextInt(256).toDouble();
+      _targetGreen = random.nextInt(256).toDouble();
+      _targetBlue = random.nextInt(256).toDouble();
+    });
+    if (_searchResults.isNotEmpty) {
+      _searchNearestColors();
+    }
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.redAccent),
+    );
+  }
+
+  Color _parseColorFromId(String id) {
+    try {
+      final parts = id.split('_');
+      if (parts.length >= 4 && parts[0] == 'color') {
+        final r = int.parse(parts[1]);
+        final g = int.parse(parts[2]);
+        final b = int.parse(parts[3]);
+        return Color.fromARGB(255, r, g, b);
+      }
+    } catch (_) {}
+    return Colors.grey;
+  }
+
+  String _parseRgbTextFromId(String id) {
+    try {
+      final parts = id.split('_');
+      if (parts.length >= 4 && parts[0] == 'color') {
+        return 'RGB(${parts[1]}, ${parts[2]}, ${parts[3]})';
+      }
+    } catch (_) {}
+    return 'RGB(?, ?, ?)';
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final targetColor = Color.fromARGB(
+      255,
+      _targetRed.toInt(),
+      _targetGreen.toInt(),
+      _targetBlue.toInt(),
+    );
+
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: const Text('WaffleDB Simple Example'),
+        title: const Text('🧇 Waffle-DB: Color Semantic Search'),
+        centerTitle: true,
+        backgroundColor: theme.colorScheme.primaryContainer,
+        foregroundColor: theme.colorScheme.onPrimaryContainer,
       ),
-      body: Column(
-        children: [
-          Expanded(
-            flex: 2,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
+      body: _isInitializing
+          ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  ElevatedButton(
-                    onPressed: _initDb,
-                    child: const Text('1. Init DB'),
-                  ),
-                  ElevatedButton(
-                    onPressed: _testInsertStaticIds,
-                    child: const Text('2a. Test Upsert (Static IDs)'),
-                  ),
-                  ElevatedButton(
-                    onPressed: _testInsertDynamicIds,
-                    child: const Text('2b. Test Insert (Dynamic IDs)'),
-                  ),
-                  ElevatedButton(
-                    onPressed: _testQueries,
-                    child: const Text('3. Test Queries (Basic & Builder)'),
-                  ),
-                  ElevatedButton(
-                    onPressed: _testDataRetrieval,
-                    child: const Text('4. Test Data Retrieval'),
-                  ),
-                  ElevatedButton(
-                    onPressed: _testCollection,
-                    child: const Text('5. Test Collection'),
-                  ),
-                  ElevatedButton(
-                    onPressed: _testDeleteAndFlush,
-                    child: const Text('6. Test Delete & Flush'),
-                  ),
-                  ElevatedButton(
-                    onPressed: _closeDb,
-                    child: const Text('7. Close DB'),
-                  ),
-                  ElevatedButton(
-                    onPressed: () => setState(() => _log = 'Log cleared...\n'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red.shade100,
-                    ),
-                    child: const Text(
-                      'Clear Log',
-                      style: TextStyle(color: Colors.red),
-                    ),
-                  ),
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Loading native database components...'),
                 ],
               ),
-            ),
-          ),
-          const Divider(height: 1),
-          Expanded(
-            flex: 3,
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(8.0),
-              color: Colors.black87,
-              child: SingleChildScrollView(
-                child: Text(
-                  _log,
-                  style: const TextStyle(
-                    color: Colors.greenAccent,
-                    fontFamily: 'monospace',
+            )
+          : Row(
+              children: [
+                // Left Panel: Configuration & Generation Controls
+                Expanded(
+                  flex: 3,
+                  child: Container(
+                    color: theme.colorScheme.surfaceContainerLow,
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Database info
+                          Card(
+                            elevation: 0,
+                            color: theme.colorScheme.surfaceContainerHighest,
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Database Status',
+                                    style: theme.textTheme.titleMedium
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: theme.colorScheme.primary,
+                                        ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      const Text('Stored Elements:'),
+                                      Text(
+                                        _totalColors
+                                            .toString()
+                                            .replaceAllMapped(
+                                              RegExp(
+                                                r'(\d{1,3})(?=(\d{3})+(?!\d))',
+                                              ),
+                                              (Match m) => '${m[1]},',
+                                            ),
+                                        style: theme.textTheme.titleLarge
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.bold,
+                                              color:
+                                                  theme.colorScheme.secondary,
+                                            ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Color Generator Section
+                          Text(
+                            '1. Populate Color Database',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          DropdownButtonFormField<int>(
+                            initialValue: _selectedCount,
+                            decoration: const InputDecoration(
+                              labelText: 'Target Database Size',
+                              border: OutlineInputBorder(),
+                            ),
+                            items: _colorCountOptions.map((count) {
+                              String label = count.toString();
+                              if (count == 10000) {
+                                label = '10,000 (Quick)';
+                              }
+                              if (count == 100000) {
+                                label = '100,000 (Medium)';
+                              }
+                              if (count == 1000000) {
+                                label = '1,000,000 (1 Million)';
+                              }
+                              if (count == 12000000) {
+                                label = '12,000,000 (12 Million)';
+                              }
+                              return DropdownMenuItem(
+                                value: count,
+                                child: Text(label),
+                              );
+                            }).toList(),
+                            onChanged: _isGenerating
+                                ? null
+                                : (val) {
+                                    if (val != null) {
+                                      setState(() {
+                                        _selectedCount = val;
+                                      });
+                                    }
+                                  },
+                          ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: ElevatedButton.icon(
+                              onPressed: _isGenerating
+                                  ? null
+                                  : _rebuildDatabase,
+                              icon: const Icon(Icons.palette),
+                              label: const Text('Generate Random Colors'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: theme.colorScheme.primary,
+                                foregroundColor: theme.colorScheme.onPrimary,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          if (_isGenerating) ...[
+                            Text(
+                              _generationMessage,
+                              style: theme.textTheme.bodySmall,
+                            ),
+                            const SizedBox(height: 8),
+                            LinearProgressIndicator(
+                              value: _generationProgress,
+                              color: theme.colorScheme.primary,
+                              backgroundColor:
+                                  theme.colorScheme.surfaceContainerHighest,
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+
+                          const Divider(height: 32),
+
+                          // Target Selection Section
+                          Text(
+                            '2. Target Color Selection',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Swatch
+                          Container(
+                            width: double.infinity,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              color: targetColor,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: theme.colorScheme.outline,
+                                width: 2,
+                              ),
+                            ),
+                            child: Center(
+                              child: Text(
+                                'Target Color\nRGB(${_targetRed.toInt()}, ${_targetGreen.toInt()}, ${_targetBlue.toInt()})',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color:
+                                      ThemeData.estimateBrightnessForColor(
+                                            targetColor,
+                                          ) ==
+                                          Brightness.dark
+                                      ? Colors.white
+                                      : Colors.black,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Sliders
+                          _buildColorSlider(
+                            label: 'Red',
+                            value: _targetRed,
+                            color: Colors.red,
+                            onChanged: (val) {
+                              setState(() {
+                                _targetRed = val;
+                              });
+                            },
+                          ),
+                          _buildColorSlider(
+                            label: 'Green',
+                            value: _targetGreen,
+                            color: Colors.green,
+                            onChanged: (val) {
+                              setState(() {
+                                _targetGreen = val;
+                              });
+                            },
+                          ),
+                          _buildColorSlider(
+                            label: 'Blue',
+                            value: _targetBlue,
+                            color: Colors.blue,
+                            onChanged: (val) {
+                              setState(() {
+                                _targetBlue = val;
+                              });
+                            },
+                          ),
+
+                          // K selection
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [Text('Nearest Neighbors (k): $_k')],
+                          ),
+                          Slider(
+                            value: _k.toDouble(),
+                            min: 1,
+                            max: 200,
+                            divisions: 199,
+                            label: '$_k',
+                            onChanged: (val) {
+                              setState(() {
+                                _k = val.toInt();
+                              });
+                            },
+                          ),
+
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: _randomizeTargetColor,
+                                  child: const Text('Random'),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed:
+                                      _searchResults.isEmpty || _totalColors > 0
+                                      ? _searchNearestColors
+                                      : null,
+                                  child: const Text('Search'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-              ),
+
+                // Right Panel: Results Grid
+                Expanded(
+                  flex: 5,
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (_searchTimeMs != null) ...[
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Query Results',
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Card(
+                                color: theme.colorScheme.secondaryContainer,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12.0,
+                                    vertical: 6.0,
+                                  ),
+                                  child: Text(
+                                    'Search completed in ${_searchTimeMs!.toStringAsFixed(3)} ms',
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: theme
+                                          .colorScheme
+                                          .onSecondaryContainer,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+
+                        Expanded(
+                          child: _searchResults.isEmpty
+                              ? Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.search,
+                                        size: 64,
+                                        color: theme.colorScheme.outline,
+                                      ),
+                                      const SizedBox(height: 16),
+                                      const Text(
+                                        'Select a target color and click Search\nto find nearest matches in milliseconds!',
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : GridView.builder(
+                                  gridDelegate:
+                                      const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 5,
+                                        crossAxisSpacing: 8,
+                                        mainAxisSpacing: 8,
+                                        childAspectRatio: 0.9,
+                                      ),
+                                  itemCount: _searchResults.length,
+                                  itemBuilder: (context, index) {
+                                    final result = _searchResults[index];
+                                    final color = _parseColorFromId(result.id);
+                                    final rgbText = _parseRgbTextFromId(
+                                      result.id,
+                                    );
+                                    final isDark =
+                                        ThemeData.estimateBrightnessForColor(
+                                          color,
+                                        ) ==
+                                        Brightness.dark;
+
+                                    return Tooltip(
+                                      message:
+                                          '${result.id}\nDistance: ${result.distance.toStringAsFixed(6)}',
+                                      child: Card(
+                                        clipBehavior: Clip.antiAlias,
+                                        color: color,
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  CircleAvatar(
+                                                    radius: 10,
+                                                    backgroundColor: isDark
+                                                        ? Colors.white24
+                                                        : Colors.black26,
+                                                    child: Text(
+                                                      '${index + 1}',
+                                                      style: TextStyle(
+                                                        fontSize: 10,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: isDark
+                                                            ? Colors.white
+                                                            : Colors.black,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    rgbText,
+                                                    style: TextStyle(
+                                                      fontSize: 10,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: isDark
+                                                          ? Colors.white
+                                                          : Colors.black,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 2),
+                                                  Text(
+                                                    'Dist: ${result.distance.toStringAsFixed(4)}',
+                                                    style: TextStyle(
+                                                      fontSize: 9,
+                                                      color: isDark
+                                                          ? Colors.white70
+                                                          : Colors.black87,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
+    );
+  }
+
+  Widget _buildColorSlider({
+    required String label,
+    required double value,
+    required Color color,
+    required ValueChanged<double> onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label),
+            Text(
+              value.toInt().toString(),
+              style: TextStyle(color: color, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        Slider(
+          value: value,
+          min: 0,
+          max: 255,
+          activeColor: color,
+          onChanged: onChanged,
+        ),
+      ],
     );
   }
 }
