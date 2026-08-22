@@ -392,9 +392,7 @@ class _MyHomePageState extends State<MyHomePage> {
               children: [
                 _buildResultsHeader(theme),
                 const SizedBox(height: 16),
-                Expanded(
-                  child: _buildResultsGrid(theme, crossAxisCount: 5),
-                ),
+                Expanded(child: _buildResultsGrid(theme, crossAxisCount: 5)),
               ],
             ),
           ),
@@ -426,9 +424,9 @@ class _MyHomePageState extends State<MyHomePage> {
                 const Text('Stored Elements:'),
                 Text(
                   _totalColors.toString().replaceAllMapped(
-                        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-                        (Match m) => '${m[1]},',
-                      ),
+                    RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                    (Match m) => '${m[1]},',
+                  ),
                   style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: theme.colorScheme.secondary,
@@ -473,10 +471,7 @@ class _MyHomePageState extends State<MyHomePage> {
             if (count == 12000000) {
               label = '12,000,000 (12 Million)';
             }
-            return DropdownMenuItem(
-              value: count,
-              child: Text(label),
-            );
+            return DropdownMenuItem(value: count, child: Text(label));
           }).toList(),
           onChanged: _isGenerating
               ? null
@@ -504,10 +499,7 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
         const SizedBox(height: 16),
         if (_isGenerating) ...[
-          Text(
-            _generationMessage,
-            style: theme.textTheme.bodySmall,
-          ),
+          Text(_generationMessage, style: theme.textTheme.bodySmall),
           const SizedBox(height: 8),
           LinearProgressIndicator(
             value: _generationProgress,
@@ -537,17 +529,15 @@ class _MyHomePageState extends State<MyHomePage> {
           decoration: BoxDecoration(
             color: targetColor,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: theme.colorScheme.outline,
-              width: 2,
-            ),
+            border: Border.all(color: theme.colorScheme.outline, width: 2),
           ),
           child: Center(
             child: Text(
               'Target Color\nRGB(${_targetRed.toInt()}, ${_targetGreen.toInt()}, ${_targetBlue.toInt()})',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: ThemeData.estimateBrightnessForColor(targetColor) ==
+                color:
+                    ThemeData.estimateBrightnessForColor(targetColor) ==
                         Brightness.dark
                     ? Colors.white
                     : Colors.black,
@@ -665,11 +655,7 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.search,
-              size: 64,
-              color: theme.colorScheme.outline,
-            ),
+            Icon(Icons.search, size: 64, color: theme.colorScheme.outline),
             const SizedBox(height: 16),
             const Text(
               'Select a target color and click Search\nto find nearest matches in milliseconds!',
@@ -712,8 +698,9 @@ class _MyHomePageState extends State<MyHomePage> {
                     children: [
                       CircleAvatar(
                         radius: 10,
-                        backgroundColor:
-                            isDark ? Colors.white24 : Colors.black26,
+                        backgroundColor: isDark
+                            ? Colors.white24
+                            : Colors.black26,
                         child: Text(
                           '${index + 1}',
                           style: TextStyle(
