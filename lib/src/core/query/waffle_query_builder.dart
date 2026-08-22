@@ -75,7 +75,12 @@ class WaffleQueryBuilder {
       );
     }
 
-    var results = _db.query(_vector!, k: _limit, efSearch: _efSearch);
+    var results = _db.query(
+      _vector!,
+      k: _limit,
+      efSearch: _efSearch,
+      includeMetadata: _includeMetadata,
+    );
 
     // Apply distance threshold filter
     if (_threshold > 0.0) {

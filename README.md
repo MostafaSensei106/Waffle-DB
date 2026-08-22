@@ -294,42 +294,6 @@ for (var res in results) {
 
 The **Waffle-DB** library is meticulously optimized for both blistering speed and strict memory efficiency.
 
-### 📊 Pure Rust Scaling Benchmarks (OpenAI 1536-d Vectors on Desktop/Server)
-
-Stress tested the core engine scaling up to **100,000** OpenAI-sized embeddings (1536 dimensions). At this scale, the index holds roughly ~600MB of pure vector data.
-
-| Elements (N) | Query Latency | Open/Restore Time | Insert Latency |
-| :--- | :--- | :--- | :--- |
-| **1,000** | ~0.76 ms | ~11.64 ms | ~0.97 ms |
-| **10,000** | ~1.71 ms | ~98.38 ms | ~2.60 ms |
-| **50,000** | ~2.17 ms | ~497.96 ms | ~3.63 ms |
-| **100,000** | **~2.17 ms** | **~1.66 s** | **~4.27 ms** |
-
-> **Key Takeaway**: Query performance stays virtually constant around **~2ms** even as the database balloons to 100,000 high-dimensional points. This is workstation-grade performance running natively on your local device.
-
-### 📱 On-Device Edge Benchmarks (Mobile Snapdragon/Apple Silicon 128-d Vectors)
-
-For smaller vector dimensions typical in local mobile models (e.g., MobileNet, lightweight text embeddings), Waffle-DB flies on mobile devices:
-
-| Operation | Total End-to-End Latency (Dart) |
-| :--- | :--- |
-| **Query (k=20, N=500)** | **~396 µs** |
-| **Query (k=50, ef=128)** | **~587 µs** |
-| **Single Insert** | **~200 µs** |
-
-### 📊 End-to-End Dart Performance (1536-d Vectors)
-
-Testing the full pipeline from Dart -> Rust -> Dart using heavy **1536-dimensional** vectors. With new `Sync` architecture.
-
-| Operation | Total End-to-End Latency (Dart) |
-| :--- | :--- |
-| **Query (k=10, N=1,000)** | **~2.59 ms** |
-| **Single Insert** | **~1.28 ms** |
-| **GetVector (By ID)** | **~56.0 µs** |
-| **GetMetadata (By ID)** | **~41.0 µs** |
-| **Delete** | **~786.0 µs** |
-| **Count / GetAllIds** | **~0.1 - 1.1 ms** |
-
 ---
 
 ## 🤝 Contributing

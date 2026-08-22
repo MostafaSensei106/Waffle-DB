@@ -81,10 +81,14 @@ impl WaffleStorage {
                     ivec.len()
                 ));
             }
-            let floats: Vec<f32> = ivec
-                .chunks_exact(4)
-                .map(|chunk| f32::from_ne_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]))
-                .collect();
+            let mut floats = vec![0.0f32; dim];
+            unsafe {
+                std::ptr::copy_nonoverlapping(
+                    ivec.as_ptr(),
+                    floats.as_mut_ptr() as *mut u8,
+                    expected_bytes,
+                );
+            }
             return Ok(Some(floats));
         }
         Ok(None)
@@ -131,17 +135,22 @@ impl WaffleStorage {
 
         for item in self.vectors_tree.iter() {
             let (key, value) = item.map_err(|e| e.to_string())?;
-            let id =
-                String::from_utf8(key.to_vec()).map_err(|e| format!("Invalid UTF-8 key: {}", e))?;
+            let id = std::str::from_utf8(&key)
+                .map_err(|e| format!("Invalid UTF-8 key: {}", e))?
+                .to_owned();
 
             if value.len() != expected_bytes {
                 continue; // skip corrupted entries
             }
 
-            let floats: Vec<f32> = value
-                .chunks_exact(4)
-                .map(|chunk| f32::from_ne_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]))
-                .collect();
+            let mut floats = vec![0.0f32; dim];
+            unsafe {
+                std::ptr::copy_nonoverlapping(
+                    value.as_ptr(),
+                    floats.as_mut_ptr() as *mut u8,
+                    expected_bytes,
+                );
+            }
             batch.push((id, floats));
 
             if batch.len() >= batch_size {
@@ -161,11 +170,13 @@ impl WaffleStorage {
 
     /// Returns all stored string IDs.
     pub fn get_all_ids(&self) -> Result<Vec<String>, String> {
-        let mut ids = Vec::new();
+        let count = self.vectors_tree.len();
+        let mut ids = Vec::with_capacity(count);
         for item in self.vectors_tree.iter() {
             let (key, _) = item.map_err(|e| e.to_string())?;
-            let id =
-                String::from_utf8(key.to_vec()).map_err(|e| format!("Invalid UTF-8 key: {}", e))?;
+            let id = std::str::from_utf8(&key)
+                .map_err(|e| format!("Invalid UTF-8 key: {}", e))?
+                .to_owned();
             ids.push(id);
         }
         Ok(ids)

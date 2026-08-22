@@ -24,17 +24,19 @@ class WaffleCollection {
   /// The name of this collection.
   final String name;
 
+  /// Cache the namespacing prefix.
+  final String _prefix;
+
   /// Creates a new logical collection over the given [WaffleDatabase].
-  WaffleCollection(this._db, this.name);
+  WaffleCollection(this._db, this.name) : _prefix = '$name::';
 
   /// Prefix an ID with the collection name to avoid collisions.
-  String _prefixId(String id) => '$name::$id';
+  String _prefixId(String id) => '$_prefix$id';
 
   /// Strip the collection prefix from an ID.
   String _stripPrefix(String id) {
-    final prefix = '$name::';
-    if (id.startsWith(prefix)) {
-      return id.substring(prefix.length);
+    if (id.startsWith(_prefix)) {
+      return id.substring(_prefix.length);
     }
     return id;
   }
@@ -75,7 +77,7 @@ class WaffleCollection {
     final results = _db.query(queryVector, k: topK, efSearch: efSearch);
     // Filter to only this collection's results and strip prefix
     return results
-        .where((r) => r.id.startsWith('$name::'))
+        .where((r) => r.id.startsWith(_prefix))
         .map(
           (r) => WaffleQueryResult(
             id: _stripPrefix(r.id),
