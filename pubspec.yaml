@@ -1,8 +1,10 @@
 name: waffle_db
-description: "An advanced, high performance local vector database for Flutter, powered by Rust and HNSW graph indexing."
+description: "An advanced, local vector database for Flutter, powered by Rust and HNSW graph indexing."
 version: 0.0.2
 
 repository: https://github.com/MostafaSensei106/Waffle-DB
+issue_tracker: https://github.com/flutter/flutter/issues
+
 license: GPL-version 3.0
 
 topics:
@@ -48,6 +50,3 @@ flutter:
         ffiPlugin: true
       windows:
         ffiPlugin: true
-
-assets:
-- web/pkg
