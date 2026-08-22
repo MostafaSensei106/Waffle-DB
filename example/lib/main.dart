@@ -292,421 +292,466 @@ class _MyHomePageState extends State<MyHomePage> {
                 ],
               ),
             )
-          : Row(
+          : LayoutBuilder(
+              builder: (context, constraints) {
+                final isMobile = constraints.maxWidth < 720;
+                if (isMobile) {
+                  return _buildMobileLayout(theme, targetColor);
+                } else {
+                  return _buildDesktopLayout(theme, targetColor);
+                }
+              },
+            ),
+    );
+  }
+
+  Widget _buildMobileLayout(ThemeData theme, Color targetColor) {
+    return DefaultTabController(
+      length: 2,
+      child: Column(
+        children: [
+          TabBar(
+            tabs: const [
+              Tab(icon: Icon(Icons.settings), text: 'Setup & Selection'),
+              Tab(icon: Icon(Icons.palette), text: 'Search Results'),
+            ],
+            labelColor: theme.colorScheme.primary,
+            unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
+            indicatorColor: theme.colorScheme.primary,
+          ),
+          Expanded(
+            child: TabBarView(
               children: [
-                // Left Panel: Configuration & Generation Controls
-                Expanded(
-                  flex: 3,
-                  child: Container(
-                    color: theme.colorScheme.surfaceContainerLow,
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Database info
-                          Card(
-                            elevation: 0,
-                            color: theme.colorScheme.surfaceContainerHighest,
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Database Status',
-                                    style: theme.textTheme.titleMedium
-                                        ?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                          color: theme.colorScheme.primary,
-                                        ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      const Text('Stored Elements:'),
-                                      Text(
-                                        _totalColors
-                                            .toString()
-                                            .replaceAllMapped(
-                                              RegExp(
-                                                r'(\d{1,3})(?=(\d{3})+(?!\d))',
-                                              ),
-                                              (Match m) => '${m[1]},',
-                                            ),
-                                        style: theme.textTheme.titleLarge
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.bold,
-                                              color:
-                                                  theme.colorScheme.secondary,
-                                            ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Color Generator Section
-                          Text(
-                            '1. Populate Color Database',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          DropdownButtonFormField<int>(
-                            initialValue: _selectedCount,
-                            decoration: const InputDecoration(
-                              labelText: 'Target Database Size',
-                              border: OutlineInputBorder(),
-                            ),
-                            items: _colorCountOptions.map((count) {
-                              String label = count.toString();
-                              if (count == 10000) {
-                                label = '10,000 (Quick)';
-                              }
-                              if (count == 100000) {
-                                label = '100,000 (Medium)';
-                              }
-                              if (count == 1000000) {
-                                label = '1,000,000 (1 Million)';
-                              }
-                              if (count == 12000000) {
-                                label = '12,000,000 (12 Million)';
-                              }
-                              return DropdownMenuItem(
-                                value: count,
-                                child: Text(label),
-                              );
-                            }).toList(),
-                            onChanged: _isGenerating
-                                ? null
-                                : (val) {
-                                    if (val != null) {
-                                      setState(() {
-                                        _selectedCount = val;
-                                      });
-                                    }
-                                  },
-                          ),
-                          const SizedBox(height: 12),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 48,
-                            child: ElevatedButton.icon(
-                              onPressed: _isGenerating
-                                  ? null
-                                  : _rebuildDatabase,
-                              icon: const Icon(Icons.palette),
-                              label: const Text('Generate Random Colors'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: theme.colorScheme.primary,
-                                foregroundColor: theme.colorScheme.onPrimary,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          if (_isGenerating) ...[
-                            Text(
-                              _generationMessage,
-                              style: theme.textTheme.bodySmall,
-                            ),
-                            const SizedBox(height: 8),
-                            LinearProgressIndicator(
-                              value: _generationProgress,
-                              color: theme.colorScheme.primary,
-                              backgroundColor:
-                                  theme.colorScheme.surfaceContainerHighest,
-                            ),
-                            const SizedBox(height: 16),
-                          ],
-
-                          const Divider(height: 32),
-
-                          // Target Selection Section
-                          Text(
-                            '2. Target Color Selection',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-
-                          // Swatch
-                          Container(
-                            width: double.infinity,
-                            height: 100,
-                            decoration: BoxDecoration(
-                              color: targetColor,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: theme.colorScheme.outline,
-                                width: 2,
-                              ),
-                            ),
-                            child: Center(
-                              child: Text(
-                                'Target Color\nRGB(${_targetRed.toInt()}, ${_targetGreen.toInt()}, ${_targetBlue.toInt()})',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color:
-                                      ThemeData.estimateBrightnessForColor(
-                                            targetColor,
-                                          ) ==
-                                          Brightness.dark
-                                      ? Colors.white
-                                      : Colors.black,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Sliders
-                          _buildColorSlider(
-                            label: 'Red',
-                            value: _targetRed,
-                            color: Colors.red,
-                            onChanged: (val) {
-                              setState(() {
-                                _targetRed = val;
-                              });
-                            },
-                          ),
-                          _buildColorSlider(
-                            label: 'Green',
-                            value: _targetGreen,
-                            color: Colors.green,
-                            onChanged: (val) {
-                              setState(() {
-                                _targetGreen = val;
-                              });
-                            },
-                          ),
-                          _buildColorSlider(
-                            label: 'Blue',
-                            value: _targetBlue,
-                            color: Colors.blue,
-                            onChanged: (val) {
-                              setState(() {
-                                _targetBlue = val;
-                              });
-                            },
-                          ),
-
-                          // K selection
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [Text('Nearest Neighbors (k): $_k')],
-                          ),
-                          Slider(
-                            value: _k.toDouble(),
-                            min: 1,
-                            max: 200,
-                            divisions: 199,
-                            label: '$_k',
-                            onChanged: (val) {
-                              setState(() {
-                                _k = val.toInt();
-                              });
-                            },
-                          ),
-
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: OutlinedButton(
-                                  onPressed: _randomizeTargetColor,
-                                  child: const Text('Random'),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: ElevatedButton(
-                                  onPressed:
-                                      _searchResults.isEmpty || _totalColors > 0
-                                      ? _searchNearestColors
-                                      : null,
-                                  child: const Text('Search'),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
+                // Tab 1: Configuration & Color Selection
+                SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildDatabaseStatusCard(theme),
+                      const SizedBox(height: 16),
+                      _buildGeneratorSection(theme),
+                      const Divider(height: 32),
+                      _buildTargetColorSection(theme, targetColor),
+                    ],
                   ),
                 ),
-
-                // Right Panel: Results Grid
-                Expanded(
-                  flex: 5,
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (_searchTimeMs != null) ...[
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Query Results',
-                                style: theme.textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Card(
-                                color: theme.colorScheme.secondaryContainer,
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12.0,
-                                    vertical: 6.0,
-                                  ),
-                                  child: Text(
-                                    'Search completed in ${_searchTimeMs!.toStringAsFixed(3)} ms',
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: theme
-                                          .colorScheme
-                                          .onSecondaryContainer,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                        ],
-
-                        Expanded(
-                          child: _searchResults.isEmpty
-                              ? Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.search,
-                                        size: 64,
-                                        color: theme.colorScheme.outline,
-                                      ),
-                                      const SizedBox(height: 16),
-                                      const Text(
-                                        'Select a target color and click Search\nto find nearest matches in milliseconds!',
-                                        textAlign: TextAlign.center,
-                                      ),
-                                    ],
-                                  ),
-                                )
-                              : GridView.builder(
-                                  gridDelegate:
-                                      const SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: 5,
-                                        crossAxisSpacing: 8,
-                                        mainAxisSpacing: 8,
-                                        childAspectRatio: 0.9,
-                                      ),
-                                  itemCount: _searchResults.length,
-                                  itemBuilder: (context, index) {
-                                    final result = _searchResults[index];
-                                    final color = _parseColorFromId(result.id);
-                                    final rgbText = _parseRgbTextFromId(
-                                      result.id,
-                                    );
-                                    final isDark =
-                                        ThemeData.estimateBrightnessForColor(
-                                          color,
-                                        ) ==
-                                        Brightness.dark;
-
-                                    return Tooltip(
-                                      message:
-                                          '${result.id}\nDistance: ${result.distance.toStringAsFixed(6)}',
-                                      child: Card(
-                                        clipBehavior: Clip.antiAlias,
-                                        color: color,
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(8.0),
-                                          child: Column(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceBetween,
-                                                children: [
-                                                  CircleAvatar(
-                                                    radius: 10,
-                                                    backgroundColor: isDark
-                                                        ? Colors.white24
-                                                        : Colors.black26,
-                                                    child: Text(
-                                                      '${index + 1}',
-                                                      style: TextStyle(
-                                                        fontSize: 10,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                        color: isDark
-                                                            ? Colors.white
-                                                            : Colors.black,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    rgbText,
-                                                    style: TextStyle(
-                                                      fontSize: 10,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      color: isDark
-                                                          ? Colors.white
-                                                          : Colors.black,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 2),
-                                                  Text(
-                                                    'Dist: ${result.distance.toStringAsFixed(4)}',
-                                                    style: TextStyle(
-                                                      fontSize: 9,
-                                                      color: isDark
-                                                          ? Colors.white70
-                                                          : Colors.black87,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                        ),
-                      ],
-                    ),
+                // Tab 2: Results Grid
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildResultsHeader(theme),
+                      const SizedBox(height: 16),
+                      Expanded(
+                        child: _buildResultsGrid(theme, crossAxisCount: 3),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDesktopLayout(ThemeData theme, Color targetColor) {
+    return Row(
+      children: [
+        // Left Panel: Configuration & Generation Controls
+        Expanded(
+          flex: 3,
+          child: Container(
+            color: theme.colorScheme.surfaceContainerLow,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildDatabaseStatusCard(theme),
+                  const SizedBox(height: 16),
+                  _buildGeneratorSection(theme),
+                  const Divider(height: 32),
+                  _buildTargetColorSection(theme, targetColor),
+                ],
+              ),
+            ),
+          ),
+        ),
+
+        // Right Panel: Results Grid
+        Expanded(
+          flex: 5,
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildResultsHeader(theme),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: _buildResultsGrid(theme, crossAxisCount: 5),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDatabaseStatusCard(ThemeData theme) {
+    return Card(
+      elevation: 0,
+      color: theme.colorScheme.surfaceContainerHighest,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Database Status',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Stored Elements:'),
+                Text(
+                  _totalColors.toString().replaceAllMapped(
+                        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                        (Match m) => '${m[1]},',
+                      ),
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.secondary,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGeneratorSection(ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '1. Populate Color Database',
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<int>(
+          initialValue: _selectedCount,
+          decoration: const InputDecoration(
+            labelText: 'Target Database Size',
+            border: OutlineInputBorder(),
+          ),
+          items: _colorCountOptions.map((count) {
+            String label = count.toString();
+            if (count == 10000) {
+              label = '10,000 (Quick)';
+            }
+            if (count == 100000) {
+              label = '100,000 (Medium)';
+            }
+            if (count == 1000000) {
+              label = '1,000,000 (1 Million)';
+            }
+            if (count == 12000000) {
+              label = '12,000,000 (12 Million)';
+            }
+            return DropdownMenuItem(
+              value: count,
+              child: Text(label),
+            );
+          }).toList(),
+          onChanged: _isGenerating
+              ? null
+              : (val) {
+                  if (val != null) {
+                    setState(() {
+                      _selectedCount = val;
+                    });
+                  }
+                },
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          height: 48,
+          child: ElevatedButton.icon(
+            onPressed: _isGenerating ? null : _rebuildDatabase,
+            icon: const Icon(Icons.palette),
+            label: const Text('Generate Random Colors'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: theme.colorScheme.onPrimary,
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        if (_isGenerating) ...[
+          Text(
+            _generationMessage,
+            style: theme.textTheme.bodySmall,
+          ),
+          const SizedBox(height: 8),
+          LinearProgressIndicator(
+            value: _generationProgress,
+            color: theme.colorScheme.primary,
+            backgroundColor: theme.colorScheme.surfaceContainerHighest,
+          ),
+          const SizedBox(height: 16),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildTargetColorSection(ThemeData theme, Color targetColor) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '2. Target Color Selection',
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          width: double.infinity,
+          height: 100,
+          decoration: BoxDecoration(
+            color: targetColor,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: theme.colorScheme.outline,
+              width: 2,
+            ),
+          ),
+          child: Center(
+            child: Text(
+              'Target Color\nRGB(${_targetRed.toInt()}, ${_targetGreen.toInt()}, ${_targetBlue.toInt()})',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: ThemeData.estimateBrightnessForColor(targetColor) ==
+                        Brightness.dark
+                    ? Colors.white
+                    : Colors.black,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        _buildColorSlider(
+          label: 'Red',
+          value: _targetRed,
+          color: Colors.red,
+          onChanged: (val) {
+            setState(() {
+              _targetRed = val;
+            });
+          },
+        ),
+        _buildColorSlider(
+          label: 'Green',
+          value: _targetGreen,
+          color: Colors.green,
+          onChanged: (val) {
+            setState(() {
+              _targetGreen = val;
+            });
+          },
+        ),
+        _buildColorSlider(
+          label: 'Blue',
+          value: _targetBlue,
+          color: Colors.blue,
+          onChanged: (val) {
+            setState(() {
+              _targetBlue = val;
+            });
+          },
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: const [Text('Nearest Neighbors (k):')],
+        ),
+        Slider(
+          value: _k.toDouble(),
+          min: 1,
+          max: 200,
+          divisions: 199,
+          label: '$_k',
+          onChanged: (val) {
+            setState(() {
+              _k = val.toInt();
+            });
+          },
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: _randomizeTargetColor,
+                child: const Text('Random'),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: _searchResults.isEmpty || _totalColors > 0
+                    ? _searchNearestColors
+                    : null,
+                child: const Text('Search'),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildResultsHeader(ThemeData theme) {
+    if (_searchTimeMs == null) return const SizedBox.shrink();
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          'Query Results',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Card(
+          color: theme.colorScheme.secondaryContainer,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 12.0,
+              vertical: 6.0,
+            ),
+            child: Text(
+              'Search completed in ${_searchTimeMs!.toStringAsFixed(3)} ms',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.onSecondaryContainer,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildResultsGrid(ThemeData theme, {required int crossAxisCount}) {
+    if (_searchResults.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.search,
+              size: 64,
+              color: theme.colorScheme.outline,
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Select a target color and click Search\nto find nearest matches in milliseconds!',
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+
+    return GridView.builder(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+        childAspectRatio: 0.9,
+      ),
+      itemCount: _searchResults.length,
+      itemBuilder: (context, index) {
+        final result = _searchResults[index];
+        final color = _parseColorFromId(result.id);
+        final rgbText = _parseRgbTextFromId(result.id);
+        final isDark =
+            ThemeData.estimateBrightnessForColor(color) == Brightness.dark;
+
+        return Tooltip(
+          message:
+              '${result.id}\nDistance: ${result.distance.toStringAsFixed(6)}',
+          child: Card(
+            clipBehavior: Clip.antiAlias,
+            color: color,
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      CircleAvatar(
+                        radius: 10,
+                        backgroundColor:
+                            isDark ? Colors.white24 : Colors.black26,
+                        child: Text(
+                          '${index + 1}',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : Colors.black,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        rgbText,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Dist: ${result.distance.toStringAsFixed(4)}',
+                        style: TextStyle(
+                          fontSize: 9,
+                          color: isDark ? Colors.white70 : Colors.black87,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
