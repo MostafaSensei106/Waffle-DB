@@ -43,7 +43,7 @@ void main() {
   }
 
   setUpAll(() async {
-    await RustLib.init();
+    await WaffleDB.init();
   });
 
   Future<void> runProfile(

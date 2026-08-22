@@ -9,4 +9,4 @@ export 'src/rust/api/config.dart'
     show WaffleConfig, WaffleGraphConfig, WaffleMetric;
 export 'src/rust/api/math.dart' show cosineSimilarity;
 export 'src/rust/api/models.dart' show VectorMetadata, WaffleQueryResult;
-export 'src/rust/frb_generated.dart' show RustLib;
+export 'src/waffle.dart';

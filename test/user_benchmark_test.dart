@@ -7,7 +7,7 @@ import 'package:waffle_db/waffle_db.dart';
 
 void main() {
   test('User Benchmark - Run 10 times', () async {
-    await RustLib.init();
+    await WaffleDB.init();
     final latencies = <double>[];
 
     // We run the benchmark 10 times

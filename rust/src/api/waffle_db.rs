@@ -50,7 +50,9 @@ fn with_engine<F, R>(handle: u64, f: F) -> Result<R, String>
 where
     F: FnOnce(&WaffleEngine) -> Result<R, String>,
 {
-    let reg = registry().lock().map_err(|e| format!("Lock poisoned: {}", e))?;
+    let reg = registry()
+        .lock()
+        .map_err(|e| format!("Lock poisoned: {}", e))?;
     let engine = reg
         .get(&handle)
         .ok_or_else(|| format!("Invalid WaffleDB handle: {}", handle))?;
@@ -62,7 +64,7 @@ where
 // ---------------------------------------------------------------------------
 
 /// Open (or create) a WaffleDB instance. Returns a handle ID.
-/// 
+///
 /// Example:
 /// ```dart
 /// final handle = await waffleOpen(config: myConfig);
@@ -88,7 +90,11 @@ pub fn waffle_open(config: WaffleConfig) -> Result<u64, String> {
                 next_id = *k as u64 + 1;
             }
         }
-        HnswIndex::load(Path::new(&config.path), "index.hnsw", &config.graph_config.metric)?
+        HnswIndex::load(
+            Path::new(&config.path),
+            "index.hnsw",
+            &config.graph_config.metric,
+        )?
     } else {
         let idx = HnswIndex::new(
             config.max_elements as usize,
@@ -110,10 +116,8 @@ pub fn waffle_open(config: WaffleConfig) -> Result<u64, String> {
                 next_id += 1;
             }
 
-            let refs: Vec<(&Vec<f32>, usize)> = insert_data
-                .iter()
-                .map(|(v, id)| (v, *id))
-                .collect();
+            let refs: Vec<(&Vec<f32>, usize)> =
+                insert_data.iter().map(|(v, id)| (v, *id)).collect();
 
             idx.insert_slice(&refs);
             Ok(())
@@ -142,7 +146,7 @@ pub fn waffle_open(config: WaffleConfig) -> Result<u64, String> {
 }
 
 /// Close a WaffleDB instance: flush to disk and release resources.
-/// 
+///
 /// Example:
 /// ```dart
 /// await waffleClose(handle: myHandle);
@@ -152,19 +156,30 @@ pub fn waffle_close(handle: u64) -> Result<(), String> {
         .lock()
         .map_err(|e| format!("Lock poisoned: {}", e))?;
     if let Some(engine) = reg.remove(&handle) {
-        engine.storage.flush().map_err(|e| format!("Storage flush failed: {}", e))?;
-        let registry = engine.id_registry.lock().map_err(|e| format!("IdRegistry lock failed: {}", e))?;
-        let map_data = serde_json::to_string(&registry.id_map).map_err(|e| format!("JSON serialization failed: {}", e))?;
-        std::fs::write(Path::new(&engine.config.path).join("id_map.json"), map_data).map_err(|e| format!("Writing id_map.json failed: {}", e))?;
+        engine
+            .storage
+            .flush()
+            .map_err(|e| format!("Storage flush failed: {}", e))?;
+        let registry = engine
+            .id_registry
+            .lock()
+            .map_err(|e| format!("IdRegistry lock failed: {}", e))?;
+        let map_data = serde_json::to_string(&registry.id_map)
+            .map_err(|e| format!("JSON serialization failed: {}", e))?;
+        std::fs::write(Path::new(&engine.config.path).join("id_map.json"), map_data)
+            .map_err(|e| format!("Writing id_map.json failed: {}", e))?;
         if engine.index.get_nb_point() > 0 {
-            engine.index.save(Path::new(&engine.config.path), "index.hnsw").map_err(|e| format!("Hnsw save failed: {}", e))?;
+            engine
+                .index
+                .save(Path::new(&engine.config.path), "index.hnsw")
+                .map_err(|e| format!("Hnsw save failed: {}", e))?;
         }
     }
     Ok(())
 }
 
 /// Insert a single vector with metadata.
-/// 
+///
 /// Example:
 /// ```dart
 /// await waffleInsert(handle: myHandle, id: "doc1", vector: [0.1, 0.2], metadata: []);
@@ -189,13 +204,14 @@ pub fn waffle_insert(
         engine.storage.write_record(&id, &vector, &metadata)?;
 
         // Assign an internal HNSW ID
-        let internal_id = engine
-            .next_internal_id
-            .fetch_add(1, Ordering::Relaxed) as usize;
+        let internal_id = engine.next_internal_id.fetch_add(1, Ordering::Relaxed) as usize;
 
         // Update maps inside a single lock acquisition to avoid deadlock
         {
-            let mut registry = engine.id_registry.lock().map_err(|e| format!("Lock: {}", e))?;
+            let mut registry = engine
+                .id_registry
+                .lock()
+                .map_err(|e| format!("Lock: {}", e))?;
             registry.id_map.insert(internal_id, id.clone());
             registry.reverse_id_map.insert(id, internal_id);
         }
@@ -210,7 +226,7 @@ pub fn waffle_insert(
 /// Batch insert multiple vectors. Vectors are passed as a flat f32 array.
 /// `vectors_flat` has length `ids.len() * dimension`.
 /// `metadata_list` has the same length as `ids`.
-/// 
+///
 /// Example:
 /// ```dart
 /// await waffleInsertBatch(handle: h, ids: ["1"], vectorsFlat: [0.1], metadataList: [[]]);
@@ -247,14 +263,19 @@ pub fn waffle_insert_batch(
             .fetch_add(n as u64, Ordering::Relaxed) as usize;
 
         {
-            let mut registry = engine.id_registry.lock().map_err(|e| format!("Lock: {}", e))?;
+            let mut registry = engine
+                .id_registry
+                .lock()
+                .map_err(|e| format!("Lock: {}", e))?;
             registry.id_map.reserve(n);
             registry.reverse_id_map.reserve(n);
 
             for (i, string_id) in ids.iter().enumerate() {
                 let internal_id = base_id + i;
                 registry.id_map.insert(internal_id, string_id.clone());
-                registry.reverse_id_map.insert(string_id.clone(), internal_id);
+                registry
+                    .reverse_id_map
+                    .insert(string_id.clone(), internal_id);
             }
         }
 
@@ -276,10 +297,7 @@ pub fn waffle_insert_batch(
         }
 
         // Parallel insert into HNSW
-        let refs: Vec<(&Vec<f32>, usize)> = insert_data
-            .iter()
-            .map(|(v, id)| (v, *id))
-            .collect();
+        let refs: Vec<(&Vec<f32>, usize)> = insert_data.iter().map(|(v, id)| (v, *id)).collect();
         engine.index.insert_slice(&refs);
 
         Ok(())
@@ -288,7 +306,7 @@ pub fn waffle_insert_batch(
 
 /// K-nearest neighbor search. Returns results sorted by distance (ascending).
 /// `ef_search` overrides the config value if > 0, otherwise uses config default.
-/// 
+///
 /// Example:
 /// ```dart
 /// final results = await waffleQuery(handle: h, vector: [0.1], k: 5, efSearch: 0, includeMetadata: true);
@@ -319,11 +337,15 @@ pub fn waffle_query(
 
         let raw_results = engine.index.search(&vector, k as usize, effective_ef);
 
-        let registry = engine.id_registry.lock().map_err(|e| format!("Lock: {}", e))?;
+        let registry = engine
+            .id_registry
+            .lock()
+            .map_err(|e| format!("Lock: {}", e))?;
 
         let mut results: Vec<WaffleQueryResult> = Vec::with_capacity(raw_results.len());
         for (internal_id, distance) in raw_results {
-            let string_id = registry.id_map
+            let string_id = registry
+                .id_map
                 .get(&internal_id)
                 .cloned()
                 .unwrap_or_else(|| format!("__unknown_{}", internal_id));
@@ -342,7 +364,11 @@ pub fn waffle_query(
         }
 
         // Sort by distance ascending
-        results.sort_by(|a, b| a.distance.partial_cmp(&b.distance).unwrap_or(std::cmp::Ordering::Equal));
+        results.sort_by(|a, b| {
+            a.distance
+                .partial_cmp(&b.distance)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
 
         Ok(results)
     })
@@ -350,7 +376,7 @@ pub fn waffle_query(
 
 /// Delete a vector by its string ID. Removes from storage.
 /// Note: HNSW doesn't support true deletion — the index entry remains until rebuild.
-/// 
+///
 /// Example:
 /// ```dart
 /// final removed = await waffleDelete(handle: h, id: "doc1");
@@ -361,7 +387,10 @@ pub fn waffle_delete(handle: u64, id: String) -> Result<bool, String> {
 
         // Remove from reverse map (HNSW entry stays as stale — filtered at query time)
         {
-            let mut registry = engine.id_registry.lock().map_err(|e| format!("Lock: {}", e))?;
+            let mut registry = engine
+                .id_registry
+                .lock()
+                .map_err(|e| format!("Lock: {}", e))?;
             if let Some(internal_id) = registry.reverse_id_map.remove(&id) {
                 registry.id_map.remove(&internal_id);
             }
@@ -372,7 +401,7 @@ pub fn waffle_delete(handle: u64, id: String) -> Result<bool, String> {
 }
 
 /// Get metadata bytes for a vector by ID.
-/// 
+///
 /// Example:
 /// ```dart
 /// final meta = await waffleGetMetadata(handle: h, id: "doc1");
@@ -383,7 +412,7 @@ pub fn waffle_get_metadata(handle: u64, id: String) -> Result<Option<Vec<u8>>, S
 }
 
 /// Get a stored vector by ID.
-/// 
+///
 /// Example:
 /// ```dart
 /// final vec = await waffleGetVector(handle: h, id: "doc1");
@@ -397,7 +426,7 @@ pub fn waffle_get_vector(handle: u64, id: String) -> Result<Option<Vec<f32>>, St
 }
 
 /// Get the number of vectors stored on disk.
-/// 
+///
 /// Example:
 /// ```dart
 /// final count = await waffleCount(handle: h);
@@ -408,7 +437,7 @@ pub fn waffle_count(handle: u64) -> Result<u64, String> {
 }
 
 /// Force flush all pending writes to disk.
-/// 
+///
 /// Example:
 /// ```dart
 /// await waffleFlush(handle: h);
@@ -418,16 +447,19 @@ pub fn waffle_flush(handle: u64) -> Result<(), String> {
         engine.storage.flush()?;
         let registry = engine.id_registry.lock().map_err(|e| e.to_string())?;
         let map_data = serde_json::to_string(&registry.id_map).map_err(|e| e.to_string())?;
-        std::fs::write(Path::new(&engine.config.path).join("id_map.json"), map_data).map_err(|e| e.to_string())?;
+        std::fs::write(Path::new(&engine.config.path).join("id_map.json"), map_data)
+            .map_err(|e| e.to_string())?;
         if engine.index.get_nb_point() > 0 {
-            engine.index.save(Path::new(&engine.config.path), "index.hnsw")?;
+            engine
+                .index
+                .save(Path::new(&engine.config.path), "index.hnsw")?;
         }
         Ok(())
     })
 }
 
 /// Get all stored string IDs.
-/// 
+///
 /// Example:
 /// ```dart
 /// final ids = await waffleGetAllIds(handle: h);

@@ -120,7 +120,7 @@ void main() {
   }
 
   setUpAll(() async {
-    await RustLib.init();
+    await WaffleDB.init();
   });
 
   setUp(() async {

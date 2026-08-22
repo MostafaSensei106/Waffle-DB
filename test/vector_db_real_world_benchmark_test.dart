@@ -462,7 +462,7 @@ class GetAllIdsBenchmark extends AsyncBenchmarkBase {
 void main() {
   group('WaffleDB Real-World Benchmark Suite', () {
     test('Run benchmark harness for all operations', () async {
-      await RustLib.init();
+      await WaffleDB.init();
 
       print('\n==================================================');
       print('          WAFFLE-DB PERFORMANCE BENCHMARK          ');
