@@ -4,7 +4,7 @@
 </p>
 
 <p align="center">
-  <strong>An advanced, high performance local vector database for Flutter, powered by Rust and HNSW graph indexing.</strong><br>
+  <strong>An advanced, local vector database for Flutter, powered by Rust and HNSW graph indexing.</strong><br>
   Deliver <i>workstation grade</i> vector search, <i>1536-bit embedding support</i>, and <i>real-time similarity matching</i> in your local apps.
 </p>
 
@@ -36,9 +36,19 @@ Most local databases in Flutter are designed for standard JSON or SQL data. They
 | **Detailed Metadata** | ❌ | ✅ | **🩺 Full Metadata Access** |
 | **OpenAI Ready**| ❌ | ❌ | **📈 Native 1536d / 4096d Support** |
 
+### 🛠️ Tech Stack
+
+* **Host Languages**: Dart 3.0+ (Flutter) & Rust 1.75+
+* **Bridge Engine**: `flutter_rust_bridge` v2.12.0
+* **Indexing Core**: `hnsw_rs` (High Performance Hierarchical Navigable Small World graphs)
+* **Persistence Engine**: `sled` (Embedded key-value transactional database)
+* **Parallel processing**: `rayon` (data-parallelism library for Rust)
+
+---
+
 ## 🏎️ Performance Benchmarks
 
-Waffle-DB is engineered for sub-millisecond latencies. Below are the authentic, 100% real performance measurements executed on an **AMD Ryzen 7 5800H** processor. These results represent actual native Rust storage engine/index FFI roundtrip calls under the official Dart `benchmark_harness` (no mock environments or simulated parameters):
+Waffle-DB is engineered for sub millisecond latencies. Performance measurements executed on an **AMD Ryzen 7 5800H** processor.
 
 | Database Operation | Average Latency (Microseconds) | Average Latency (Milliseconds) | Real-world Throughput |
 | :--- | :---: | :---: | :--- |
@@ -306,13 +316,6 @@ for (var res in results) {
   }
 }
 ```
-
----
-
-## ⚡ Performance Benchmarks
-
-The **Waffle-DB** library is meticulously optimized for both blistering speed and strict memory efficiency.
-
 ---
 
 ## 🤝 Contributing
