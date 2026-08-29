@@ -276,7 +276,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('🧇 Waffle-DB: Color Semantic Search'),
+        title: const Text('Waffle-DB'),
         centerTitle: true,
         backgroundColor: theme.colorScheme.primaryContainer,
         foregroundColor: theme.colorScheme.onPrimaryContainer,
