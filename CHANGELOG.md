@@ -1,3 +1,9 @@
+# 0.0.2+1
+
+- **OHOS Platform Support**: Introduced OpenHarmony (OHOS) SDK environment variable retrieval in `Environment`, updated `Rustup` toolchain resolution, added target configurations for OHOS in `Target`, updated CMake configuration to handle OHOS builds, and modified Gradle plugin to utilize `ExecOperations`.
+- **Dependencies & Bindings**: Updated dependencies in `pubspec.yaml` and `Cargo.toml` to latest versions and regenerated Rust API files using `flutter_rust_bridge` version `2.13.0`.
+
+
 ## 0.0.2
 
 - **HNSW Save Reliability**: Fixed a bug where closing or flushing an empty HNSW index returned an error by skipping index dump if the graph contains 0 elements.
