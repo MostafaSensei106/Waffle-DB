@@ -44,6 +44,17 @@ class WaffleConfig {
   static Future<WaffleConfig> default_() =>
       RustLib.instance.api.crateApiConfigWaffleConfigDefault();
 
+  /// Creates a configuration optimized for high-volume datasets (1M+ vectors).
+  ///
+  /// Example:
+  /// ```dart
+  /// final config = await WaffleConfig.highVolumeProfile(path: 'db', dimension: 128);
+  /// ```
+  static Future<WaffleConfig> highVolumeProfile(
+          {required String path, required int dimension}) =>
+      RustLib.instance.api.crateApiConfigWaffleConfigHighVolumeProfile(
+          path: path, dimension: dimension);
+
   /// Creates a configuration optimized for mobile devices.
   ///
   /// Example:

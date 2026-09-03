@@ -48,22 +48,34 @@ Most local databases in Flutter are designed for standard JSON or SQL data. They
 
 ## 🏎️ Performance Benchmarks
 
-Waffle-DB is engineered for sub millisecond latencies. Performance measurements executed on an **AMD Ryzen 7 5800H** processor.
+Waffle-DB is engineered for sub-millisecond latencies. The latest benchmarks evaluate core operations and stress test edge percentiles to guarantee stability at scale.
+
+### Core Operation Latencies
 
 | Database Operation | Average Latency (Microseconds) | Average Latency (Milliseconds) | Real-world Throughput |
 | :--- | :---: | :---: | :--- |
-| **Database Open & Close** | 1,494.1 us | 1.49 ms | ~670 initialization cycles/sec |
-| **Insert Single Vector (128-dim)** | 112.3 us | 0.11 ms | **~8,900 inserts/sec** |
-| **Insert Batch (1,000 vectors)** | 27,714.2 us | 27.71 ms | **~36,000 vectors/sec ingested** |
-| **Query KNN (k=10, efSearch=32, no metadata)** | 141.6 us | 0.14 ms | **~7,060 similarity queries/sec** |
-| **Query KNN (k=10, efSearch=32, with metadata)** | 141.3 us | 0.14 ms | **~7,070 queries/sec** (zero overhead retrieval) |
-| **Get Vector by ID** | 14.1 us | 0.01 ms | ~70,000 random reads/sec |
-| **Get Metadata by ID** | 15.5 us | 0.01 ms | ~64,500 random reads/sec |
-| **Delete Record** | 91.4 us | 0.09 ms | ~10,900 deletes/sec |
-| **Get All IDs (1,000 elements)** | 1,144.8 us | 1.14 ms | ~870 scanner runs/sec |
+| **Database Open & Close** | 1,286.4 µs | 1.29 ms | ~775 initialization cycles/sec |
+| **Insert Single Vector (128-dim)** | 163.3 µs | 0.16 ms | **~6,100 inserts/sec** |
+| **Insert Batch (1,000 vectors)** | 40,929.3 µs | 40.93 ms | **~24,400 vectors/sec ingested** |
+| **Query KNN (k=10, efSearch=32, no metadata)** | 132.3 µs | 0.13 ms | **~7,500 similarity queries/sec** |
+| **Query KNN (k=10, efSearch=32, with metadata)** | 131.3 µs | 0.13 ms | **~7,600 queries/sec** (zero overhead retrieval) |
+| **Get Vector by ID** | 11.0 µs | 0.01 ms | ~90,000 random reads/sec |
+| **Get Metadata by ID** | 10.5 µs | 0.01 ms | ~95,000 random reads/sec |
+| **Delete Record** | 43.6 µs | 0.04 ms | ~22,900 deletes/sec |
+| **Get All IDs (1,000 elements)** | 491.2 µs | 0.49 ms | ~2,000 scanner runs/sec |
+
+### Stress Test & Load Percentiles
+
+During rigorous stress testing (5000+ operations in a tight loop), Waffle-DB guarantees low latency tails under pressure.
+
+| Operation (Stress Test) | p50 (Median) | p90 (High Load) | p95 (Heavy Load) | p99 (Spike) | Max (Tail) |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **5,000 Single Insertions** | 0.61 ms | 0.86 ms | 0.95 ms | 1.17 ms | 1.81 ms |
+| **20 Batches (1000/batch)** | 82.98 ms | 123.43 ms | 126.17 ms | 126.17 ms | 126.17 ms |
+| **5,000 KNN Queries (k=10)** | 0.43 ms | 0.73 ms | 0.99 ms | 1.22 ms | 4.24 ms |
 
 > [!NOTE]
-> Benchmarks are run inside a Dart test environment calling the Rust engine via native FFI bindings. You can reproduce these measurements by running `flutter test test/vector_db_real_world_benchmark_test.dart`.
+> Benchmarks are run inside a Dart test environment calling the Rust engine via native FFI bindings. You can reproduce these measurements by running `flutter test test/vector_db_real_world_benchmark_test.dart` and `flutter test test/stress_test.dart`.
 
 ---
 

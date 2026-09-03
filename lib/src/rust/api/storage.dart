@@ -4,10 +4,10 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import '../frb_generated.dart';
-import 'config.dart';
 import 'models.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+// These functions are ignored because they are not marked as `pub`: `get_internal_id`, `get_string_id`, `init`, `load_all_id_mappings`, `remove_id_mapping`, `write_id_mapping`, `write_id_mappings_batch`
 // These functions are ignored because they have generic arguments: `load_vectors_in_batches`
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WaffleStorage>>
@@ -23,10 +23,6 @@ abstract class WaffleStorage implements RustOpaqueInterface {
 
   /// Returns all stored string IDs.
   Future<List<String>> getAllIds();
-
-  /// Initialize the storage using the given configuration.
-  static Future<WaffleStorage> init({required WaffleConfig config}) =>
-      RustLib.instance.api.crateApiStorageWaffleStorageInit(config: config);
 
   /// Read raw metadata bytes by ID.
   Future<Uint8List?> readMetadata({required String id});

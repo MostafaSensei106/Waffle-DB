@@ -459,6 +459,57 @@ class GetAllIdsBenchmark extends AsyncBenchmarkBase {
   }
 }
 
+// 10. Million Insert Benchmark
+class MillionInsertBenchmark extends AsyncBenchmarkBase {
+  final String path = '/tmp/waffle_bench_million';
+  late WaffleDatabase db;
+  final _random = Random(42);
+  static const int totalVectors = 1000000;
+  static const int batchSize = 50000;
+  static const int dimension = 128;
+
+  MillionInsertBenchmark()
+      : super("Insert 1M Vectors (128-dim, batches of 50K)");
+
+  @override
+  Future<void> setup() async {
+    cleanPath(path);
+    final config = await WaffleConfig.highVolumeProfile(
+      dimension: dimension,
+      path: path,
+    );
+    db = await WaffleDatabase.open(config);
+  }
+
+  @override
+  Future<void> run() async {
+    int inserted = 0;
+
+    for (int batch = 0; batch * batchSize < totalVectors; batch++) {
+      final currentBatchSize = min(batchSize, totalVectors - inserted);
+      final records = List.generate(currentBatchSize, (i) {
+        final idx = inserted + i;
+        return WaffleRecord(
+          id: 'v-$idx',
+          vector: Float32List.fromList(
+            List.generate(dimension, (_) => _random.nextDouble()),
+          ),
+          metadata: Uint8List.fromList([idx & 0xFF, (idx >> 8) & 0xFF]),
+        );
+      });
+
+      await db.insertBatch(records);
+      inserted += currentBatchSize;
+    }
+  }
+
+  @override
+  Future<void> teardown() async {
+    await db.close();
+    cleanPath(path);
+  }
+}
+
 void main() {
   group('WaffleDB Real-World Benchmark Suite', () {
     test('Run benchmark harness for all operations', () async {
@@ -494,6 +545,10 @@ void main() {
 
       final getAllIds = GetAllIdsBenchmark();
       await getAllIds.report();
+
+      // Commenting out the million benchmark by default to not slow down the regular test suite
+      // final millionInsert = MillionInsertBenchmark();
+      // await millionInsert.report();
 
       print('==================================================\n');
     });

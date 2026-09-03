@@ -22,3 +22,7 @@ pub struct WaffleQueryResult {
     /// Optional metadata payload if requested during the search.
     pub metadata: Option<Vec<u8>>,
 }
+
+/// Dummy function to force FRB to generate bindings for VectorMetadata
+#[flutter_rust_bridge::frb(sync)]
+pub fn _dummy_export_vector_metadata(_meta: VectorMetadata) {}

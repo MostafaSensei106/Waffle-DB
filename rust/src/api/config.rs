@@ -152,4 +152,27 @@ impl WaffleConfig {
             worker_threads: num_cpus::get() as u32,
         }
     }
+
+    /// Creates a configuration optimized for high-volume datasets (1M+ vectors).
+    ///
+    /// Example:
+    /// ```dart
+    /// final config = await WaffleConfig.highVolumeProfile(path: 'db', dimension: 128);
+    /// ```
+    pub fn high_volume_profile(path: &str, dimension: u32) -> Self {
+        Self {
+            dimension,
+            path: path.to_string(),
+            graph_config: WaffleGraphConfig {
+                m: 16,           // Balance between memory and recall
+                metric: WaffleMetric::Cosine,
+                ef_construction: 64,  // Good enough for large datasets
+                ef_search: 32,
+            },
+            max_elements: 10_000_000,
+            use_quantization: true,   // Critical for memory at scale
+            cache_size_bytes: 256 * 1024 * 1024,  // 256 MB cache
+            worker_threads: num_cpus::get() as u32,
+        }
+    }
 }

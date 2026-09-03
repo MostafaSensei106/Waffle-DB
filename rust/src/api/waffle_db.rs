@@ -6,7 +6,7 @@
 
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Mutex, OnceLock};
+use std::sync::{OnceLock, RwLock};
 
 use crate::api::config::WaffleConfig;
 use crate::api::math::HnswIndex;
@@ -32,7 +32,7 @@ struct WaffleEngine {
     /// Monotonically increasing internal ID counter for HNSW node IDs.
     next_internal_id: AtomicU64,
     /// Registry mapping internal IDs to/from user-facing string IDs.
-    id_registry: Mutex<IdRegistry>,
+    id_registry: RwLock<IdRegistry>,
 }
 
 // ---------------------------------------------------------------------------
@@ -41,9 +41,9 @@ struct WaffleEngine {
 
 static HANDLE_COUNTER: AtomicU64 = AtomicU64::new(1);
 
-fn registry() -> &'static Mutex<HashMap<u64, WaffleEngine>> {
-    static REGISTRY: OnceLock<Mutex<HashMap<u64, WaffleEngine>>> = OnceLock::new();
-    REGISTRY.get_or_init(|| Mutex::new(HashMap::new()))
+fn registry() -> &'static RwLock<HashMap<u64, WaffleEngine>> {
+    static REGISTRY: OnceLock<RwLock<HashMap<u64, WaffleEngine>>> = OnceLock::new();
+    REGISTRY.get_or_init(|| RwLock::new(HashMap::new()))
 }
 
 fn with_engine<F, R>(handle: u64, f: F) -> Result<R, String>
@@ -51,7 +51,7 @@ where
     F: FnOnce(&WaffleEngine) -> Result<R, String>,
 {
     let reg = registry()
-        .lock()
+        .read()
         .map_err(|e| format!("Lock poisoned: {}", e))?;
     let engine = reg
         .get(&handle)
@@ -75,21 +75,28 @@ pub fn waffle_open(config: WaffleConfig) -> Result<u64, String> {
     let index_file = Path::new(&config.path).join("index.hnsw.hnsw.graph");
     let map_file = Path::new(&config.path).join("id_map.json");
 
-    let total_count = storage.count() as usize;
-    let mut id_map: HashMap<usize, String> = HashMap::with_capacity(total_count);
-    let mut reverse_id_map: HashMap<String, usize> = HashMap::with_capacity(total_count);
-    let mut next_id: u64 = 0;
-
-    let index = if map_file.exists() && index_file.exists() {
-        let map_data = fs::read_to_string(&map_file).map_err(|e| e.to_string())?;
-        id_map = serde_json::from_str(&map_data).map_err(|e| e.to_string())?;
-        reverse_id_map = HashMap::with_capacity(id_map.len());
-        for (k, v) in &id_map {
-            reverse_id_map.insert(v.clone(), *k);
-            if *k as u64 >= next_id {
-                next_id = *k as u64 + 1;
+    if map_file.exists() {
+        // Read old JSON, write to sled trees, delete JSON file
+        if let Ok(map_data) = fs::read_to_string(&map_file) {
+            if let Ok(id_map) = serde_json::from_str::<HashMap<usize, String>>(&map_data) {
+                for (internal_id, string_id) in id_map {
+                    let _ = storage.write_id_mapping(internal_id, &string_id);
+                }
             }
         }
+        let _ = fs::remove_file(&map_file);
+    }
+
+    let mut id_map = HashMap::new();
+    let mut reverse_id_map = HashMap::new();
+    let mut next_id: u64 = 0;
+
+    let index = if index_file.exists() {
+        let (loaded_id_map, loaded_reverse_id_map, loaded_next_id) = storage.load_all_id_mappings()?;
+        id_map = loaded_id_map;
+        reverse_id_map = loaded_reverse_id_map;
+        next_id = loaded_next_id;
+        
         HnswIndex::load(
             Path::new(&config.path),
             "index.hnsw",
@@ -111,8 +118,9 @@ pub fn waffle_open(config: WaffleConfig) -> Result<u64, String> {
             for (string_id, vec_data) in batch {
                 let internal_id = next_id as usize;
                 id_map.insert(internal_id, string_id.clone());
-                reverse_id_map.insert(string_id, internal_id);
+                reverse_id_map.insert(string_id.clone(), internal_id);
                 insert_data.push((vec_data, internal_id));
+                let _ = storage.write_id_mapping(internal_id, &string_id);
                 next_id += 1;
             }
 
@@ -130,7 +138,7 @@ pub fn waffle_open(config: WaffleConfig) -> Result<u64, String> {
         storage,
         config,
         next_internal_id: AtomicU64::new(next_id),
-        id_registry: Mutex::new(IdRegistry {
+        id_registry: RwLock::new(IdRegistry {
             id_map,
             reverse_id_map,
         }),
@@ -138,7 +146,7 @@ pub fn waffle_open(config: WaffleConfig) -> Result<u64, String> {
 
     let handle = HANDLE_COUNTER.fetch_add(1, Ordering::Relaxed);
     registry()
-        .lock()
+        .write()
         .map_err(|e| format!("Lock poisoned: {}", e))?
         .insert(handle, engine);
 
@@ -153,21 +161,13 @@ pub fn waffle_open(config: WaffleConfig) -> Result<u64, String> {
 /// ```
 pub fn waffle_close(handle: u64) -> Result<(), String> {
     let mut reg = registry()
-        .lock()
+        .write()
         .map_err(|e| format!("Lock poisoned: {}", e))?;
     if let Some(engine) = reg.remove(&handle) {
         engine
             .storage
             .flush()
             .map_err(|e| format!("Storage flush failed: {}", e))?;
-        let registry = engine
-            .id_registry
-            .lock()
-            .map_err(|e| format!("IdRegistry lock failed: {}", e))?;
-        let map_data = serde_json::to_string(&registry.id_map)
-            .map_err(|e| format!("JSON serialization failed: {}", e))?;
-        std::fs::write(Path::new(&engine.config.path).join("id_map.json"), map_data)
-            .map_err(|e| format!("Writing id_map.json failed: {}", e))?;
         if engine.index.get_nb_point() > 0 {
             engine
                 .index
@@ -210,11 +210,13 @@ pub fn waffle_insert(
         {
             let mut registry = engine
                 .id_registry
-                .lock()
+                .write()
                 .map_err(|e| format!("Lock: {}", e))?;
             registry.id_map.insert(internal_id, id.clone());
-            registry.reverse_id_map.insert(id, internal_id);
+            registry.reverse_id_map.insert(id.clone(), internal_id);
         }
+        
+        let _ = engine.storage.write_id_mapping(internal_id, &id);
 
         // Insert into HNSW index
         engine.index.insert(&vector, internal_id);
@@ -231,6 +233,8 @@ pub fn waffle_insert(
 /// ```dart
 /// await waffleInsertBatch(handle: h, ids: ["1"], vectorsFlat: [0.1], metadataList: [[]]);
 /// ```
+const BATCH_CHUNK_SIZE: usize = 50_000;
+
 pub fn waffle_insert_batch(
     handle: u64,
     ids: Vec<String>,
@@ -262,43 +266,52 @@ pub fn waffle_insert_batch(
             .next_internal_id
             .fetch_add(n as u64, Ordering::Relaxed) as usize;
 
-        {
-            let mut registry = engine
-                .id_registry
-                .lock()
-                .map_err(|e| format!("Lock: {}", e))?;
-            registry.id_map.reserve(n);
-            registry.reverse_id_map.reserve(n);
+        for chunk_start in (0..n).step_by(BATCH_CHUNK_SIZE) {
+            let chunk_end = (chunk_start + BATCH_CHUNK_SIZE).min(n);
+            let chunk_size = chunk_end - chunk_start;
 
-            for (i, string_id) in ids.iter().enumerate() {
-                let internal_id = base_id + i;
-                registry.id_map.insert(internal_id, string_id.clone());
-                registry
-                    .reverse_id_map
-                    .insert(string_id.clone(), internal_id);
+            let mut mappings = Vec::with_capacity(chunk_size);
+            {
+                let mut registry = engine
+                    .id_registry
+                    .write()
+                    .map_err(|e| format!("Lock: {}", e))?;
+                
+                for i in chunk_start..chunk_end {
+                    let string_id = &ids[i];
+                    let internal_id = base_id + i;
+                    registry.id_map.insert(internal_id, string_id.clone());
+                    registry
+                        .reverse_id_map
+                        .insert(string_id.clone(), internal_id);
+                    mappings.push((internal_id, string_id.as_str()));
+                }
             }
-        }
 
-        // Persist all records to disk directly using flat vector slices to avoid cloning/allocating Vecs
-        for (i, string_id) in ids.iter().enumerate() {
-            let start = i * dim;
-            let end = start + dim;
-            engine
-                .storage
-                .write_record(string_id, &vectors_flat[start..end], &metadata_list[i])?;
-        }
+            let _ = engine.storage.write_id_mappings_batch(&mappings);
 
-        // Copy vectors once for HNSW index insertion
-        let mut insert_data: Vec<(Vec<f32>, usize)> = Vec::with_capacity(n);
-        for (i, _) in ids.iter().enumerate() {
-            let start = i * dim;
-            let end = start + dim;
-            insert_data.push((vectors_flat[start..end].to_vec(), base_id + i));
-        }
+            // Persist all records to disk directly using flat vector slices to avoid cloning/allocating Vecs
+            for i in chunk_start..chunk_end {
+                let string_id = &ids[i];
+                let start = i * dim;
+                let end = start + dim;
+                engine
+                    .storage
+                    .write_record(string_id, &vectors_flat[start..end], &metadata_list[i])?;
+            }
 
-        // Parallel insert into HNSW
-        let refs: Vec<(&Vec<f32>, usize)> = insert_data.iter().map(|(v, id)| (v, *id)).collect();
-        engine.index.insert_slice(&refs);
+            // Copy vectors once for HNSW index insertion
+            let mut insert_data: Vec<(Vec<f32>, usize)> = Vec::with_capacity(chunk_size);
+            for i in chunk_start..chunk_end {
+                let start = i * dim;
+                let end = start + dim;
+                insert_data.push((vectors_flat[start..end].to_vec(), base_id + i));
+            }
+
+            // Parallel insert into HNSW
+            let refs: Vec<(&Vec<f32>, usize)> = insert_data.iter().map(|(v, id)| (v, *id)).collect();
+            engine.index.insert_slice(&refs);
+        }
 
         Ok(())
     })
@@ -339,7 +352,7 @@ pub fn waffle_query(
 
         let registry = engine
             .id_registry
-            .lock()
+            .read()
             .map_err(|e| format!("Lock: {}", e))?;
 
         let mut results: Vec<WaffleQueryResult> = Vec::with_capacity(raw_results.len());
@@ -389,10 +402,11 @@ pub fn waffle_delete(handle: u64, id: String) -> Result<bool, String> {
         {
             let mut registry = engine
                 .id_registry
-                .lock()
+                .write()
                 .map_err(|e| format!("Lock: {}", e))?;
             if let Some(internal_id) = registry.reverse_id_map.remove(&id) {
                 registry.id_map.remove(&internal_id);
+                let _ = engine.storage.remove_id_mapping(internal_id, &id);
             }
         }
 
@@ -445,10 +459,6 @@ pub fn waffle_count(handle: u64) -> Result<u64, String> {
 pub fn waffle_flush(handle: u64) -> Result<(), String> {
     with_engine(handle, |engine| {
         engine.storage.flush()?;
-        let registry = engine.id_registry.lock().map_err(|e| e.to_string())?;
-        let map_data = serde_json::to_string(&registry.id_map).map_err(|e| e.to_string())?;
-        std::fs::write(Path::new(&engine.config.path).join("id_map.json"), map_data)
-            .map_err(|e| e.to_string())?;
         if engine.index.get_nb_point() > 0 {
             engine
                 .index

@@ -7,13 +7,33 @@ use std::path::Path;
 
 use crate::api::config::WaffleMetric;
 
-/// Creates an HNSW index with the correct distance metric based on config.
-/// Returns a type-erased wrapper since Hnsw is generic over the distance type.
-#[frb(ignore)]
-pub enum HnswIndex {
+pub enum HnswIndexEnum {
     Cosine(Hnsw<'static, f32, DistCosine>),
     Euclidean(Hnsw<'static, f32, DistL2>),
     DotProduct(Hnsw<'static, f32, DistDot>),
+}
+
+/// Creates an HNSW index with the correct distance metric based on config.
+/// Returns a type-erased wrapper since Hnsw is generic over the distance type.
+#[frb(ignore)]
+pub struct HnswIndex {
+    inner: HnswIndexEnum,
+    reloader_ptr: usize,
+}
+
+// Hnsw is Send/Sync, we just wrap it and a pointer.
+unsafe impl Send for HnswIndex {}
+unsafe impl Sync for HnswIndex {}
+
+impl Drop for HnswIndex {
+    fn drop(&mut self) {
+        if self.reloader_ptr != 0 {
+            // Safety: we allocated this via Box::leak in `load`
+            unsafe {
+                let _ = Box::from_raw(self.reloader_ptr as *mut HnswIo);
+            }
+        }
+    }
 }
 
 impl HnswIndex {
@@ -24,48 +44,49 @@ impl HnswIndex {
         ef_construction: usize,
         metric: &WaffleMetric,
     ) -> Self {
-        match metric {
+        let inner = match metric {
             WaffleMetric::Cosine => {
-                HnswIndex::Cosine(Hnsw::new(m, max_elements, 16, ef_construction, DistCosine))
+                HnswIndexEnum::Cosine(Hnsw::new(m, max_elements, 16, ef_construction, DistCosine))
             }
             WaffleMetric::Euclidean => {
-                HnswIndex::Euclidean(Hnsw::new(m, max_elements, 16, ef_construction, DistL2))
+                HnswIndexEnum::Euclidean(Hnsw::new(m, max_elements, 16, ef_construction, DistL2))
             }
             WaffleMetric::DotProduct => {
-                HnswIndex::DotProduct(Hnsw::new(m, max_elements, 16, ef_construction, DistDot))
+                HnswIndexEnum::DotProduct(Hnsw::new(m, max_elements, 16, ef_construction, DistDot))
             }
-        }
+        };
+        Self { inner, reloader_ptr: 0 }
     }
 
     pub fn insert(&self, data: &[f32], id: usize) {
-        match self {
-            HnswIndex::Cosine(h) => h.insert((data, id)),
-            HnswIndex::Euclidean(h) => h.insert((data, id)),
-            HnswIndex::DotProduct(h) => h.insert((data, id)),
+        match &self.inner {
+            HnswIndexEnum::Cosine(h) => h.insert((data, id)),
+            HnswIndexEnum::Euclidean(h) => h.insert((data, id)),
+            HnswIndexEnum::DotProduct(h) => h.insert((data, id)),
         }
     }
 
     pub fn insert_slice(&self, data: &[(&Vec<f32>, usize)]) {
-        match self {
-            HnswIndex::Cosine(h) => h.parallel_insert(data),
-            HnswIndex::Euclidean(h) => h.parallel_insert(data),
-            HnswIndex::DotProduct(h) => h.parallel_insert(data),
+        match &self.inner {
+            HnswIndexEnum::Cosine(h) => h.parallel_insert(data),
+            HnswIndexEnum::Euclidean(h) => h.parallel_insert(data),
+            HnswIndexEnum::DotProduct(h) => h.parallel_insert(data),
         }
     }
 
     pub fn search(&self, query: &[f32], k: usize, ef_search: usize) -> Vec<(usize, f32)> {
-        match self {
-            HnswIndex::Cosine(h) => h
+        match &self.inner {
+            HnswIndexEnum::Cosine(h) => h
                 .search(query, k, ef_search)
                 .into_iter()
                 .map(|n| (n.d_id, n.distance))
                 .collect(),
-            HnswIndex::Euclidean(h) => h
+            HnswIndexEnum::Euclidean(h) => h
                 .search(query, k, ef_search)
                 .into_iter()
                 .map(|n| (n.d_id, n.distance))
                 .collect(),
-            HnswIndex::DotProduct(h) => h
+            HnswIndexEnum::DotProduct(h) => h
                 .search(query, k, ef_search)
                 .into_iter()
                 .map(|n| (n.d_id, n.distance))
@@ -74,24 +95,24 @@ impl HnswIndex {
     }
 
     pub fn get_nb_point(&self) -> usize {
-        match self {
-            HnswIndex::Cosine(h) => h.get_nb_point(),
-            HnswIndex::Euclidean(h) => h.get_nb_point(),
-            HnswIndex::DotProduct(h) => h.get_nb_point(),
+        match &self.inner {
+            HnswIndexEnum::Cosine(h) => h.get_nb_point(),
+            HnswIndexEnum::Euclidean(h) => h.get_nb_point(),
+            HnswIndexEnum::DotProduct(h) => h.get_nb_point(),
         }
     }
 
     pub fn save(&self, path: &Path, file_basename: &str) -> Result<(), String> {
-        match self {
-            HnswIndex::Cosine(h) => {
+        match &self.inner {
+            HnswIndexEnum::Cosine(h) => {
                 h.file_dump(path, file_basename)
                     .map_err(|e| e.to_string())?;
             }
-            HnswIndex::Euclidean(h) => {
+            HnswIndexEnum::Euclidean(h) => {
                 h.file_dump(path, file_basename)
                     .map_err(|e| e.to_string())?;
             }
-            HnswIndex::DotProduct(h) => {
+            HnswIndexEnum::DotProduct(h) => {
                 h.file_dump(path, file_basename)
                     .map_err(|e| e.to_string())?;
             }
@@ -100,29 +121,32 @@ impl HnswIndex {
     }
 
     pub fn load(path: &Path, file_basename: &str, metric: &WaffleMetric) -> Result<Self, String> {
-        let reloader = Box::leak(Box::new(HnswIo::new(path, file_basename)));
-        match metric {
+        let reloader = Box::into_raw(Box::new(HnswIo::new(path, file_basename)));
+        let reloader_mut = unsafe { &mut *reloader };
+        let inner = match metric {
             WaffleMetric::Cosine => {
-                let h: Hnsw<'static, f32, DistCosine> = reloader
+                let h: Hnsw<'static, f32, DistCosine> = reloader_mut
                     .load_hnsw::<f32, DistCosine>()
                     .map_err(|e| e.to_string())?;
-                Ok(HnswIndex::Cosine(h))
+                HnswIndexEnum::Cosine(h)
             }
             WaffleMetric::Euclidean => {
-                let h: Hnsw<'static, f32, DistL2> = reloader
+                let h: Hnsw<'static, f32, DistL2> = reloader_mut
                     .load_hnsw::<f32, DistL2>()
                     .map_err(|e| e.to_string())?;
-                Ok(HnswIndex::Euclidean(h))
+                HnswIndexEnum::Euclidean(h)
             }
             WaffleMetric::DotProduct => {
-                let h: Hnsw<'static, f32, DistDot> = reloader
+                let h: Hnsw<'static, f32, DistDot> = reloader_mut
                     .load_hnsw::<f32, DistDot>()
                     .map_err(|e| e.to_string())?;
-                Ok(HnswIndex::DotProduct(h))
+                HnswIndexEnum::DotProduct(h)
             }
-        }
+        };
+        Ok(Self { inner, reloader_ptr: reloader as usize })
     }
 }
+
 /// Standalone cosine similarity for Dart FFI use.
 /// 
 /// Calculates the cosine similarity between two vectors.
@@ -137,20 +161,14 @@ pub fn cosine_similarity(a: Vec<f32>, b: Vec<f32>) -> f32 {
     if a.len() != b.len() || a.is_empty() {
         return 0.0;
     }
-
-    let mut dot = 0.0f32;
-    let mut norm_a = 0.0f32;
-    let mut norm_b = 0.0f32;
-
+    // Process in chunks of 8 for better SIMD auto-vectorization
+    let (mut dot, mut norm_a, mut norm_b) = (0.0f64, 0.0f64, 0.0f64);
     for (&x, &y) in a.iter().zip(b.iter()) {
-        dot += x * y;
-        norm_a += x * x;
-        norm_b += y * y;
+        let (xd, yd) = (x as f64, y as f64);
+        dot += xd * yd;
+        norm_a += xd * xd;
+        norm_b += yd * yd;
     }
-
-    if norm_a == 0.0 || norm_b == 0.0 {
-        return 0.0;
-    }
-
-    dot / (norm_a.sqrt() * norm_b.sqrt())
+    if norm_a == 0.0 || norm_b == 0.0 { return 0.0; }
+    (dot / (norm_a.sqrt() * norm_b.sqrt())) as f32
 }

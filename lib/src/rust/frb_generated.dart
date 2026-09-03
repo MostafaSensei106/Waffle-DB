@@ -6,7 +6,6 @@
 import 'api/config.dart';
 import 'api/math.dart';
 import 'api/models.dart';
-import 'api/storage.dart';
 import 'api/waffle_db.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -72,7 +71,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.13.0';
 
   @override
-  int get rustContentHash => 984598128;
+  int get rustContentHash => -1101628960;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -84,37 +83,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
 }
 
 abstract class RustLibApi extends BaseApi {
-  Future<BigInt> crateApiStorageWaffleStorageCount(
-      {required WaffleStorage that});
-
-  Future<bool> crateApiStorageWaffleStorageDeleteRecord(
-      {required WaffleStorage that, required String id});
-
-  Future<void> crateApiStorageWaffleStorageFlush({required WaffleStorage that});
-
-  Future<List<String>> crateApiStorageWaffleStorageGetAllIds(
-      {required WaffleStorage that});
-
-  Future<WaffleStorage> crateApiStorageWaffleStorageInit(
-      {required WaffleConfig config});
-
-  Future<Uint8List?> crateApiStorageWaffleStorageReadMetadata(
-      {required WaffleStorage that, required String id});
-
-  Future<Float32List?> crateApiStorageWaffleStorageReadVector(
-      {required WaffleStorage that, required String id, required BigInt dim});
-
-  Future<bool> crateApiStorageWaffleStorageWriteMetadata(
-      {required WaffleStorage that,
-      required String id,
-      required List<double> vector,
-      required VectorMetadata metadata});
-
-  Future<void> crateApiStorageWaffleStorageWriteRecord(
-      {required WaffleStorage that,
-      required String id,
-      required List<double> vector,
-      required List<int> metadata});
+  void crateApiModelsDummyExportVectorMetadata({required VectorMetadata meta});
 
   Future<double> crateApiMathCosineSimilarity(
       {required List<double> a, required List<double> b});
@@ -122,6 +91,9 @@ abstract class RustLibApi extends BaseApi {
   Future<void> crateApiWaffleDbWaffleClose({required BigInt handle});
 
   Future<WaffleConfig> crateApiConfigWaffleConfigDefault();
+
+  Future<WaffleConfig> crateApiConfigWaffleConfigHighVolumeProfile(
+      {required String path, required int dimension});
 
   Future<WaffleConfig> crateApiConfigWaffleConfigMobileProfile(
       {required String path, required int dimension});
@@ -170,15 +142,6 @@ abstract class RustLibApi extends BaseApi {
       required int k,
       required int efSearch,
       required bool includeMetadata});
-
-  RustArcIncrementStrongCountFnType
-      get rust_arc_increment_strong_count_WaffleStorage;
-
-  RustArcDecrementStrongCountFnType
-      get rust_arc_decrement_strong_count_WaffleStorage;
-
-  CrossPlatformFinalizerArg
-      get rust_arc_decrement_strong_count_WaffleStoragePtr;
 }
 
 class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
@@ -190,262 +153,27 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   });
 
   @override
-  Future<BigInt> crateApiStorageWaffleStorageCount(
-      {required WaffleStorage that}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
+  void crateApiModelsDummyExportVectorMetadata({required VectorMetadata meta}) {
+    return handler.executeSync(SyncTask(
+      callFfi: () {
         final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWaffleStorage(
-            that, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 1, port: port_);
+        sse_encode_box_autoadd_vector_metadata(meta, serializer);
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 1)!;
       },
       codec: SseCodec(
-        decodeSuccessData: sse_decode_u_64,
+        decodeSuccessData: sse_decode_unit,
         decodeErrorData: null,
       ),
-      constMeta: kCrateApiStorageWaffleStorageCountConstMeta,
-      argValues: [that],
+      constMeta: kCrateApiModelsDummyExportVectorMetadataConstMeta,
+      argValues: [meta],
       apiImpl: this,
     ));
   }
 
-  TaskConstMeta get kCrateApiStorageWaffleStorageCountConstMeta =>
+  TaskConstMeta get kCrateApiModelsDummyExportVectorMetadataConstMeta =>
       const TaskConstMeta(
-        debugName: "WaffleStorage_count",
-        argNames: ["that"],
-      );
-
-  @override
-  Future<bool> crateApiStorageWaffleStorageDeleteRecord(
-      {required WaffleStorage that, required String id}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWaffleStorage(
-            that, serializer);
-        sse_encode_String(id, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 2, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_bool,
-        decodeErrorData: sse_decode_String,
-      ),
-      constMeta: kCrateApiStorageWaffleStorageDeleteRecordConstMeta,
-      argValues: [that, id],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiStorageWaffleStorageDeleteRecordConstMeta =>
-      const TaskConstMeta(
-        debugName: "WaffleStorage_delete_record",
-        argNames: ["that", "id"],
-      );
-
-  @override
-  Future<void> crateApiStorageWaffleStorageFlush(
-      {required WaffleStorage that}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWaffleStorage(
-            that, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 3, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_unit,
-        decodeErrorData: sse_decode_String,
-      ),
-      constMeta: kCrateApiStorageWaffleStorageFlushConstMeta,
-      argValues: [that],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiStorageWaffleStorageFlushConstMeta =>
-      const TaskConstMeta(
-        debugName: "WaffleStorage_flush",
-        argNames: ["that"],
-      );
-
-  @override
-  Future<List<String>> crateApiStorageWaffleStorageGetAllIds(
-      {required WaffleStorage that}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWaffleStorage(
-            that, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 4, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_list_String,
-        decodeErrorData: sse_decode_String,
-      ),
-      constMeta: kCrateApiStorageWaffleStorageGetAllIdsConstMeta,
-      argValues: [that],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiStorageWaffleStorageGetAllIdsConstMeta =>
-      const TaskConstMeta(
-        debugName: "WaffleStorage_get_all_ids",
-        argNames: ["that"],
-      );
-
-  @override
-  Future<WaffleStorage> crateApiStorageWaffleStorageInit(
-      {required WaffleConfig config}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_box_autoadd_waffle_config(config, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 5, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData:
-            sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWaffleStorage,
-        decodeErrorData: sse_decode_String,
-      ),
-      constMeta: kCrateApiStorageWaffleStorageInitConstMeta,
-      argValues: [config],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiStorageWaffleStorageInitConstMeta =>
-      const TaskConstMeta(
-        debugName: "WaffleStorage_init",
-        argNames: ["config"],
-      );
-
-  @override
-  Future<Uint8List?> crateApiStorageWaffleStorageReadMetadata(
-      {required WaffleStorage that, required String id}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWaffleStorage(
-            that, serializer);
-        sse_encode_String(id, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 6, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_opt_list_prim_u_8_strict,
-        decodeErrorData: sse_decode_String,
-      ),
-      constMeta: kCrateApiStorageWaffleStorageReadMetadataConstMeta,
-      argValues: [that, id],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiStorageWaffleStorageReadMetadataConstMeta =>
-      const TaskConstMeta(
-        debugName: "WaffleStorage_read_metadata",
-        argNames: ["that", "id"],
-      );
-
-  @override
-  Future<Float32List?> crateApiStorageWaffleStorageReadVector(
-      {required WaffleStorage that, required String id, required BigInt dim}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWaffleStorage(
-            that, serializer);
-        sse_encode_String(id, serializer);
-        sse_encode_usize(dim, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 7, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_opt_list_prim_f_32_strict,
-        decodeErrorData: sse_decode_String,
-      ),
-      constMeta: kCrateApiStorageWaffleStorageReadVectorConstMeta,
-      argValues: [that, id, dim],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiStorageWaffleStorageReadVectorConstMeta =>
-      const TaskConstMeta(
-        debugName: "WaffleStorage_read_vector",
-        argNames: ["that", "id", "dim"],
-      );
-
-  @override
-  Future<bool> crateApiStorageWaffleStorageWriteMetadata(
-      {required WaffleStorage that,
-      required String id,
-      required List<double> vector,
-      required VectorMetadata metadata}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWaffleStorage(
-            that, serializer);
-        sse_encode_String(id, serializer);
-        sse_encode_list_prim_f_32_loose(vector, serializer);
-        sse_encode_box_autoadd_vector_metadata(metadata, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 8, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_bool,
-        decodeErrorData: sse_decode_String,
-      ),
-      constMeta: kCrateApiStorageWaffleStorageWriteMetadataConstMeta,
-      argValues: [that, id, vector, metadata],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiStorageWaffleStorageWriteMetadataConstMeta =>
-      const TaskConstMeta(
-        debugName: "WaffleStorage_write_metadata",
-        argNames: ["that", "id", "vector", "metadata"],
-      );
-
-  @override
-  Future<void> crateApiStorageWaffleStorageWriteRecord(
-      {required WaffleStorage that,
-      required String id,
-      required List<double> vector,
-      required List<int> metadata}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWaffleStorage(
-            that, serializer);
-        sse_encode_String(id, serializer);
-        sse_encode_list_prim_f_32_loose(vector, serializer);
-        sse_encode_list_prim_u_8_loose(metadata, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 9, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_unit,
-        decodeErrorData: sse_decode_String,
-      ),
-      constMeta: kCrateApiStorageWaffleStorageWriteRecordConstMeta,
-      argValues: [that, id, vector, metadata],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiStorageWaffleStorageWriteRecordConstMeta =>
-      const TaskConstMeta(
-        debugName: "WaffleStorage_write_record",
-        argNames: ["that", "id", "vector", "metadata"],
+        debugName: "_dummy_export_vector_metadata",
+        argNames: ["meta"],
       );
 
   @override
@@ -457,7 +185,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_list_prim_f_32_loose(a, serializer);
         sse_encode_list_prim_f_32_loose(b, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 10, port: port_);
+            funcId: 2, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_f_32,
@@ -482,7 +210,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_u_64(handle, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 11, port: port_);
+            funcId: 3, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_unit,
@@ -506,7 +234,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       callFfi: (port_) {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 12, port: port_);
+            funcId: 4, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_waffle_config,
@@ -525,6 +253,33 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<WaffleConfig> crateApiConfigWaffleConfigHighVolumeProfile(
+      {required String path, required int dimension}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_String(path, serializer);
+        sse_encode_u_32(dimension, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 5, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_waffle_config,
+        decodeErrorData: null,
+      ),
+      constMeta: kCrateApiConfigWaffleConfigHighVolumeProfileConstMeta,
+      argValues: [path, dimension],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta get kCrateApiConfigWaffleConfigHighVolumeProfileConstMeta =>
+      const TaskConstMeta(
+        debugName: "waffle_config_high_volume_profile",
+        argNames: ["path", "dimension"],
+      );
+
+  @override
   Future<WaffleConfig> crateApiConfigWaffleConfigMobileProfile(
       {required String path, required int dimension}) {
     return handler.executeNormal(NormalTask(
@@ -533,7 +288,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_String(path, serializer);
         sse_encode_u_32(dimension, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 13, port: port_);
+            funcId: 6, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_waffle_config,
@@ -560,7 +315,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_String(path, serializer);
         sse_encode_u_32(dimension, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 14, port: port_);
+            funcId: 7, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_waffle_config,
@@ -587,7 +342,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_String(path, serializer);
         sse_encode_u_32(dimension, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 15, port: port_);
+            funcId: 8, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_waffle_config,
@@ -614,7 +369,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_String(path, serializer);
         sse_encode_u_32(dimension, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 16, port: port_);
+            funcId: 9, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_waffle_config,
@@ -638,7 +393,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       callFfi: () {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_u_64(handle, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 17)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 10)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_u_64,
@@ -665,7 +420,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_u_64(handle, serializer);
         sse_encode_String(id, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 18, port: port_);
+            funcId: 11, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_bool,
@@ -690,7 +445,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_u_64(handle, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 19, port: port_);
+            funcId: 12, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_unit,
@@ -714,7 +469,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       callFfi: () {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_u_64(handle, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 20)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 13)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_list_String,
@@ -740,7 +495,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_u_64(handle, serializer);
         sse_encode_String(id, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 21)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 14)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_opt_list_prim_u_8_strict,
@@ -766,7 +521,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_u_64(handle, serializer);
         sse_encode_String(id, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 22)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 15)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_opt_list_prim_f_32_strict,
@@ -798,7 +553,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_list_prim_f_32_loose(vector, serializer);
         sse_encode_list_prim_u_8_loose(metadata, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 23, port: port_);
+            funcId: 16, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_unit,
@@ -830,7 +585,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_list_prim_f_32_loose(vectorsFlat, serializer);
         sse_encode_list_list_prim_u_8_strict(metadataList, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 24, port: port_);
+            funcId: 17, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_unit,
@@ -855,7 +610,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_box_autoadd_waffle_config(config, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 25, port: port_);
+            funcId: 18, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_u_64,
@@ -887,7 +642,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_u_32(k, serializer);
         sse_encode_u_32(efSearch, serializer);
         sse_encode_bool(includeMetadata, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 26)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 19)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_list_waffle_query_result,
@@ -904,38 +659,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         debugName: "waffle_query",
         argNames: ["handle", "vector", "k", "efSearch", "includeMetadata"],
       );
-
-  RustArcIncrementStrongCountFnType
-      get rust_arc_increment_strong_count_WaffleStorage => wire
-          .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWaffleStorage;
-
-  RustArcDecrementStrongCountFnType
-      get rust_arc_decrement_strong_count_WaffleStorage => wire
-          .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWaffleStorage;
-
-  @protected
-  WaffleStorage
-      dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWaffleStorage(
-          dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return WaffleStorageImpl.frbInternalDcoDecode(raw as List<dynamic>);
-  }
-
-  @protected
-  WaffleStorage
-      dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWaffleStorage(
-          dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return WaffleStorageImpl.frbInternalDcoDecode(raw as List<dynamic>);
-  }
-
-  @protected
-  WaffleStorage
-      dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWaffleStorage(
-          dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return WaffleStorageImpl.frbInternalDcoDecode(raw as List<dynamic>);
-  }
 
   @protected
   String dco_decode_String(dynamic raw) {
@@ -1052,12 +775,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  BigInt dco_decode_usize(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return dcoDecodeU64(raw);
-  }
-
-  @protected
   VectorMetadata dco_decode_vector_metadata(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
@@ -1119,33 +836,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       distance: dco_decode_f_32(arr[1]),
       metadata: dco_decode_opt_list_prim_u_8_strict(arr[2]),
     );
-  }
-
-  @protected
-  WaffleStorage
-      sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWaffleStorage(
-          SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return WaffleStorageImpl.frbInternalSseDecode(
-        sse_decode_usize(deserializer), sse_decode_i_32(deserializer));
-  }
-
-  @protected
-  WaffleStorage
-      sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWaffleStorage(
-          SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return WaffleStorageImpl.frbInternalSseDecode(
-        sse_decode_usize(deserializer), sse_decode_i_32(deserializer));
-  }
-
-  @protected
-  WaffleStorage
-      sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWaffleStorage(
-          SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return WaffleStorageImpl.frbInternalSseDecode(
-        sse_decode_usize(deserializer), sse_decode_i_32(deserializer));
   }
 
   @protected
@@ -1300,12 +990,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  BigInt sse_decode_usize(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return deserializer.buffer.getBigUint64();
-  }
-
-  @protected
   VectorMetadata sse_decode_vector_metadata(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var var_title = sse_decode_String(deserializer);
@@ -1370,36 +1054,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_metadata = sse_decode_opt_list_prim_u_8_strict(deserializer);
     return WaffleQueryResult(
         id: var_id, distance: var_distance, metadata: var_metadata);
-  }
-
-  @protected
-  void
-      sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWaffleStorage(
-          WaffleStorage self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_usize(
-        (self as WaffleStorageImpl).frbInternalSseEncode(move: true),
-        serializer);
-  }
-
-  @protected
-  void
-      sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWaffleStorage(
-          WaffleStorage self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_usize(
-        (self as WaffleStorageImpl).frbInternalSseEncode(move: false),
-        serializer);
-  }
-
-  @protected
-  void
-      sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWaffleStorage(
-          WaffleStorage self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_usize(
-        (self as WaffleStorageImpl).frbInternalSseEncode(move: null),
-        serializer);
   }
 
   @protected
@@ -1549,12 +1203,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  void sse_encode_usize(BigInt self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    serializer.buffer.putBigUint64(self);
-  }
-
-  @protected
   void sse_encode_vector_metadata(
       VectorMetadata self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
@@ -1600,71 +1248,4 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_f_32(self.distance, serializer);
     sse_encode_opt_list_prim_u_8_strict(self.metadata, serializer);
   }
-}
-
-@sealed
-class WaffleStorageImpl extends RustOpaque implements WaffleStorage {
-  // Not to be used by end users
-  WaffleStorageImpl.frbInternalDcoDecode(List<dynamic> wire)
-      : super.frbInternalDcoDecode(wire, _kStaticData);
-
-  // Not to be used by end users
-  WaffleStorageImpl.frbInternalSseDecode(BigInt ptr, int externalSizeOnNative)
-      : super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
-
-  static final _kStaticData = RustArcStaticData(
-    rustArcIncrementStrongCount:
-        RustLib.instance.api.rust_arc_increment_strong_count_WaffleStorage,
-    rustArcDecrementStrongCount:
-        RustLib.instance.api.rust_arc_decrement_strong_count_WaffleStorage,
-    rustArcDecrementStrongCountPtr:
-        RustLib.instance.api.rust_arc_decrement_strong_count_WaffleStoragePtr,
-  );
-
-  /// Count the total number of stored vectors.
-  Future<BigInt> count() =>
-      RustLib.instance.api.crateApiStorageWaffleStorageCount(
-        that: this,
-      );
-
-  /// Delete a record from storage.
-  Future<bool> deleteRecord({required String id}) => RustLib.instance.api
-      .crateApiStorageWaffleStorageDeleteRecord(that: this, id: id);
-
-  /// Flush pending storage operations to disk.
-  Future<void> flush() =>
-      RustLib.instance.api.crateApiStorageWaffleStorageFlush(
-        that: this,
-      );
-
-  /// Returns all stored string IDs.
-  Future<List<String>> getAllIds() =>
-      RustLib.instance.api.crateApiStorageWaffleStorageGetAllIds(
-        that: this,
-      );
-
-  /// Read raw metadata bytes by ID.
-  Future<Uint8List?> readMetadata({required String id}) => RustLib.instance.api
-      .crateApiStorageWaffleStorageReadMetadata(that: this, id: id);
-
-  /// Read a vector by ID, checking against the expected dimension.
-  Future<Float32List?> readVector({required String id, required BigInt dim}) =>
-      RustLib.instance.api
-          .crateApiStorageWaffleStorageReadVector(that: this, id: id, dim: dim);
-
-  /// Write only the metadata for a record.
-  Future<bool> writeMetadata(
-          {required String id,
-          required List<double> vector,
-          required VectorMetadata metadata}) =>
-      RustLib.instance.api.crateApiStorageWaffleStorageWriteMetadata(
-          that: this, id: id, vector: vector, metadata: metadata);
-
-  /// Write a full record (vector and metadata bytes) to disk.
-  Future<void> writeRecord(
-          {required String id,
-          required List<double> vector,
-          required List<int> metadata}) =>
-      RustLib.instance.api.crateApiStorageWaffleStorageWriteRecord(
-          that: this, id: id, vector: vector, metadata: metadata);
 }

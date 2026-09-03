@@ -9,6 +9,10 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 // These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `ArchivedVectorMetadata`, `VectorMetadataResolver`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `check_bytes`, `deserialize`, `fmt`, `resolve`, `serialize`
 
+/// Dummy function to force FRB to generate bindings for VectorMetadata
+void dummyExportVectorMetadata({required VectorMetadata meta}) =>
+    RustLib.instance.api.crateApiModelsDummyExportVectorMetadata(meta: meta);
+
 /// Internal metadata stored alongside vectors for filtering and context.
 class VectorMetadata {
   /// Optional title for the vector.

@@ -43,14 +43,6 @@ Future<void> waffleInsert(
     RustLib.instance.api.crateApiWaffleDbWaffleInsert(
         handle: handle, id: id, vector: vector, metadata: metadata);
 
-/// Batch insert multiple vectors. Vectors are passed as a flat f32 array.
-/// `vectors_flat` has length `ids.len() * dimension`.
-/// `metadata_list` has the same length as `ids`.
-///
-/// Example:
-/// ```dart
-/// await waffleInsertBatch(handle: h, ids: ["1"], vectorsFlat: [0.1], metadataList: [[]]);
-/// ```
 Future<void> waffleInsertBatch(
         {required BigInt handle,
         required List<String> ids,

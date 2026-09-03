@@ -1,3 +1,11 @@
+# 0.0.3
+- **Performance**: Optimized insertion and queries for datasets with 1,000,000+ vectors.
+- **Performance**: Replaced `Mutex` with `RwLock` for concurrent read queries.
+- **Performance**: Migrated `id_map.json` into the `sled` database for significantly faster load times and reduced memory pressure.
+- **Performance**: Improved batch insertions to chunk data and process efficiently.
+- **Fix**: Resolved `Box::leak` memory leak during index loading.
+- **Config**: Added `WaffleConfig.highVolumeProfile()` for multi-million vector datasets.
+
 # 0.0.2+1
 
 - **OHOS Platform Support**: Introduced OpenHarmony (OHOS) SDK environment variable retrieval in `Environment`, updated `Rustup` toolchain resolution, added target configurations for OHOS in `Target`, updated CMake configuration to handle OHOS builds, and modified Gradle plugin to utilize `ExecOperations`.

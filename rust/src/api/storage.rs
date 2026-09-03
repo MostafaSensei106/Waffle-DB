@@ -3,15 +3,16 @@ use sled::{Db, Tree};
 use crate::api::{config::WaffleConfig, models::VectorMetadata};
 
 /// Low-level storage backend using Sled.
-pub struct WaffleStorage {
+pub(crate) struct WaffleStorage {
     db: Db,
     vectors_tree: Tree,
     metadata_tree: Tree,
+    pub(crate) id_map_tree: Tree,
 }
 
 impl WaffleStorage {
     /// Initialize the storage using the given configuration.
-    pub fn init(config: &WaffleConfig) -> Result<Self, String> {
+    pub(crate) fn init(config: &WaffleConfig) -> Result<Self, String> {
         let db = sled::Config::new()
             .path(&config.path)
             .cache_capacity(config.cache_size_bytes)
@@ -20,16 +21,18 @@ impl WaffleStorage {
 
         let vectors_tree = db.open_tree("v_grid").map_err(|e| e.to_string())?;
         let metadata_tree = db.open_tree("m_grid").map_err(|e| e.to_string())?;
+        let id_map_tree = db.open_tree("id_map").map_err(|e| e.to_string())?;
 
         Ok(Self {
             db,
             vectors_tree,
             metadata_tree,
+            id_map_tree,
         })
     }
 
     /// Write only the metadata for a record.
-    pub fn write_metadata(
+    pub(crate) fn write_metadata(
         &self,
         id: &str,
         _vector: &[f32],
@@ -46,7 +49,7 @@ impl WaffleStorage {
     }
 
     /// Write a full record (vector and metadata bytes) to disk.
-    pub fn write_record(&self, id: &str, vector: &[f32], metadata: &[u8]) -> Result<(), String> {
+    pub(crate) fn write_record(&self, id: &str, vector: &[f32], metadata: &[u8]) -> Result<(), String> {
         let v_bytes = unsafe {
             std::slice::from_raw_parts(
                 vector.as_ptr() as *const u8,
@@ -63,7 +66,7 @@ impl WaffleStorage {
     }
 
     /// Read raw metadata bytes by ID.
-    pub fn read_metadata(&self, id: &str) -> Result<Option<Vec<u8>>, String> {
+    pub(crate) fn read_metadata(&self, id: &str) -> Result<Option<Vec<u8>>, String> {
         if let Some(ivec) = self.metadata_tree.get(id).map_err(|e| e.to_string())? {
             return Ok(Some(ivec.to_vec()));
         }
@@ -71,7 +74,7 @@ impl WaffleStorage {
     }
 
     /// Read a vector by ID, checking against the expected dimension.
-    pub fn read_vector(&self, id: &str, dim: usize) -> Result<Option<Vec<f32>>, String> {
+    pub(crate) fn read_vector(&self, id: &str, dim: usize) -> Result<Option<Vec<f32>>, String> {
         if let Some(ivec) = self.vectors_tree.get(id).map_err(|e| e.to_string())? {
             let expected_bytes = dim * std::mem::size_of::<f32>();
             if ivec.len() != expected_bytes {
@@ -95,7 +98,7 @@ impl WaffleStorage {
     }
 
     /// Delete a record from storage.
-    pub fn delete_record(&self, id: &str) -> Result<bool, String> {
+    pub(crate) fn delete_record(&self, id: &str) -> Result<bool, String> {
         let v_removed = self
             .vectors_tree
             .remove(id)
@@ -110,18 +113,18 @@ impl WaffleStorage {
     }
 
     /// Count the total number of stored vectors.
-    pub fn count(&self) -> u64 {
+    pub(crate) fn count(&self) -> u64 {
         self.vectors_tree.len() as u64
     }
 
     /// Flush pending storage operations to disk.
-    pub fn flush(&self) -> Result<(), String> {
+    pub(crate) fn flush(&self) -> Result<(), String> {
         self.db.flush().map_err(|e| e.to_string())?;
         Ok(())
     }
 
     /// Iterates over stored vectors and yields them in batches to save RAM.
-    pub fn load_vectors_in_batches<F>(
+    pub(crate) fn load_vectors_in_batches<F>(
         &self,
         dim: usize,
         batch_size: usize,
@@ -169,7 +172,7 @@ impl WaffleStorage {
     }
 
     /// Returns all stored string IDs.
-    pub fn get_all_ids(&self) -> Result<Vec<String>, String> {
+    pub(crate) fn get_all_ids(&self) -> Result<Vec<String>, String> {
         let count = self.vectors_tree.len();
         let mut ids = Vec::with_capacity(count);
         for item in self.vectors_tree.iter() {
@@ -180,5 +183,87 @@ impl WaffleStorage {
             ids.push(id);
         }
         Ok(ids)
+    }
+
+    /// Write a forward (internal→string) and reverse (string→internal) mapping.
+    pub(crate) fn write_id_mapping(&self, internal_id: usize, string_id: &str) -> Result<(), String> {
+        let fwd_key = format!("fwd:{}", internal_id);
+        let rev_key = format!("rev:{}", string_id);
+        self.id_map_tree.insert(fwd_key.as_bytes(), string_id.as_bytes()).map_err(|e| e.to_string())?;
+        self.id_map_tree.insert(rev_key.as_bytes(), &internal_id.to_le_bytes()).map_err(|e| e.to_string())?;
+        Ok(())
+    }
+
+    /// Batch write ID mappings efficiently.
+    pub(crate) fn write_id_mappings_batch(&self, mappings: &[(usize, &str)]) -> Result<(), String> {
+        let mut batch = sled::Batch::default();
+        for (internal_id, string_id) in mappings {
+            let fwd_key = format!("fwd:{}", internal_id);
+            let rev_key = format!("rev:{}", string_id);
+            batch.insert(fwd_key.as_bytes(), string_id.as_bytes());
+            batch.insert(rev_key.as_bytes(), &internal_id.to_le_bytes());
+        }
+        self.id_map_tree.apply_batch(batch).map_err(|e| e.to_string())?;
+        Ok(())
+    }
+
+    /// Read string ID by internal ID.
+    pub(crate) fn get_string_id(&self, internal_id: usize) -> Result<Option<String>, String> {
+        let fwd_key = format!("fwd:{}", internal_id);
+        if let Some(ivec) = self.id_map_tree.get(fwd_key.as_bytes()).map_err(|e| e.to_string())? {
+            let string_id = std::str::from_utf8(&ivec).map_err(|e| e.to_string())?.to_owned();
+            return Ok(Some(string_id));
+        }
+        Ok(None)
+    }
+
+    /// Read internal ID by string ID.
+    pub(crate) fn get_internal_id(&self, string_id: &str) -> Result<Option<usize>, String> {
+        let rev_key = format!("rev:{}", string_id);
+        if let Some(ivec) = self.id_map_tree.get(rev_key.as_bytes()).map_err(|e| e.to_string())? {
+            let mut bytes = [0u8; 8];
+            let len = std::cmp::min(ivec.len(), 8);
+            bytes[..len].copy_from_slice(&ivec[..len]);
+            return Ok(Some(usize::from_le_bytes(bytes)));
+        }
+        Ok(None)
+    }
+
+    /// Remove an ID mapping.
+    pub(crate) fn remove_id_mapping(&self, internal_id: usize, string_id: &str) -> Result<(), String> {
+        let fwd_key = format!("fwd:{}", internal_id);
+        let rev_key = format!("rev:{}", string_id);
+        self.id_map_tree.remove(fwd_key.as_bytes()).map_err(|e| e.to_string())?;
+        self.id_map_tree.remove(rev_key.as_bytes()).map_err(|e| e.to_string())?;
+        Ok(())
+    }
+
+    /// Load all ID mappings into memory (for HNSW rebuild).
+    pub(crate) fn load_all_id_mappings(&self) -> Result<(std::collections::HashMap<usize, String>, std::collections::HashMap<String, usize>, u64), String> {
+        let mut id_map = std::collections::HashMap::new();
+        let mut reverse_id_map = std::collections::HashMap::new();
+        let mut next_id: u64 = 0;
+
+        for item in self.id_map_tree.iter() {
+            let (key, value) = item.map_err(|e| e.to_string())?;
+            if key.starts_with(b"fwd:") {
+                let internal_id_str = std::str::from_utf8(&key[4..]).map_err(|e| e.to_string())?;
+                if let Ok(internal_id) = internal_id_str.parse::<usize>() {
+                    let string_id = std::str::from_utf8(&value).map_err(|e| e.to_string())?.to_owned();
+                    id_map.insert(internal_id, string_id);
+                    if internal_id as u64 >= next_id {
+                        next_id = internal_id as u64 + 1;
+                    }
+                }
+            } else if key.starts_with(b"rev:") {
+                let string_id = std::str::from_utf8(&key[4..]).map_err(|e| e.to_string())?.to_owned();
+                let mut bytes = [0u8; 8];
+                let len = std::cmp::min(value.len(), 8);
+                bytes[..len].copy_from_slice(&value[..len]);
+                let internal_id = usize::from_le_bytes(bytes);
+                reverse_id_map.insert(string_id, internal_id);
+            }
+        }
+        Ok((id_map, reverse_id_map, next_id))
     }
 }
