@@ -84,7 +84,8 @@ void main() {
       );
     });
 
-    test('Delete non-existent ID gracefully returns false or ignores', () async {
+    test('Delete non-existent ID gracefully returns false or ignores',
+        () async {
       final removed = await db.delete('non-existent');
       expect(removed, isFalse);
     });
@@ -116,7 +117,7 @@ void main() {
           vector: Float32List.fromList([1.0, 1.0]), // Wrong
         ),
       ];
-      
+
       expect(
         () => db.insertBatch(records),
         throwsA(anything),
@@ -124,9 +125,9 @@ void main() {
     });
 
     test('Get All IDs retrieves exactly what was inserted', () async {
-      await db.insert('A', Float32List.fromList([1,0,0,0]));
-      await db.insert('B', Float32List.fromList([0,1,0,0]));
-      
+      await db.insert('A', Float32List.fromList([1, 0, 0, 0]));
+      await db.insert('B', Float32List.fromList([0, 1, 0, 0]));
+
       final ids = db.getAllIds();
       expect(ids.length, 2);
       expect(ids, containsAll(['A', 'B']));
