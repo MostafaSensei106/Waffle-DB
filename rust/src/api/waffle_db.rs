@@ -277,9 +277,8 @@ pub fn waffle_insert_batch(
                     .write()
                     .map_err(|e| format!("Lock: {}", e))?;
                 
-                for i in chunk_start..chunk_end {
-                    let string_id = &ids[i];
-                    let internal_id = base_id + i;
+                for (offset, string_id) in ids[chunk_start..chunk_end].iter().enumerate() {
+                    let internal_id = base_id + chunk_start + offset;
                     registry.id_map.insert(internal_id, string_id.clone());
                     registry
                         .reverse_id_map

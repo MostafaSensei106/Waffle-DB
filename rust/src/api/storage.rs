@@ -1,6 +1,11 @@
+use std::collections::HashMap;
+
 use sled::{Db, Tree};
 
 use crate::api::{config::WaffleConfig, models::VectorMetadata};
+
+/// In-memory ID mappings loaded from disk: `(id_map, reverse_id_map, next_id)`.
+type IdMappings = (HashMap<usize, String>, HashMap<String, usize>, u64);
 
 /// Low-level storage backend using Sled.
 pub(crate) struct WaffleStorage {
@@ -272,18 +277,9 @@ impl WaffleStorage {
     }
 
     /// Load all ID mappings into memory (for HNSW rebuild).
-    pub(crate) fn load_all_id_mappings(
-        &self,
-    ) -> Result<
-        (
-            std::collections::HashMap<usize, String>,
-            std::collections::HashMap<String, usize>,
-            u64,
-        ),
-        String,
-    > {
-        let mut id_map = std::collections::HashMap::new();
-        let mut reverse_id_map = std::collections::HashMap::new();
+    pub(crate) fn load_all_id_mappings(&self) -> Result<IdMappings, String> {
+        let mut id_map: HashMap<usize, String> = HashMap::new();
+        let mut reverse_id_map: HashMap<String, usize> = HashMap::new();
         let mut next_id: u64 = 0;
 
         for item in self.id_map_tree.iter() {
