@@ -32,6 +32,7 @@ impl WaffleStorage {
     }
 
     /// Write only the metadata for a record.
+    #[allow(dead_code)]
     pub(crate) fn write_metadata(
         &self,
         id: &str,
@@ -49,12 +50,14 @@ impl WaffleStorage {
     }
 
     /// Write a full record (vector and metadata bytes) to disk.
-    pub(crate) fn write_record(&self, id: &str, vector: &[f32], metadata: &[u8]) -> Result<(), String> {
+    pub(crate) fn write_record(
+        &self,
+        id: &str,
+        vector: &[f32],
+        metadata: &[u8],
+    ) -> Result<(), String> {
         let v_bytes = unsafe {
-            std::slice::from_raw_parts(
-                vector.as_ptr() as *const u8,
-                std::mem::size_of_val(vector),
-            )
+            std::slice::from_raw_parts(vector.as_ptr() as *const u8, std::mem::size_of_val(vector))
         };
         self.vectors_tree
             .insert(id, v_bytes)
@@ -186,11 +189,19 @@ impl WaffleStorage {
     }
 
     /// Write a forward (internal→string) and reverse (string→internal) mapping.
-    pub(crate) fn write_id_mapping(&self, internal_id: usize, string_id: &str) -> Result<(), String> {
+    pub(crate) fn write_id_mapping(
+        &self,
+        internal_id: usize,
+        string_id: &str,
+    ) -> Result<(), String> {
         let fwd_key = format!("fwd:{}", internal_id);
         let rev_key = format!("rev:{}", string_id);
-        self.id_map_tree.insert(fwd_key.as_bytes(), string_id.as_bytes()).map_err(|e| e.to_string())?;
-        self.id_map_tree.insert(rev_key.as_bytes(), &internal_id.to_le_bytes()).map_err(|e| e.to_string())?;
+        self.id_map_tree
+            .insert(fwd_key.as_bytes(), string_id.as_bytes())
+            .map_err(|e| e.to_string())?;
+        self.id_map_tree
+            .insert(rev_key.as_bytes(), &internal_id.to_le_bytes())
+            .map_err(|e| e.to_string())?;
         Ok(())
     }
 
@@ -203,24 +214,38 @@ impl WaffleStorage {
             batch.insert(fwd_key.as_bytes(), string_id.as_bytes());
             batch.insert(rev_key.as_bytes(), &internal_id.to_le_bytes());
         }
-        self.id_map_tree.apply_batch(batch).map_err(|e| e.to_string())?;
+        self.id_map_tree
+            .apply_batch(batch)
+            .map_err(|e| e.to_string())?;
         Ok(())
     }
 
     /// Read string ID by internal ID.
+    #[allow(dead_code)]
     pub(crate) fn get_string_id(&self, internal_id: usize) -> Result<Option<String>, String> {
         let fwd_key = format!("fwd:{}", internal_id);
-        if let Some(ivec) = self.id_map_tree.get(fwd_key.as_bytes()).map_err(|e| e.to_string())? {
-            let string_id = std::str::from_utf8(&ivec).map_err(|e| e.to_string())?.to_owned();
+        if let Some(ivec) = self
+            .id_map_tree
+            .get(fwd_key.as_bytes())
+            .map_err(|e| e.to_string())?
+        {
+            let string_id = std::str::from_utf8(&ivec)
+                .map_err(|e| e.to_string())?
+                .to_owned();
             return Ok(Some(string_id));
         }
         Ok(None)
     }
 
     /// Read internal ID by string ID.
+    #[allow(dead_code)]
     pub(crate) fn get_internal_id(&self, string_id: &str) -> Result<Option<usize>, String> {
         let rev_key = format!("rev:{}", string_id);
-        if let Some(ivec) = self.id_map_tree.get(rev_key.as_bytes()).map_err(|e| e.to_string())? {
+        if let Some(ivec) = self
+            .id_map_tree
+            .get(rev_key.as_bytes())
+            .map_err(|e| e.to_string())?
+        {
             let mut bytes = [0u8; 8];
             let len = std::cmp::min(ivec.len(), 8);
             bytes[..len].copy_from_slice(&ivec[..len]);
@@ -230,16 +255,33 @@ impl WaffleStorage {
     }
 
     /// Remove an ID mapping.
-    pub(crate) fn remove_id_mapping(&self, internal_id: usize, string_id: &str) -> Result<(), String> {
+    pub(crate) fn remove_id_mapping(
+        &self,
+        internal_id: usize,
+        string_id: &str,
+    ) -> Result<(), String> {
         let fwd_key = format!("fwd:{}", internal_id);
         let rev_key = format!("rev:{}", string_id);
-        self.id_map_tree.remove(fwd_key.as_bytes()).map_err(|e| e.to_string())?;
-        self.id_map_tree.remove(rev_key.as_bytes()).map_err(|e| e.to_string())?;
+        self.id_map_tree
+            .remove(fwd_key.as_bytes())
+            .map_err(|e| e.to_string())?;
+        self.id_map_tree
+            .remove(rev_key.as_bytes())
+            .map_err(|e| e.to_string())?;
         Ok(())
     }
 
     /// Load all ID mappings into memory (for HNSW rebuild).
-    pub(crate) fn load_all_id_mappings(&self) -> Result<(std::collections::HashMap<usize, String>, std::collections::HashMap<String, usize>, u64), String> {
+    pub(crate) fn load_all_id_mappings(
+        &self,
+    ) -> Result<
+        (
+            std::collections::HashMap<usize, String>,
+            std::collections::HashMap<String, usize>,
+            u64,
+        ),
+        String,
+    > {
         let mut id_map = std::collections::HashMap::new();
         let mut reverse_id_map = std::collections::HashMap::new();
         let mut next_id: u64 = 0;
@@ -249,14 +291,18 @@ impl WaffleStorage {
             if key.starts_with(b"fwd:") {
                 let internal_id_str = std::str::from_utf8(&key[4..]).map_err(|e| e.to_string())?;
                 if let Ok(internal_id) = internal_id_str.parse::<usize>() {
-                    let string_id = std::str::from_utf8(&value).map_err(|e| e.to_string())?.to_owned();
+                    let string_id = std::str::from_utf8(&value)
+                        .map_err(|e| e.to_string())?
+                        .to_owned();
                     id_map.insert(internal_id, string_id);
                     if internal_id as u64 >= next_id {
                         next_id = internal_id as u64 + 1;
                     }
                 }
             } else if key.starts_with(b"rev:") {
-                let string_id = std::str::from_utf8(&key[4..]).map_err(|e| e.to_string())?.to_owned();
+                let string_id = std::str::from_utf8(&key[4..])
+                    .map_err(|e| e.to_string())?
+                    .to_owned();
                 let mut bytes = [0u8; 8];
                 let len = std::cmp::min(value.len(), 8);
                 bytes[..len].copy_from_slice(&value[..len]);
