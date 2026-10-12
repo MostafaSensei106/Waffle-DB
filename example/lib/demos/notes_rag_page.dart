@@ -242,18 +242,23 @@ class _NotesRagPageState extends State<NotesRagPage> {
   @override
   Widget build(BuildContext context) {
     if (!_ready) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const CircularProgressIndicator(),
-            const SizedBox(height: 12),
-            Text(_status),
-          ],
+      return Scaffold(
+        appBar: AppBar(title: const Text('RAG Notes')),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 12),
+              Text(_status),
+            ],
+          ),
         ),
       );
     }
-    return Column(
+    return Scaffold(
+      appBar: AppBar(title: const Text('RAG Notes')),
+      body: Column(
       children: [
         Padding(
           padding: const EdgeInsets.all(12),
@@ -377,6 +382,7 @@ class _NotesRagPageState extends State<NotesRagPage> {
           ),
         ),
       ],
+      ),
     );
   }
 }

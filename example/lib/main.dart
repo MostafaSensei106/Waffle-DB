@@ -27,12 +27,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Waffle-DB Color Search',
+      title: 'Waffle-DB Demos',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.teal,
-          brightness: Brightness.dark,
-        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.purple),
         useMaterial3: true,
       ),
       home: const DemoHub(),
@@ -66,16 +63,17 @@ class _DemoHubState extends State<DemoHub> {
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
+          NavigationDestination(icon: Icon(Icons.palette), label: 'Colors'),
           NavigationDestination(
-              icon: Icon(Icons.palette), label: 'Colors'),
+            icon: Icon(Icons.shopping_bag),
+            label: 'Products',
+          ),
+          NavigationDestination(icon: Icon(Icons.restaurant), label: 'Recipes'),
+          NavigationDestination(icon: Icon(Icons.contacts), label: 'Contacts'),
           NavigationDestination(
-              icon: Icon(Icons.shopping_bag), label: 'Products'),
-          NavigationDestination(
-              icon: Icon(Icons.restaurant), label: 'Recipes'),
-          NavigationDestination(
-              icon: Icon(Icons.contacts), label: 'Contacts'),
-          NavigationDestination(
-              icon: Icon(Icons.auto_stories), label: 'RAG Notes'),
+            icon: Icon(Icons.auto_stories),
+            label: 'RAG Notes',
+          ),
         ],
       ),
     );
@@ -261,11 +259,7 @@ class _MyHomePageState extends State<MyHomePage> {
     ]);
 
     final sw = Stopwatch()..start();
-    final results = _db!.search(
-      vector: queryVector,
-      topK: _k,
-      efSearch: 48,
-    );
+    final results = _db!.search(vector: queryVector, topK: _k, efSearch: 48);
     sw.stop();
 
     setState(() {
