@@ -1,7 +1,7 @@
 use std::path::Path;
 use std::sync::RwLock;
 
-use redb::{Database, ReadableTable, TableDefinition};
+use redb::{Database, ReadableTable, ReadableTableMetadata, TableDefinition};
 use roaring::RoaringBitmap;
 
 use crate::api::error::{Result, WaffleError};
@@ -130,29 +130,48 @@ impl Store {
         Ok(table.get(external)?.map(|g| g.value()))
     }
 
-    pub fn alloc_id(&self, tx: &redb::WriteTransaction, external: &str) -> Result<u32> {
-        let mut free_table = tx.open_table(T_FREELIST)?;
-        if let Some(entry) = free_table.range::<u32>(..)?.next() {
-            let (k, _) = entry?;
-            let id = k.value();
-            free_table.remove(id)?;
+    pub fn alloc_id(&self, tx: &redb::WriteTransaction) -> Result<u32> {
+        let recycled = {
+            let mut free_table = tx.open_table(T_FREELIST)?;
+            let first: Option<u32> = {
+                let mut range = free_table.range::<u32>(..)?;
+                match range.next() {
+                    Some(entry) => Some(entry?.0.value()),
+                    None => None,
+                }
+            };
+            if let Some(id) = first {
+                free_table.remove(id)?;
+                Some(id)
+            } else {
+                None
+            }
+        };
+        if let Some(id) = recycled {
             return Ok(id);
         }
-        drop(free_table);
-        let raw = {
+        let next: u64 = {
             let meta = tx.open_table(T_META)?;
-            meta.get(META_NEXT_ID)?
-                .map(|g| g.value().to_vec())
-                .ok_or_else(|| WaffleError::Storage("missing next_id metadata".to_owned()))?
+            let guard = meta.get(META_NEXT_ID)?;
+            let raw = match guard.as_ref() {
+                Some(g) => g.value().to_vec(),
+                None => {
+                    return Err(WaffleError::Storage(
+                        "missing next_id metadata".to_owned(),
+                    ))
+                }
+            };
+            drop(guard);
+            drop(meta);
+            let arr: [u8; 8] = raw[0..8].try_into().map_err(|_| {
+                WaffleError::Storage("corrupt next_id metadata".to_owned())
+            })?;
+            u64::from_le_bytes(arr)
         };
-        let mut arr = [0u8; 8];
-        arr.copy_from_slice(&raw[0..8]);
-        let next = u64::from_le_bytes(arr);
         if next > u32::MAX as u64 {
             return Err(WaffleError::Storage("internal id space exhausted".to_owned()));
         }
         self.set_next_id(tx, next + 1)?;
-        let _ = external;
         Ok(next as u32)
     }
 
@@ -234,17 +253,12 @@ impl Store {
     }
 
     pub fn remove_record(&self, tx: &redb::WriteTransaction, external: &str, internal: u32) -> Result<Option<ChunkRecord>> {
-        let record = {
-            let data = tx.open_table(T_DATA)?;
-            match data.get(internal)? {
-                Some(g) => Some(unarchive_chunk(g.value())?),
-                None => None,
-            }
+        let mut data = tx.open_table(T_DATA)?;
+        let record = match data.get(internal)? {
+            Some(g) => Some(unarchive_chunk(g.value())?),
+            None => None,
         };
-        {
-            let mut data = tx.open_table(T_DATA)?;
-            data.remove(internal)?;
-        }
+        data.remove(internal)?;
         {
             let mut vecs = tx.open_table(T_VECTORS)?;
             vecs.remove(internal)?;
@@ -374,7 +388,7 @@ impl Store {
         let tx = self.db.begin_read()?;
         let table = tx.open_table(T_EXT2INT)?;
         let mut ids = Vec::new();
-        let mut iter = table.range::<&str>(..)??;
+        let mut iter = table.range::<&str>(..)?;
         while let Some(entry) = iter.next() {
             let (k, _) = entry?;
             ids.push(k.value().to_owned());
@@ -387,7 +401,7 @@ impl Store {
         let ext = tx.open_table(T_EXT2INT)?;
         let vecs = tx.open_table(T_VECTORS)?;
         let mut out = Vec::new();
-        let mut iter = ext.range::<&str>(..)??;
+        let mut iter = ext.range::<&str>(..)?;
         while let Some(entry) = iter.next() {
             let (k, v) = entry?;
             let external = k.value().to_owned();

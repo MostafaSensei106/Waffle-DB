@@ -3,271 +3,563 @@
 
 // ignore_for_file: unused_import, unused_element, unnecessary_import, duplicate_ignore, invalid_use_of_internal_member, annotate_overrides, non_constant_identifier_names, curly_braces_in_flow_control_structures, prefer_const_literals_to_create_immutables, unused_field
 
+
 // Static analysis wrongly picks the IO variant, thus ignore this
 // ignore_for_file: argument_type_not_assignable
 
 import 'api/config.dart';
+import 'api/error.dart';
+import 'api/filter.dart';
 import 'api/math.dart';
-import 'api/models.dart';
+import 'api/query.dart';
+import 'api/schema.dart';
+import 'api/store.dart';
+import 'api/text.dart';
+import 'api/vector.dart';
 import 'api/waffle_db.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated_web.dart';
 
-abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
-  RustLibApiImplPlatform({
-    required super.handler,
-    required super.wire,
-    required super.generalizedFrbRustBinding,
-    required super.portManager,
-  });
 
-  @protected
-  String dco_decode_String(dynamic raw);
 
-  @protected
-  bool dco_decode_bool(dynamic raw);
 
-  @protected
-  VectorMetadata dco_decode_box_autoadd_vector_metadata(dynamic raw);
+                abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
+                  RustLibApiImplPlatform({
+                    required super.handler,
+                    required super.wire,
+                    required super.generalizedFrbRustBinding,
+                    required super.portManager,
+                  });
 
-  @protected
-  WaffleConfig dco_decode_box_autoadd_waffle_config(dynamic raw);
+                  CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_PathPtr => wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPath;
 
-  @protected
-  double dco_decode_f_32(dynamic raw);
+CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_RoaringBitmapPtr => wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap;
 
-  @protected
-  int dco_decode_i_32(dynamic raw);
+CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_StorePtr => wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore;
 
-  @protected
-  List<String> dco_decode_list_String(dynamic raw);
+CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_TextEnginePtr => wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine;
 
-  @protected
-  List<Uint8List> dco_decode_list_list_prim_u_8_strict(dynamic raw);
+CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_VectorEnginePtr => wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine;
 
-  @protected
-  List<double> dco_decode_list_prim_f_32_loose(dynamic raw);
+CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_WriteTransactionPtr => wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction;
 
-  @protected
-  Float32List dco_decode_list_prim_f_32_strict(dynamic raw);
 
-  @protected
-  List<int> dco_decode_list_prim_u_8_loose(dynamic raw);
 
-  @protected
-  Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
+                  @protected RoaringBitmap dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(dynamic raw);
 
-  @protected
-  List<WaffleQueryResult> dco_decode_list_waffle_query_result(dynamic raw);
+@protected Store dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(dynamic raw);
 
-  @protected
-  Float32List? dco_decode_opt_list_prim_f_32_strict(dynamic raw);
+@protected TextEngine dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(dynamic raw);
 
-  @protected
-  Uint8List? dco_decode_opt_list_prim_u_8_strict(dynamic raw);
+@protected VectorEngine dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(dynamic raw);
 
-  @protected
-  int dco_decode_u_32(dynamic raw);
+@protected WriteTransaction dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(dynamic raw);
 
-  @protected
-  BigInt dco_decode_u_64(dynamic raw);
+@protected Path dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPath(dynamic raw);
 
-  @protected
-  int dco_decode_u_8(dynamic raw);
+@protected RoaringBitmap dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(dynamic raw);
 
-  @protected
-  void dco_decode_unit(dynamic raw);
+@protected Store dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(dynamic raw);
 
-  @protected
-  VectorMetadata dco_decode_vector_metadata(dynamic raw);
+@protected TextEngine dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(dynamic raw);
 
-  @protected
-  WaffleConfig dco_decode_waffle_config(dynamic raw);
+@protected VectorEngine dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(dynamic raw);
 
-  @protected
-  WaffleGraphConfig dco_decode_waffle_graph_config(dynamic raw);
+@protected WriteTransaction dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(dynamic raw);
 
-  @protected
-  WaffleMetric dco_decode_waffle_metric(dynamic raw);
+@protected Path dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPath(dynamic raw);
 
-  @protected
-  WaffleQueryResult dco_decode_waffle_query_result(dynamic raw);
+@protected RoaringBitmap dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(dynamic raw);
 
-  @protected
-  String sse_decode_String(SseDeserializer deserializer);
+@protected Store dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(dynamic raw);
 
-  @protected
-  bool sse_decode_bool(SseDeserializer deserializer);
+@protected TextEngine dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(dynamic raw);
 
-  @protected
-  VectorMetadata sse_decode_box_autoadd_vector_metadata(
-      SseDeserializer deserializer);
+@protected VectorEngine dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(dynamic raw);
 
-  @protected
-  WaffleConfig sse_decode_box_autoadd_waffle_config(
-      SseDeserializer deserializer);
+@protected WriteTransaction dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(dynamic raw);
 
-  @protected
-  double sse_decode_f_32(SseDeserializer deserializer);
+@protected Object? dco_decode_SerdeJsonValue(dynamic raw);
 
-  @protected
-  int sse_decode_i_32(SseDeserializer deserializer);
+@protected String dco_decode_String(dynamic raw);
 
-  @protected
-  List<String> sse_decode_list_String(SseDeserializer deserializer);
+@protected bool dco_decode_bool(dynamic raw);
 
-  @protected
-  List<Uint8List> sse_decode_list_list_prim_u_8_strict(
-      SseDeserializer deserializer);
+@protected RoaringBitmap dco_decode_box_autoadd_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(dynamic raw);
 
-  @protected
-  List<double> sse_decode_list_prim_f_32_loose(SseDeserializer deserializer);
+@protected ChunkRecord dco_decode_box_autoadd_chunk_record(dynamic raw);
 
-  @protected
-  Float32List sse_decode_list_prim_f_32_strict(SseDeserializer deserializer);
+@protected double dco_decode_box_autoadd_f_32(dynamic raw);
 
-  @protected
-  List<int> sse_decode_list_prim_u_8_loose(SseDeserializer deserializer);
+@protected int dco_decode_box_autoadd_u_32(dynamic raw);
 
-  @protected
-  Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
+@protected WaffleConfig dco_decode_box_autoadd_waffle_config(dynamic raw);
 
-  @protected
-  List<WaffleQueryResult> sse_decode_list_waffle_query_result(
-      SseDeserializer deserializer);
+@protected WaffleHit dco_decode_box_autoadd_waffle_hit(dynamic raw);
 
-  @protected
-  Float32List? sse_decode_opt_list_prim_f_32_strict(
-      SseDeserializer deserializer);
+@protected WaffleSchema dco_decode_box_autoadd_waffle_schema(dynamic raw);
 
-  @protected
-  Uint8List? sse_decode_opt_list_prim_u_8_strict(SseDeserializer deserializer);
+@protected WaffleSearchRequest dco_decode_box_autoadd_waffle_search_request(dynamic raw);
 
-  @protected
-  int sse_decode_u_32(SseDeserializer deserializer);
+@protected FilterNode dco_decode_box_filter_node(dynamic raw);
 
-  @protected
-  BigInt sse_decode_u_64(SseDeserializer deserializer);
+@protected ChunkRecord dco_decode_chunk_record(dynamic raw);
 
-  @protected
-  int sse_decode_u_8(SseDeserializer deserializer);
+@protected double dco_decode_f_32(dynamic raw);
 
-  @protected
-  void sse_decode_unit(SseDeserializer deserializer);
+@protected double dco_decode_f_64(dynamic raw);
 
-  @protected
-  VectorMetadata sse_decode_vector_metadata(SseDeserializer deserializer);
+@protected FilterNode dco_decode_filter_node(dynamic raw);
 
-  @protected
-  WaffleConfig sse_decode_waffle_config(SseDeserializer deserializer);
+@protected int dco_decode_i_32(dynamic raw);
 
-  @protected
-  WaffleGraphConfig sse_decode_waffle_graph_config(
-      SseDeserializer deserializer);
+@protected List<Object?> dco_decode_list_SerdeJsonValue(dynamic raw);
 
-  @protected
-  WaffleMetric sse_decode_waffle_metric(SseDeserializer deserializer);
+@protected List<String> dco_decode_list_String(dynamic raw);
 
-  @protected
-  WaffleQueryResult sse_decode_waffle_query_result(
-      SseDeserializer deserializer);
+@protected List<FilterNode> dco_decode_list_filter_node(dynamic raw);
 
-  @protected
-  void sse_encode_String(String self, SseSerializer serializer);
+@protected List<double> dco_decode_list_prim_f_32_loose(dynamic raw);
 
-  @protected
-  void sse_encode_bool(bool self, SseSerializer serializer);
+@protected Float32List dco_decode_list_prim_f_32_strict(dynamic raw);
 
-  @protected
-  void sse_encode_box_autoadd_vector_metadata(
-      VectorMetadata self, SseSerializer serializer);
+@protected List<int> dco_decode_list_prim_u_32_loose(dynamic raw);
 
-  @protected
-  void sse_encode_box_autoadd_waffle_config(
-      WaffleConfig self, SseSerializer serializer);
+@protected Uint32List dco_decode_list_prim_u_32_strict(dynamic raw);
 
-  @protected
-  void sse_encode_f_32(double self, SseSerializer serializer);
+@protected List<int> dco_decode_list_prim_u_8_loose(dynamic raw);
 
-  @protected
-  void sse_encode_i_32(int self, SseSerializer serializer);
+@protected Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
 
-  @protected
-  void sse_encode_list_String(List<String> self, SseSerializer serializer);
+@protected List<(String,int,Float32List)> dco_decode_list_record_string_u_32_list_prim_f_32_strict(dynamic raw);
 
-  @protected
-  void sse_encode_list_list_prim_u_8_strict(
-      List<Uint8List> self, SseSerializer serializer);
+@protected List<(int,double)> dco_decode_list_record_u_32_f_32(dynamic raw);
 
-  @protected
-  void sse_encode_list_prim_f_32_loose(
-      List<double> self, SseSerializer serializer);
+@protected List<(int,double,double?)> dco_decode_list_record_u_32_f_32_opt_box_autoadd_f_32(dynamic raw);
 
-  @protected
-  void sse_encode_list_prim_f_32_strict(
-      Float32List self, SseSerializer serializer);
+@protected List<WaffleField> dco_decode_list_waffle_field(dynamic raw);
 
-  @protected
-  void sse_encode_list_prim_u_8_loose(List<int> self, SseSerializer serializer);
+@protected List<WaffleHit> dco_decode_list_waffle_hit(dynamic raw);
 
-  @protected
-  void sse_encode_list_prim_u_8_strict(
-      Uint8List self, SseSerializer serializer);
+@protected String? dco_decode_opt_String(dynamic raw);
 
-  @protected
-  void sse_encode_list_waffle_query_result(
-      List<WaffleQueryResult> self, SseSerializer serializer);
+@protected RoaringBitmap? dco_decode_opt_box_autoadd_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(dynamic raw);
 
-  @protected
-  void sse_encode_opt_list_prim_f_32_strict(
-      Float32List? self, SseSerializer serializer);
+@protected ChunkRecord? dco_decode_opt_box_autoadd_chunk_record(dynamic raw);
 
-  @protected
-  void sse_encode_opt_list_prim_u_8_strict(
-      Uint8List? self, SseSerializer serializer);
+@protected double? dco_decode_opt_box_autoadd_f_32(dynamic raw);
 
-  @protected
-  void sse_encode_u_32(int self, SseSerializer serializer);
+@protected int? dco_decode_opt_box_autoadd_u_32(dynamic raw);
 
-  @protected
-  void sse_encode_u_64(BigInt self, SseSerializer serializer);
+@protected WaffleHit? dco_decode_opt_box_autoadd_waffle_hit(dynamic raw);
 
-  @protected
-  void sse_encode_u_8(int self, SseSerializer serializer);
+@protected Float32List? dco_decode_opt_list_prim_f_32_strict(dynamic raw);
 
-  @protected
-  void sse_encode_unit(void self, SseSerializer serializer);
+@protected Uint8List? dco_decode_opt_list_prim_u_8_strict(dynamic raw);
 
-  @protected
-  void sse_encode_vector_metadata(
-      VectorMetadata self, SseSerializer serializer);
+@protected (String,int,Float32List) dco_decode_record_string_u_32_list_prim_f_32_strict(dynamic raw);
 
-  @protected
-  void sse_encode_waffle_config(WaffleConfig self, SseSerializer serializer);
+@protected (int,double) dco_decode_record_u_32_f_32(dynamic raw);
 
-  @protected
-  void sse_encode_waffle_graph_config(
-      WaffleGraphConfig self, SseSerializer serializer);
+@protected (int,double,double?) dco_decode_record_u_32_f_32_opt_box_autoadd_f_32(dynamic raw);
 
-  @protected
-  void sse_encode_waffle_metric(WaffleMetric self, SseSerializer serializer);
+@protected int dco_decode_u_32(dynamic raw);
 
-  @protected
-  void sse_encode_waffle_query_result(
-      WaffleQueryResult self, SseSerializer serializer);
-}
+@protected BigInt dco_decode_u_64(dynamic raw);
+
+@protected int dco_decode_u_8(dynamic raw);
+
+@protected U8Array20 dco_decode_u_8_array_20(dynamic raw);
+
+@protected U8Array8 dco_decode_u_8_array_8(dynamic raw);
+
+@protected void dco_decode_unit(dynamic raw);
+
+@protected BigInt dco_decode_usize(dynamic raw);
+
+@protected WaffleConfig dco_decode_waffle_config(dynamic raw);
+
+@protected WaffleError dco_decode_waffle_error(dynamic raw);
+
+@protected WaffleField dco_decode_waffle_field(dynamic raw);
+
+@protected WaffleFieldType dco_decode_waffle_field_type(dynamic raw);
+
+@protected WaffleGraphConfig dco_decode_waffle_graph_config(dynamic raw);
+
+@protected WaffleHit dco_decode_waffle_hit(dynamic raw);
+
+@protected WaffleLanguage dco_decode_waffle_language(dynamic raw);
+
+@protected WaffleMetric dco_decode_waffle_metric(dynamic raw);
+
+@protected WaffleSchema dco_decode_waffle_schema(dynamic raw);
+
+@protected WaffleSearchRequest dco_decode_waffle_search_request(dynamic raw);
+
+@protected RoaringBitmap sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(SseDeserializer deserializer);
+
+@protected Store sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(SseDeserializer deserializer);
+
+@protected TextEngine sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(SseDeserializer deserializer);
+
+@protected VectorEngine sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(SseDeserializer deserializer);
+
+@protected WriteTransaction sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(SseDeserializer deserializer);
+
+@protected Path sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPath(SseDeserializer deserializer);
+
+@protected RoaringBitmap sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(SseDeserializer deserializer);
+
+@protected Store sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(SseDeserializer deserializer);
+
+@protected TextEngine sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(SseDeserializer deserializer);
+
+@protected VectorEngine sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(SseDeserializer deserializer);
+
+@protected WriteTransaction sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(SseDeserializer deserializer);
+
+@protected Path sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPath(SseDeserializer deserializer);
+
+@protected RoaringBitmap sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(SseDeserializer deserializer);
+
+@protected Store sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(SseDeserializer deserializer);
+
+@protected TextEngine sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(SseDeserializer deserializer);
+
+@protected VectorEngine sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(SseDeserializer deserializer);
+
+@protected WriteTransaction sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(SseDeserializer deserializer);
+
+@protected Object? sse_decode_SerdeJsonValue(SseDeserializer deserializer);
+
+@protected String sse_decode_String(SseDeserializer deserializer);
+
+@protected bool sse_decode_bool(SseDeserializer deserializer);
+
+@protected RoaringBitmap sse_decode_box_autoadd_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(SseDeserializer deserializer);
+
+@protected ChunkRecord sse_decode_box_autoadd_chunk_record(SseDeserializer deserializer);
+
+@protected double sse_decode_box_autoadd_f_32(SseDeserializer deserializer);
+
+@protected int sse_decode_box_autoadd_u_32(SseDeserializer deserializer);
+
+@protected WaffleConfig sse_decode_box_autoadd_waffle_config(SseDeserializer deserializer);
+
+@protected WaffleHit sse_decode_box_autoadd_waffle_hit(SseDeserializer deserializer);
+
+@protected WaffleSchema sse_decode_box_autoadd_waffle_schema(SseDeserializer deserializer);
+
+@protected WaffleSearchRequest sse_decode_box_autoadd_waffle_search_request(SseDeserializer deserializer);
+
+@protected FilterNode sse_decode_box_filter_node(SseDeserializer deserializer);
+
+@protected ChunkRecord sse_decode_chunk_record(SseDeserializer deserializer);
+
+@protected double sse_decode_f_32(SseDeserializer deserializer);
+
+@protected double sse_decode_f_64(SseDeserializer deserializer);
+
+@protected FilterNode sse_decode_filter_node(SseDeserializer deserializer);
+
+@protected int sse_decode_i_32(SseDeserializer deserializer);
+
+@protected List<Object?> sse_decode_list_SerdeJsonValue(SseDeserializer deserializer);
+
+@protected List<String> sse_decode_list_String(SseDeserializer deserializer);
+
+@protected List<FilterNode> sse_decode_list_filter_node(SseDeserializer deserializer);
+
+@protected List<double> sse_decode_list_prim_f_32_loose(SseDeserializer deserializer);
+
+@protected Float32List sse_decode_list_prim_f_32_strict(SseDeserializer deserializer);
+
+@protected List<int> sse_decode_list_prim_u_32_loose(SseDeserializer deserializer);
+
+@protected Uint32List sse_decode_list_prim_u_32_strict(SseDeserializer deserializer);
+
+@protected List<int> sse_decode_list_prim_u_8_loose(SseDeserializer deserializer);
+
+@protected Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
+
+@protected List<(String,int,Float32List)> sse_decode_list_record_string_u_32_list_prim_f_32_strict(SseDeserializer deserializer);
+
+@protected List<(int,double)> sse_decode_list_record_u_32_f_32(SseDeserializer deserializer);
+
+@protected List<(int,double,double?)> sse_decode_list_record_u_32_f_32_opt_box_autoadd_f_32(SseDeserializer deserializer);
+
+@protected List<WaffleField> sse_decode_list_waffle_field(SseDeserializer deserializer);
+
+@protected List<WaffleHit> sse_decode_list_waffle_hit(SseDeserializer deserializer);
+
+@protected String? sse_decode_opt_String(SseDeserializer deserializer);
+
+@protected RoaringBitmap? sse_decode_opt_box_autoadd_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(SseDeserializer deserializer);
+
+@protected ChunkRecord? sse_decode_opt_box_autoadd_chunk_record(SseDeserializer deserializer);
+
+@protected double? sse_decode_opt_box_autoadd_f_32(SseDeserializer deserializer);
+
+@protected int? sse_decode_opt_box_autoadd_u_32(SseDeserializer deserializer);
+
+@protected WaffleHit? sse_decode_opt_box_autoadd_waffle_hit(SseDeserializer deserializer);
+
+@protected Float32List? sse_decode_opt_list_prim_f_32_strict(SseDeserializer deserializer);
+
+@protected Uint8List? sse_decode_opt_list_prim_u_8_strict(SseDeserializer deserializer);
+
+@protected (String,int,Float32List) sse_decode_record_string_u_32_list_prim_f_32_strict(SseDeserializer deserializer);
+
+@protected (int,double) sse_decode_record_u_32_f_32(SseDeserializer deserializer);
+
+@protected (int,double,double?) sse_decode_record_u_32_f_32_opt_box_autoadd_f_32(SseDeserializer deserializer);
+
+@protected int sse_decode_u_32(SseDeserializer deserializer);
+
+@protected BigInt sse_decode_u_64(SseDeserializer deserializer);
+
+@protected int sse_decode_u_8(SseDeserializer deserializer);
+
+@protected U8Array20 sse_decode_u_8_array_20(SseDeserializer deserializer);
+
+@protected U8Array8 sse_decode_u_8_array_8(SseDeserializer deserializer);
+
+@protected void sse_decode_unit(SseDeserializer deserializer);
+
+@protected BigInt sse_decode_usize(SseDeserializer deserializer);
+
+@protected WaffleConfig sse_decode_waffle_config(SseDeserializer deserializer);
+
+@protected WaffleError sse_decode_waffle_error(SseDeserializer deserializer);
+
+@protected WaffleField sse_decode_waffle_field(SseDeserializer deserializer);
+
+@protected WaffleFieldType sse_decode_waffle_field_type(SseDeserializer deserializer);
+
+@protected WaffleGraphConfig sse_decode_waffle_graph_config(SseDeserializer deserializer);
+
+@protected WaffleHit sse_decode_waffle_hit(SseDeserializer deserializer);
+
+@protected WaffleLanguage sse_decode_waffle_language(SseDeserializer deserializer);
+
+@protected WaffleMetric sse_decode_waffle_metric(SseDeserializer deserializer);
+
+@protected WaffleSchema sse_decode_waffle_schema(SseDeserializer deserializer);
+
+@protected WaffleSearchRequest sse_decode_waffle_search_request(SseDeserializer deserializer);
+
+@protected void sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(RoaringBitmap self, SseSerializer serializer);
+
+@protected void sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(Store self, SseSerializer serializer);
+
+@protected void sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(TextEngine self, SseSerializer serializer);
+
+@protected void sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(VectorEngine self, SseSerializer serializer);
+
+@protected void sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(WriteTransaction self, SseSerializer serializer);
+
+@protected void sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPath(Path self, SseSerializer serializer);
+
+@protected void sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(RoaringBitmap self, SseSerializer serializer);
+
+@protected void sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(Store self, SseSerializer serializer);
+
+@protected void sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(TextEngine self, SseSerializer serializer);
+
+@protected void sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(VectorEngine self, SseSerializer serializer);
+
+@protected void sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(WriteTransaction self, SseSerializer serializer);
+
+@protected void sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPath(Path self, SseSerializer serializer);
+
+@protected void sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(RoaringBitmap self, SseSerializer serializer);
+
+@protected void sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(Store self, SseSerializer serializer);
+
+@protected void sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(TextEngine self, SseSerializer serializer);
+
+@protected void sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(VectorEngine self, SseSerializer serializer);
+
+@protected void sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(WriteTransaction self, SseSerializer serializer);
+
+@protected void sse_encode_SerdeJsonValue(Object? self, SseSerializer serializer);
+
+@protected void sse_encode_String(String self, SseSerializer serializer);
+
+@protected void sse_encode_bool(bool self, SseSerializer serializer);
+
+@protected void sse_encode_box_autoadd_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(RoaringBitmap self, SseSerializer serializer);
+
+@protected void sse_encode_box_autoadd_chunk_record(ChunkRecord self, SseSerializer serializer);
+
+@protected void sse_encode_box_autoadd_f_32(double self, SseSerializer serializer);
+
+@protected void sse_encode_box_autoadd_u_32(int self, SseSerializer serializer);
+
+@protected void sse_encode_box_autoadd_waffle_config(WaffleConfig self, SseSerializer serializer);
+
+@protected void sse_encode_box_autoadd_waffle_hit(WaffleHit self, SseSerializer serializer);
+
+@protected void sse_encode_box_autoadd_waffle_schema(WaffleSchema self, SseSerializer serializer);
+
+@protected void sse_encode_box_autoadd_waffle_search_request(WaffleSearchRequest self, SseSerializer serializer);
+
+@protected void sse_encode_box_filter_node(FilterNode self, SseSerializer serializer);
+
+@protected void sse_encode_chunk_record(ChunkRecord self, SseSerializer serializer);
+
+@protected void sse_encode_f_32(double self, SseSerializer serializer);
+
+@protected void sse_encode_f_64(double self, SseSerializer serializer);
+
+@protected void sse_encode_filter_node(FilterNode self, SseSerializer serializer);
+
+@protected void sse_encode_i_32(int self, SseSerializer serializer);
+
+@protected void sse_encode_list_SerdeJsonValue(List<Object?> self, SseSerializer serializer);
+
+@protected void sse_encode_list_String(List<String> self, SseSerializer serializer);
+
+@protected void sse_encode_list_filter_node(List<FilterNode> self, SseSerializer serializer);
+
+@protected void sse_encode_list_prim_f_32_loose(List<double> self, SseSerializer serializer);
+
+@protected void sse_encode_list_prim_f_32_strict(Float32List self, SseSerializer serializer);
+
+@protected void sse_encode_list_prim_u_32_loose(List<int> self, SseSerializer serializer);
+
+@protected void sse_encode_list_prim_u_32_strict(Uint32List self, SseSerializer serializer);
+
+@protected void sse_encode_list_prim_u_8_loose(List<int> self, SseSerializer serializer);
+
+@protected void sse_encode_list_prim_u_8_strict(Uint8List self, SseSerializer serializer);
+
+@protected void sse_encode_list_record_string_u_32_list_prim_f_32_strict(List<(String,int,Float32List)> self, SseSerializer serializer);
+
+@protected void sse_encode_list_record_u_32_f_32(List<(int,double)> self, SseSerializer serializer);
+
+@protected void sse_encode_list_record_u_32_f_32_opt_box_autoadd_f_32(List<(int,double,double?)> self, SseSerializer serializer);
+
+@protected void sse_encode_list_waffle_field(List<WaffleField> self, SseSerializer serializer);
+
+@protected void sse_encode_list_waffle_hit(List<WaffleHit> self, SseSerializer serializer);
+
+@protected void sse_encode_opt_String(String? self, SseSerializer serializer);
+
+@protected void sse_encode_opt_box_autoadd_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(RoaringBitmap? self, SseSerializer serializer);
+
+@protected void sse_encode_opt_box_autoadd_chunk_record(ChunkRecord? self, SseSerializer serializer);
+
+@protected void sse_encode_opt_box_autoadd_f_32(double? self, SseSerializer serializer);
+
+@protected void sse_encode_opt_box_autoadd_u_32(int? self, SseSerializer serializer);
+
+@protected void sse_encode_opt_box_autoadd_waffle_hit(WaffleHit? self, SseSerializer serializer);
+
+@protected void sse_encode_opt_list_prim_f_32_strict(Float32List? self, SseSerializer serializer);
+
+@protected void sse_encode_opt_list_prim_u_8_strict(Uint8List? self, SseSerializer serializer);
+
+@protected void sse_encode_record_string_u_32_list_prim_f_32_strict((String,int,Float32List) self, SseSerializer serializer);
+
+@protected void sse_encode_record_u_32_f_32((int,double) self, SseSerializer serializer);
+
+@protected void sse_encode_record_u_32_f_32_opt_box_autoadd_f_32((int,double,double?) self, SseSerializer serializer);
+
+@protected void sse_encode_u_32(int self, SseSerializer serializer);
+
+@protected void sse_encode_u_64(BigInt self, SseSerializer serializer);
+
+@protected void sse_encode_u_8(int self, SseSerializer serializer);
+
+@protected void sse_encode_u_8_array_20(U8Array20 self, SseSerializer serializer);
+
+@protected void sse_encode_u_8_array_8(U8Array8 self, SseSerializer serializer);
+
+@protected void sse_encode_unit(void self, SseSerializer serializer);
+
+@protected void sse_encode_usize(BigInt self, SseSerializer serializer);
+
+@protected void sse_encode_waffle_config(WaffleConfig self, SseSerializer serializer);
+
+@protected void sse_encode_waffle_error(WaffleError self, SseSerializer serializer);
+
+@protected void sse_encode_waffle_field(WaffleField self, SseSerializer serializer);
+
+@protected void sse_encode_waffle_field_type(WaffleFieldType self, SseSerializer serializer);
+
+@protected void sse_encode_waffle_graph_config(WaffleGraphConfig self, SseSerializer serializer);
+
+@protected void sse_encode_waffle_hit(WaffleHit self, SseSerializer serializer);
+
+@protected void sse_encode_waffle_language(WaffleLanguage self, SseSerializer serializer);
+
+@protected void sse_encode_waffle_metric(WaffleMetric self, SseSerializer serializer);
+
+@protected void sse_encode_waffle_schema(WaffleSchema self, SseSerializer serializer);
+
+@protected void sse_encode_waffle_search_request(WaffleSearchRequest self, SseSerializer serializer);
+                }
+                
+
 
 // Section: wire_class
 
 class RustLibWire implements BaseWire {
-  RustLibWire.fromExternalLibrary(ExternalLibrary lib);
-}
+            RustLibWire.fromExternalLibrary(ExternalLibrary lib);
 
-@JS('wasm_bindgen')
-external RustLibWasmModule get wasmModule;
+            void rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPath(int ptr) => wasmModule.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPath(ptr);
 
-@JS()
-@anonymous
-extension type RustLibWasmModule._(JSObject _) implements JSObject {}
+void rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPath(int ptr) => wasmModule.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPath(ptr);
+
+void rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(int ptr) => wasmModule.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(ptr);
+
+void rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(int ptr) => wasmModule.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(ptr);
+
+void rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(int ptr) => wasmModule.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(ptr);
+
+void rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(int ptr) => wasmModule.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(ptr);
+
+void rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(int ptr) => wasmModule.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(ptr);
+
+void rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(int ptr) => wasmModule.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(ptr);
+
+void rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(int ptr) => wasmModule.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(ptr);
+
+void rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(int ptr) => wasmModule.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(ptr);
+
+void rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(int ptr) => wasmModule.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(ptr);
+
+void rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(int ptr) => wasmModule.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(ptr);
+        }
+        @JS('wasm_bindgen') external RustLibWasmModule get wasmModule;
+
+        @JS() @anonymous extension type RustLibWasmModule._(JSObject _) implements JSObject {
+            external void rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPath(int ptr);
+
+external void rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPath(int ptr);
+
+external void rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(int ptr);
+
+external void rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(int ptr);
+
+external void rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(int ptr);
+
+external void rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(int ptr);
+
+external void rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(int ptr);
+
+external void rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(int ptr);
+
+external void rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(int ptr);
+
+external void rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(int ptr);
+
+external void rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(int ptr);
+
+external void rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(int ptr);
+        }
+        

@@ -2,7 +2,7 @@ use rkyv::{Archive, Deserialize, Serialize};
 
 use crate::api::error::{Result, WaffleError};
 
-#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum WaffleFieldType {
     String,
     Integer,
@@ -11,27 +11,48 @@ pub enum WaffleFieldType {
     Text,
 }
 
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+impl WaffleFieldType {
+    fn as_str(&self) -> &'static str {
+        match self {
+            WaffleFieldType::String => "string",
+            WaffleFieldType::Integer => "integer",
+            WaffleFieldType::Double => "double",
+            WaffleFieldType::Boolean => "boolean",
+            WaffleFieldType::Text => "text",
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
 pub struct WaffleField {
     pub name: String,
     pub field_type: WaffleFieldType,
     pub indexed: bool,
 }
 
-#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum WaffleLanguage {
     English,
     Arabic,
 }
 
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+impl WaffleLanguage {
+    fn as_str(&self) -> &'static str {
+        match self {
+            WaffleLanguage::English => "english",
+            WaffleLanguage::Arabic => "arabic",
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
 pub struct WaffleSchema {
     pub fields: Vec<WaffleField>,
     pub text_language: WaffleLanguage,
 }
 
 impl WaffleSchema {
-    pub fn validate(&self) -> Result<()> {
+    pub(crate) fn validate(&self) -> Result<()> {
         if self.fields.is_empty() {
             return Err(WaffleError::Schema(
                 "schema must declare at least one field".to_owned(),
@@ -58,16 +79,32 @@ impl WaffleSchema {
         Ok(())
     }
 
-    pub fn canonical_json(&self) -> Result<String> {
-        serde_json::to_string(self).map_err(WaffleError::from)
+    pub(crate) fn canonical_json(&self) -> Result<String> {
+        let fields: Vec<serde_json::Value> = self
+            .fields
+            .iter()
+            .map(|f| {
+                serde_json::json!({
+                    "name": f.name,
+                    "type": f.field_type.as_str(),
+                    "indexed": f.indexed,
+                })
+            })
+            .collect();
+        let v = serde_json::json!({
+            "fields": fields,
+            "text_language": self.text_language.as_str(),
+        });
+        serde_json::to_string(&v).map_err(WaffleError::from)
     }
 
-    pub fn indexed_field(&self, name: &str) -> Option<&WaffleField> {
+    pub(crate) fn indexed_field(&self, name: &str) -> Option<&WaffleField> {
         self.fields.iter().find(|f| f.name == name && f.indexed)
     }
 }
 
 #[derive(Archive, Serialize, Deserialize, Debug, Clone)]
+#[flutter_rust_bridge::frb(ignore)]
 pub struct ChunkRecord {
     pub external_id: String,
     pub parent_id: Option<String>,

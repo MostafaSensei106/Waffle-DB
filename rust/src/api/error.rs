@@ -1,6 +1,7 @@
 use thiserror::Error;
 
 #[derive(Debug, Error)]
+#[flutter_rust_bridge::frb(ignore)]
 pub enum WaffleError {
     #[error("storage error: {0}")]
     Storage(String),

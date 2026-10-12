@@ -15,6 +15,7 @@ num_cpus = "1.17.0"
 serde_json = "1.0.154"
 anyhow = "1.0.104"
 thiserror = "2"
+cxx = "1.0"
 
 # ---  RAG engines (usearch + tantivy + redb + roaring) ---
 # Vector Engine: SIMD K-NN + predicate pre-filtering during traversal.

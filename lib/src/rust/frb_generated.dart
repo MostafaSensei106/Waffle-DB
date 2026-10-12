@@ -4,1248 +4,3116 @@
 // ignore_for_file: unused_import, unused_element, unnecessary_import, duplicate_ignore, invalid_use_of_internal_member, annotate_overrides, non_constant_identifier_names, curly_braces_in_flow_control_structures, prefer_const_literals_to_create_immutables, unused_field
 
 import 'api/config.dart';
+import 'api/error.dart';
+import 'api/filter.dart';
 import 'api/math.dart';
-import 'api/models.dart';
+import 'api/query.dart';
+import 'api/schema.dart';
+import 'api/store.dart';
+import 'api/text.dart';
+import 'api/vector.dart';
 import 'api/waffle_db.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'frb_generated.dart';
-import 'frb_generated.io.dart'
-    if (dart.library.js_interop) 'frb_generated.web.dart';
+import 'frb_generated.io.dart' if (dart.library.js_interop) 'frb_generated.web.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-/// Main entrypoint of the Rust API
-class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
-  @internal
-  static final instance = RustLib._();
-
-  RustLib._();
-
-  /// Initialize flutter_rust_bridge
-  static Future<void> init({
-    RustLibApi? api,
-    BaseHandler? handler,
-    ExternalLibrary? externalLibrary,
-    bool forceSameCodegenVersion = true,
-  }) async {
-    await instance.initImpl(
-      api: api,
-      handler: handler,
-      externalLibrary: externalLibrary,
-      forceSameCodegenVersion: forceSameCodegenVersion,
-    );
-  }
-
-  /// Initialize flutter_rust_bridge in mock mode.
-  /// No libraries for FFI are loaded.
-  static void initMock({
-    required RustLibApi api,
-  }) {
-    instance.initMockImpl(
-      api: api,
-    );
-  }
-
-  /// Dispose flutter_rust_bridge
-  ///
-  /// The call to this function is optional, since flutter_rust_bridge (and everything else)
-  /// is automatically disposed when the app stops.
-  static void dispose() => instance.disposeImpl();
-
-  @override
-  ApiImplConstructor<RustLibApiImpl, RustLibWire> get apiImplConstructor =>
-      RustLibApiImpl.new;
-
-  @override
-  WireConstructor<RustLibWire> get wireConstructor =>
-      RustLibWire.fromExternalLibrary;
-
-  @override
-  Future<void> executeRustInitializers() async {}
-
-  @override
-  ExternalLibraryLoaderConfig get defaultExternalLibraryLoaderConfig =>
-      kDefaultExternalLibraryLoaderConfig;
-
-  @override
-  String get codegenVersion => '2.13.0';
-
-  @override
-  int get rustContentHash => -1101628960;
-
-  static const kDefaultExternalLibraryLoaderConfig =
-      ExternalLibraryLoaderConfig(
-    stem: 'waffle_db',
-    ioDirectory: 'rust/target/release/',
-    webPrefix: 'pkg/',
-    wasmBindgenName: 'wasm_bindgen',
-  );
-}
-
-abstract class RustLibApi extends BaseApi {
-  void crateApiModelsDummyExportVectorMetadata({required VectorMetadata meta});
-
-  Future<double> crateApiMathCosineSimilarity(
-      {required List<double> a, required List<double> b});
-
-  Future<void> crateApiWaffleDbWaffleClose({required BigInt handle});
-
-  Future<WaffleConfig> crateApiConfigWaffleConfigDefault();
-
-  Future<WaffleConfig> crateApiConfigWaffleConfigHighVolumeProfile(
-      {required String path, required int dimension});
-
-  Future<WaffleConfig> crateApiConfigWaffleConfigMobileProfile(
-      {required String path, required int dimension});
-
-  Future<WaffleConfig> crateApiConfigWaffleConfigReadHeavyProfile(
-      {required String path, required int dimension});
-
-  Future<WaffleConfig> crateApiConfigWaffleConfigServerProfile(
-      {required String path, required int dimension});
-
-  Future<WaffleConfig> crateApiConfigWaffleConfigWriteHeavyProfile(
-      {required String path, required int dimension});
-
-  BigInt crateApiWaffleDbWaffleCount({required BigInt handle});
-
-  Future<bool> crateApiWaffleDbWaffleDelete(
-      {required BigInt handle, required String id});
-
-  Future<void> crateApiWaffleDbWaffleFlush({required BigInt handle});
-
-  List<String> crateApiWaffleDbWaffleGetAllIds({required BigInt handle});
-
-  Uint8List? crateApiWaffleDbWaffleGetMetadata(
-      {required BigInt handle, required String id});
-
-  Float32List? crateApiWaffleDbWaffleGetVector(
-      {required BigInt handle, required String id});
-
-  Future<void> crateApiWaffleDbWaffleInsert(
-      {required BigInt handle,
-      required String id,
-      required List<double> vector,
-      required List<int> metadata});
-
-  Future<void> crateApiWaffleDbWaffleInsertBatch(
-      {required BigInt handle,
-      required List<String> ids,
-      required List<double> vectorsFlat,
-      required List<Uint8List> metadataList});
-
-  Future<BigInt> crateApiWaffleDbWaffleOpen({required WaffleConfig config});
-
-  List<WaffleQueryResult> crateApiWaffleDbWaffleQuery(
-      {required BigInt handle,
-      required List<double> vector,
-      required int k,
-      required int efSearch,
-      required bool includeMetadata});
-}
-
-class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
-  RustLibApiImpl({
-    required super.handler,
-    required super.wire,
-    required super.generalizedFrbRustBinding,
-    required super.portManager,
-  });
-
-  @override
-  void crateApiModelsDummyExportVectorMetadata({required VectorMetadata meta}) {
-    return handler.executeSync(SyncTask(
-      callFfi: () {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_box_autoadd_vector_metadata(meta, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 1)!;
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_unit,
-        decodeErrorData: null,
-      ),
-      constMeta: kCrateApiModelsDummyExportVectorMetadataConstMeta,
-      argValues: [meta],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiModelsDummyExportVectorMetadataConstMeta =>
-      const TaskConstMeta(
-        debugName: "_dummy_export_vector_metadata",
-        argNames: ["meta"],
-      );
-
-  @override
-  Future<double> crateApiMathCosineSimilarity(
-      {required List<double> a, required List<double> b}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_list_prim_f_32_loose(a, serializer);
-        sse_encode_list_prim_f_32_loose(b, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 2, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_f_32,
-        decodeErrorData: null,
-      ),
-      constMeta: kCrateApiMathCosineSimilarityConstMeta,
-      argValues: [a, b],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiMathCosineSimilarityConstMeta =>
-      const TaskConstMeta(
-        debugName: "cosine_similarity",
-        argNames: ["a", "b"],
-      );
-
-  @override
-  Future<void> crateApiWaffleDbWaffleClose({required BigInt handle}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_u_64(handle, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 3, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_unit,
-        decodeErrorData: sse_decode_String,
-      ),
-      constMeta: kCrateApiWaffleDbWaffleCloseConstMeta,
-      argValues: [handle],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiWaffleDbWaffleCloseConstMeta =>
-      const TaskConstMeta(
-        debugName: "waffle_close",
-        argNames: ["handle"],
-      );
-
-  @override
-  Future<WaffleConfig> crateApiConfigWaffleConfigDefault() {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 4, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_waffle_config,
-        decodeErrorData: null,
-      ),
-      constMeta: kCrateApiConfigWaffleConfigDefaultConstMeta,
-      argValues: [],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiConfigWaffleConfigDefaultConstMeta =>
-      const TaskConstMeta(
-        debugName: "waffle_config_default",
-        argNames: [],
-      );
-
-  @override
-  Future<WaffleConfig> crateApiConfigWaffleConfigHighVolumeProfile(
-      {required String path, required int dimension}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_String(path, serializer);
-        sse_encode_u_32(dimension, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 5, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_waffle_config,
-        decodeErrorData: null,
-      ),
-      constMeta: kCrateApiConfigWaffleConfigHighVolumeProfileConstMeta,
-      argValues: [path, dimension],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiConfigWaffleConfigHighVolumeProfileConstMeta =>
-      const TaskConstMeta(
-        debugName: "waffle_config_high_volume_profile",
-        argNames: ["path", "dimension"],
-      );
-
-  @override
-  Future<WaffleConfig> crateApiConfigWaffleConfigMobileProfile(
-      {required String path, required int dimension}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_String(path, serializer);
-        sse_encode_u_32(dimension, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 6, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_waffle_config,
-        decodeErrorData: null,
-      ),
-      constMeta: kCrateApiConfigWaffleConfigMobileProfileConstMeta,
-      argValues: [path, dimension],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiConfigWaffleConfigMobileProfileConstMeta =>
-      const TaskConstMeta(
-        debugName: "waffle_config_mobile_profile",
-        argNames: ["path", "dimension"],
-      );
-
-  @override
-  Future<WaffleConfig> crateApiConfigWaffleConfigReadHeavyProfile(
-      {required String path, required int dimension}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_String(path, serializer);
-        sse_encode_u_32(dimension, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 7, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_waffle_config,
-        decodeErrorData: null,
-      ),
-      constMeta: kCrateApiConfigWaffleConfigReadHeavyProfileConstMeta,
-      argValues: [path, dimension],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiConfigWaffleConfigReadHeavyProfileConstMeta =>
-      const TaskConstMeta(
-        debugName: "waffle_config_read_heavy_profile",
-        argNames: ["path", "dimension"],
-      );
-
-  @override
-  Future<WaffleConfig> crateApiConfigWaffleConfigServerProfile(
-      {required String path, required int dimension}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_String(path, serializer);
-        sse_encode_u_32(dimension, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 8, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_waffle_config,
-        decodeErrorData: null,
-      ),
-      constMeta: kCrateApiConfigWaffleConfigServerProfileConstMeta,
-      argValues: [path, dimension],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiConfigWaffleConfigServerProfileConstMeta =>
-      const TaskConstMeta(
-        debugName: "waffle_config_server_profile",
-        argNames: ["path", "dimension"],
-      );
-
-  @override
-  Future<WaffleConfig> crateApiConfigWaffleConfigWriteHeavyProfile(
-      {required String path, required int dimension}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_String(path, serializer);
-        sse_encode_u_32(dimension, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 9, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_waffle_config,
-        decodeErrorData: null,
-      ),
-      constMeta: kCrateApiConfigWaffleConfigWriteHeavyProfileConstMeta,
-      argValues: [path, dimension],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiConfigWaffleConfigWriteHeavyProfileConstMeta =>
-      const TaskConstMeta(
-        debugName: "waffle_config_write_heavy_profile",
-        argNames: ["path", "dimension"],
-      );
-
-  @override
-  BigInt crateApiWaffleDbWaffleCount({required BigInt handle}) {
-    return handler.executeSync(SyncTask(
-      callFfi: () {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_u_64(handle, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 10)!;
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_u_64,
-        decodeErrorData: sse_decode_String,
-      ),
-      constMeta: kCrateApiWaffleDbWaffleCountConstMeta,
-      argValues: [handle],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiWaffleDbWaffleCountConstMeta =>
-      const TaskConstMeta(
-        debugName: "waffle_count",
-        argNames: ["handle"],
-      );
-
-  @override
-  Future<bool> crateApiWaffleDbWaffleDelete(
-      {required BigInt handle, required String id}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_u_64(handle, serializer);
-        sse_encode_String(id, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 11, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_bool,
-        decodeErrorData: sse_decode_String,
-      ),
-      constMeta: kCrateApiWaffleDbWaffleDeleteConstMeta,
-      argValues: [handle, id],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiWaffleDbWaffleDeleteConstMeta =>
-      const TaskConstMeta(
-        debugName: "waffle_delete",
-        argNames: ["handle", "id"],
-      );
-
-  @override
-  Future<void> crateApiWaffleDbWaffleFlush({required BigInt handle}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_u_64(handle, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 12, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_unit,
-        decodeErrorData: sse_decode_String,
-      ),
-      constMeta: kCrateApiWaffleDbWaffleFlushConstMeta,
-      argValues: [handle],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiWaffleDbWaffleFlushConstMeta =>
-      const TaskConstMeta(
-        debugName: "waffle_flush",
-        argNames: ["handle"],
-      );
-
-  @override
-  List<String> crateApiWaffleDbWaffleGetAllIds({required BigInt handle}) {
-    return handler.executeSync(SyncTask(
-      callFfi: () {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_u_64(handle, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 13)!;
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_list_String,
-        decodeErrorData: sse_decode_String,
-      ),
-      constMeta: kCrateApiWaffleDbWaffleGetAllIdsConstMeta,
-      argValues: [handle],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiWaffleDbWaffleGetAllIdsConstMeta =>
-      const TaskConstMeta(
-        debugName: "waffle_get_all_ids",
-        argNames: ["handle"],
-      );
-
-  @override
-  Uint8List? crateApiWaffleDbWaffleGetMetadata(
-      {required BigInt handle, required String id}) {
-    return handler.executeSync(SyncTask(
-      callFfi: () {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_u_64(handle, serializer);
-        sse_encode_String(id, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 14)!;
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_opt_list_prim_u_8_strict,
-        decodeErrorData: sse_decode_String,
-      ),
-      constMeta: kCrateApiWaffleDbWaffleGetMetadataConstMeta,
-      argValues: [handle, id],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiWaffleDbWaffleGetMetadataConstMeta =>
-      const TaskConstMeta(
-        debugName: "waffle_get_metadata",
-        argNames: ["handle", "id"],
-      );
-
-  @override
-  Float32List? crateApiWaffleDbWaffleGetVector(
-      {required BigInt handle, required String id}) {
-    return handler.executeSync(SyncTask(
-      callFfi: () {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_u_64(handle, serializer);
-        sse_encode_String(id, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 15)!;
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_opt_list_prim_f_32_strict,
-        decodeErrorData: sse_decode_String,
-      ),
-      constMeta: kCrateApiWaffleDbWaffleGetVectorConstMeta,
-      argValues: [handle, id],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiWaffleDbWaffleGetVectorConstMeta =>
-      const TaskConstMeta(
-        debugName: "waffle_get_vector",
-        argNames: ["handle", "id"],
-      );
-
-  @override
-  Future<void> crateApiWaffleDbWaffleInsert(
-      {required BigInt handle,
-      required String id,
-      required List<double> vector,
-      required List<int> metadata}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_u_64(handle, serializer);
-        sse_encode_String(id, serializer);
-        sse_encode_list_prim_f_32_loose(vector, serializer);
-        sse_encode_list_prim_u_8_loose(metadata, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 16, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_unit,
-        decodeErrorData: sse_decode_String,
-      ),
-      constMeta: kCrateApiWaffleDbWaffleInsertConstMeta,
-      argValues: [handle, id, vector, metadata],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiWaffleDbWaffleInsertConstMeta =>
-      const TaskConstMeta(
-        debugName: "waffle_insert",
-        argNames: ["handle", "id", "vector", "metadata"],
-      );
-
-  @override
-  Future<void> crateApiWaffleDbWaffleInsertBatch(
-      {required BigInt handle,
-      required List<String> ids,
-      required List<double> vectorsFlat,
-      required List<Uint8List> metadataList}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_u_64(handle, serializer);
-        sse_encode_list_String(ids, serializer);
-        sse_encode_list_prim_f_32_loose(vectorsFlat, serializer);
-        sse_encode_list_list_prim_u_8_strict(metadataList, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 17, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_unit,
-        decodeErrorData: sse_decode_String,
-      ),
-      constMeta: kCrateApiWaffleDbWaffleInsertBatchConstMeta,
-      argValues: [handle, ids, vectorsFlat, metadataList],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiWaffleDbWaffleInsertBatchConstMeta =>
-      const TaskConstMeta(
-        debugName: "waffle_insert_batch",
-        argNames: ["handle", "ids", "vectorsFlat", "metadataList"],
-      );
-
-  @override
-  Future<BigInt> crateApiWaffleDbWaffleOpen({required WaffleConfig config}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_box_autoadd_waffle_config(config, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 18, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_u_64,
-        decodeErrorData: sse_decode_String,
-      ),
-      constMeta: kCrateApiWaffleDbWaffleOpenConstMeta,
-      argValues: [config],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiWaffleDbWaffleOpenConstMeta => const TaskConstMeta(
-        debugName: "waffle_open",
-        argNames: ["config"],
-      );
-
-  @override
-  List<WaffleQueryResult> crateApiWaffleDbWaffleQuery(
-      {required BigInt handle,
-      required List<double> vector,
-      required int k,
-      required int efSearch,
-      required bool includeMetadata}) {
-    return handler.executeSync(SyncTask(
-      callFfi: () {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_u_64(handle, serializer);
-        sse_encode_list_prim_f_32_loose(vector, serializer);
-        sse_encode_u_32(k, serializer);
-        sse_encode_u_32(efSearch, serializer);
-        sse_encode_bool(includeMetadata, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 19)!;
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_list_waffle_query_result,
-        decodeErrorData: sse_decode_String,
-      ),
-      constMeta: kCrateApiWaffleDbWaffleQueryConstMeta,
-      argValues: [handle, vector, k, efSearch, includeMetadata],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiWaffleDbWaffleQueryConstMeta =>
-      const TaskConstMeta(
-        debugName: "waffle_query",
-        argNames: ["handle", "vector", "k", "efSearch", "includeMetadata"],
-      );
-
-  @protected
-  String dco_decode_String(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return raw as String;
-  }
-
-  @protected
-  bool dco_decode_bool(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return raw as bool;
-  }
-
-  @protected
-  VectorMetadata dco_decode_box_autoadd_vector_metadata(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return dco_decode_vector_metadata(raw);
-  }
-
-  @protected
-  WaffleConfig dco_decode_box_autoadd_waffle_config(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return dco_decode_waffle_config(raw);
-  }
-
-  @protected
-  double dco_decode_f_32(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return raw as double;
-  }
-
-  @protected
-  int dco_decode_i_32(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return raw as int;
-  }
-
-  @protected
-  List<String> dco_decode_list_String(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return (raw as List<dynamic>).map(dco_decode_String).toList();
-  }
-
-  @protected
-  List<Uint8List> dco_decode_list_list_prim_u_8_strict(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return (raw as List<dynamic>).map(dco_decode_list_prim_u_8_strict).toList();
-  }
-
-  @protected
-  List<double> dco_decode_list_prim_f_32_loose(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return raw as List<double>;
-  }
-
-  @protected
-  Float32List dco_decode_list_prim_f_32_strict(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return raw as Float32List;
-  }
-
-  @protected
-  List<int> dco_decode_list_prim_u_8_loose(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return raw as List<int>;
-  }
-
-  @protected
-  Uint8List dco_decode_list_prim_u_8_strict(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return raw as Uint8List;
-  }
-
-  @protected
-  List<WaffleQueryResult> dco_decode_list_waffle_query_result(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return (raw as List<dynamic>).map(dco_decode_waffle_query_result).toList();
-  }
-
-  @protected
-  Float32List? dco_decode_opt_list_prim_f_32_strict(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return raw == null ? null : dco_decode_list_prim_f_32_strict(raw);
-  }
-
-  @protected
-  Uint8List? dco_decode_opt_list_prim_u_8_strict(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return raw == null ? null : dco_decode_list_prim_u_8_strict(raw);
-  }
-
-  @protected
-  int dco_decode_u_32(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return raw as int;
-  }
-
-  @protected
-  BigInt dco_decode_u_64(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return dcoDecodeU64(raw);
-  }
-
-  @protected
-  int dco_decode_u_8(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return raw as int;
-  }
-
-  @protected
-  void dco_decode_unit(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return;
-  }
-
-  @protected
-  VectorMetadata dco_decode_vector_metadata(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    final arr = raw as List<dynamic>;
-    if (arr.length != 4)
-      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
-    return VectorMetadata(
-      title: dco_decode_String(arr[0]),
-      description: dco_decode_String(arr[1]),
-      category: dco_decode_String(arr[2]),
-      payload: dco_decode_list_prim_u_8_strict(arr[3]),
-    );
-  }
-
-  @protected
-  WaffleConfig dco_decode_waffle_config(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    final arr = raw as List<dynamic>;
-    if (arr.length != 7)
-      throw Exception('unexpected arr length: expect 7 but see ${arr.length}');
-    return WaffleConfig(
-      dimension: dco_decode_u_32(arr[0]),
-      path: dco_decode_String(arr[1]),
-      graphConfig: dco_decode_waffle_graph_config(arr[2]),
-      maxElements: dco_decode_u_32(arr[3]),
-      useQuantization: dco_decode_bool(arr[4]),
-      cacheSizeBytes: dco_decode_u_64(arr[5]),
-      workerThreads: dco_decode_u_32(arr[6]),
-    );
-  }
-
-  @protected
-  WaffleGraphConfig dco_decode_waffle_graph_config(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    final arr = raw as List<dynamic>;
-    if (arr.length != 4)
-      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
-    return WaffleGraphConfig(
-      m: dco_decode_u_32(arr[0]),
-      metric: dco_decode_waffle_metric(arr[1]),
-      efConstruction: dco_decode_u_32(arr[2]),
-      efSearch: dco_decode_u_32(arr[3]),
-    );
-  }
-
-  @protected
-  WaffleMetric dco_decode_waffle_metric(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return WaffleMetric.values[raw as int];
-  }
-
-  @protected
-  WaffleQueryResult dco_decode_waffle_query_result(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    final arr = raw as List<dynamic>;
-    if (arr.length != 3)
-      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
-    return WaffleQueryResult(
-      id: dco_decode_String(arr[0]),
-      distance: dco_decode_f_32(arr[1]),
-      metadata: dco_decode_opt_list_prim_u_8_strict(arr[2]),
-    );
-  }
-
-  @protected
-  String sse_decode_String(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    var inner = sse_decode_list_prim_u_8_strict(deserializer);
-    return utf8.decoder.convert(inner);
-  }
-
-  @protected
-  bool sse_decode_bool(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return deserializer.buffer.getUint8() != 0;
-  }
-
-  @protected
-  VectorMetadata sse_decode_box_autoadd_vector_metadata(
-      SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return (sse_decode_vector_metadata(deserializer));
-  }
-
-  @protected
-  WaffleConfig sse_decode_box_autoadd_waffle_config(
-      SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return (sse_decode_waffle_config(deserializer));
-  }
-
-  @protected
-  double sse_decode_f_32(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return deserializer.buffer.getFloat32();
-  }
-
-  @protected
-  int sse_decode_i_32(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return deserializer.buffer.getInt32();
-  }
-
-  @protected
-  List<String> sse_decode_list_String(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-
-    var len_ = sse_decode_i_32(deserializer);
-    var ans_ = <String>[];
-    for (var idx_ = 0; idx_ < len_; ++idx_) {
-      ans_.add(sse_decode_String(deserializer));
-    }
-    return ans_;
-  }
-
-  @protected
-  List<Uint8List> sse_decode_list_list_prim_u_8_strict(
-      SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-
-    var len_ = sse_decode_i_32(deserializer);
-    var ans_ = <Uint8List>[];
-    for (var idx_ = 0; idx_ < len_; ++idx_) {
-      ans_.add(sse_decode_list_prim_u_8_strict(deserializer));
-    }
-    return ans_;
-  }
-
-  @protected
-  List<double> sse_decode_list_prim_f_32_loose(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    var len_ = sse_decode_i_32(deserializer);
-    return deserializer.buffer.getFloat32List(len_);
-  }
-
-  @protected
-  Float32List sse_decode_list_prim_f_32_strict(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    var len_ = sse_decode_i_32(deserializer);
-    return deserializer.buffer.getFloat32List(len_);
-  }
-
-  @protected
-  List<int> sse_decode_list_prim_u_8_loose(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    var len_ = sse_decode_i_32(deserializer);
-    return deserializer.buffer.getUint8List(len_);
-  }
-
-  @protected
-  Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    var len_ = sse_decode_i_32(deserializer);
-    return deserializer.buffer.getUint8List(len_);
-  }
-
-  @protected
-  List<WaffleQueryResult> sse_decode_list_waffle_query_result(
-      SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-
-    var len_ = sse_decode_i_32(deserializer);
-    var ans_ = <WaffleQueryResult>[];
-    for (var idx_ = 0; idx_ < len_; ++idx_) {
-      ans_.add(sse_decode_waffle_query_result(deserializer));
-    }
-    return ans_;
-  }
-
-  @protected
-  Float32List? sse_decode_opt_list_prim_f_32_strict(
-      SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-
-    if (sse_decode_bool(deserializer)) {
-      return (sse_decode_list_prim_f_32_strict(deserializer));
-    } else {
-      return null;
-    }
-  }
-
-  @protected
-  Uint8List? sse_decode_opt_list_prim_u_8_strict(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-
-    if (sse_decode_bool(deserializer)) {
-      return (sse_decode_list_prim_u_8_strict(deserializer));
-    } else {
-      return null;
-    }
-  }
-
-  @protected
-  int sse_decode_u_32(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return deserializer.buffer.getUint32();
-  }
-
-  @protected
-  BigInt sse_decode_u_64(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return deserializer.buffer.getBigUint64();
-  }
-
-  @protected
-  int sse_decode_u_8(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return deserializer.buffer.getUint8();
-  }
-
-  @protected
-  void sse_decode_unit(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-  }
-
-  @protected
-  VectorMetadata sse_decode_vector_metadata(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    var var_title = sse_decode_String(deserializer);
-    var var_description = sse_decode_String(deserializer);
-    var var_category = sse_decode_String(deserializer);
-    var var_payload = sse_decode_list_prim_u_8_strict(deserializer);
-    return VectorMetadata(
-        title: var_title,
-        description: var_description,
-        category: var_category,
-        payload: var_payload);
-  }
-
-  @protected
-  WaffleConfig sse_decode_waffle_config(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    var var_dimension = sse_decode_u_32(deserializer);
-    var var_path = sse_decode_String(deserializer);
-    var var_graphConfig = sse_decode_waffle_graph_config(deserializer);
-    var var_maxElements = sse_decode_u_32(deserializer);
-    var var_useQuantization = sse_decode_bool(deserializer);
-    var var_cacheSizeBytes = sse_decode_u_64(deserializer);
-    var var_workerThreads = sse_decode_u_32(deserializer);
-    return WaffleConfig(
-        dimension: var_dimension,
-        path: var_path,
-        graphConfig: var_graphConfig,
-        maxElements: var_maxElements,
-        useQuantization: var_useQuantization,
-        cacheSizeBytes: var_cacheSizeBytes,
-        workerThreads: var_workerThreads);
-  }
-
-  @protected
-  WaffleGraphConfig sse_decode_waffle_graph_config(
-      SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    var var_m = sse_decode_u_32(deserializer);
-    var var_metric = sse_decode_waffle_metric(deserializer);
-    var var_efConstruction = sse_decode_u_32(deserializer);
-    var var_efSearch = sse_decode_u_32(deserializer);
-    return WaffleGraphConfig(
-        m: var_m,
-        metric: var_metric,
-        efConstruction: var_efConstruction,
-        efSearch: var_efSearch);
-  }
-
-  @protected
-  WaffleMetric sse_decode_waffle_metric(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    var inner = sse_decode_i_32(deserializer);
-    return WaffleMetric.values[inner];
-  }
-
-  @protected
-  WaffleQueryResult sse_decode_waffle_query_result(
-      SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    var var_id = sse_decode_String(deserializer);
-    var var_distance = sse_decode_f_32(deserializer);
-    var var_metadata = sse_decode_opt_list_prim_u_8_strict(deserializer);
-    return WaffleQueryResult(
-        id: var_id, distance: var_distance, metadata: var_metadata);
-  }
-
-  @protected
-  void sse_encode_String(String self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_list_prim_u_8_strict(utf8.encoder.convert(self), serializer);
-  }
-
-  @protected
-  void sse_encode_bool(bool self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    serializer.buffer.putUint8(self ? 1 : 0);
-  }
-
-  @protected
-  void sse_encode_box_autoadd_vector_metadata(
-      VectorMetadata self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_vector_metadata(self, serializer);
-  }
-
-  @protected
-  void sse_encode_box_autoadd_waffle_config(
-      WaffleConfig self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_waffle_config(self, serializer);
-  }
-
-  @protected
-  void sse_encode_f_32(double self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    serializer.buffer.putFloat32(self);
-  }
-
-  @protected
-  void sse_encode_i_32(int self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    serializer.buffer.putInt32(self);
-  }
-
-  @protected
-  void sse_encode_list_String(List<String> self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_i_32(self.length, serializer);
-    for (final item in self) {
-      sse_encode_String(item, serializer);
-    }
-  }
-
-  @protected
-  void sse_encode_list_list_prim_u_8_strict(
-      List<Uint8List> self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_i_32(self.length, serializer);
-    for (final item in self) {
-      sse_encode_list_prim_u_8_strict(item, serializer);
-    }
-  }
-
-  @protected
-  void sse_encode_list_prim_f_32_loose(
-      List<double> self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_i_32(self.length, serializer);
-    serializer.buffer.putFloat32List(
-        self is Float32List ? self : Float32List.fromList(self));
-  }
-
-  @protected
-  void sse_encode_list_prim_f_32_strict(
-      Float32List self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_i_32(self.length, serializer);
-    serializer.buffer.putFloat32List(self);
-  }
-
-  @protected
-  void sse_encode_list_prim_u_8_loose(
-      List<int> self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_i_32(self.length, serializer);
-    serializer.buffer
-        .putUint8List(self is Uint8List ? self : Uint8List.fromList(self));
-  }
-
-  @protected
-  void sse_encode_list_prim_u_8_strict(
-      Uint8List self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_i_32(self.length, serializer);
-    serializer.buffer.putUint8List(self);
-  }
-
-  @protected
-  void sse_encode_list_waffle_query_result(
-      List<WaffleQueryResult> self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_i_32(self.length, serializer);
-    for (final item in self) {
-      sse_encode_waffle_query_result(item, serializer);
-    }
-  }
-
-  @protected
-  void sse_encode_opt_list_prim_f_32_strict(
-      Float32List? self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-
-    sse_encode_bool(self != null, serializer);
-    if (self != null) {
-      sse_encode_list_prim_f_32_strict(self, serializer);
-    }
-  }
-
-  @protected
-  void sse_encode_opt_list_prim_u_8_strict(
-      Uint8List? self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-
-    sse_encode_bool(self != null, serializer);
-    if (self != null) {
-      sse_encode_list_prim_u_8_strict(self, serializer);
-    }
-  }
-
-  @protected
-  void sse_encode_u_32(int self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    serializer.buffer.putUint32(self);
-  }
-
-  @protected
-  void sse_encode_u_64(BigInt self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    serializer.buffer.putBigUint64(self);
-  }
-
-  @protected
-  void sse_encode_u_8(int self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    serializer.buffer.putUint8(self);
-  }
-
-  @protected
-  void sse_encode_unit(void self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-  }
-
-  @protected
-  void sse_encode_vector_metadata(
-      VectorMetadata self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_String(self.title, serializer);
-    sse_encode_String(self.description, serializer);
-    sse_encode_String(self.category, serializer);
-    sse_encode_list_prim_u_8_strict(self.payload, serializer);
-  }
-
-  @protected
-  void sse_encode_waffle_config(WaffleConfig self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_u_32(self.dimension, serializer);
-    sse_encode_String(self.path, serializer);
-    sse_encode_waffle_graph_config(self.graphConfig, serializer);
-    sse_encode_u_32(self.maxElements, serializer);
-    sse_encode_bool(self.useQuantization, serializer);
-    sse_encode_u_64(self.cacheSizeBytes, serializer);
-    sse_encode_u_32(self.workerThreads, serializer);
-  }
-
-  @protected
-  void sse_encode_waffle_graph_config(
-      WaffleGraphConfig self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_u_32(self.m, serializer);
-    sse_encode_waffle_metric(self.metric, serializer);
-    sse_encode_u_32(self.efConstruction, serializer);
-    sse_encode_u_32(self.efSearch, serializer);
-  }
-
-  @protected
-  void sse_encode_waffle_metric(WaffleMetric self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_i_32(self.index, serializer);
-  }
-
-  @protected
-  void sse_encode_waffle_query_result(
-      WaffleQueryResult self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_String(self.id, serializer);
-    sse_encode_f_32(self.distance, serializer);
-    sse_encode_opt_list_prim_u_8_strict(self.metadata, serializer);
-  }
-}
+
+                /// Main entrypoint of the Rust API
+                class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
+                  @internal
+                  static final instance = RustLib._();
+
+                  RustLib._();
+
+                  /// Initialize flutter_rust_bridge
+                  static Future<void> init({
+                    RustLibApi? api,
+                    BaseHandler? handler,
+                    ExternalLibrary? externalLibrary,
+                    bool forceSameCodegenVersion = true,
+                  }) async {
+                    await instance.initImpl(
+                      api: api,
+                      handler: handler,
+                      externalLibrary: externalLibrary,
+                      forceSameCodegenVersion: forceSameCodegenVersion,
+                    );
+                  }
+
+                  /// Initialize flutter_rust_bridge in mock mode.
+                  /// No libraries for FFI are loaded.
+                  static void initMock({
+                    required RustLibApi api,
+                  }) {
+                    instance.initMockImpl(
+                      api: api,
+                    );
+                  }
+
+                  /// Dispose flutter_rust_bridge
+                  ///
+                  /// The call to this function is optional, since flutter_rust_bridge (and everything else)
+                  /// is automatically disposed when the app stops.
+                  static void dispose() => instance.disposeImpl();
+
+                  @override
+                  ApiImplConstructor<RustLibApiImpl, RustLibWire> get apiImplConstructor => RustLibApiImpl.new;
+
+                  @override
+                  WireConstructor<RustLibWire> get wireConstructor => RustLibWire.fromExternalLibrary;
+
+                  @override
+                  Future<void> executeRustInitializers() async {
+                    
+                    
+                  }
+
+                  @override
+                  ExternalLibraryLoaderConfig get defaultExternalLibraryLoaderConfig => kDefaultExternalLibraryLoaderConfig;
+
+                  @override
+                  String get codegenVersion => '2.13.0';
+
+                  @override
+                  int get rustContentHash => 1512280811;
+
+                  static const kDefaultExternalLibraryLoaderConfig = ExternalLibraryLoaderConfig(
+                    stem: 'waffle_db',
+                    ioDirectory: 'rust/target/release/',
+                    webPrefix: 'pkg/',
+                    wasmBindgenName: 'wasm_bindgen',
+                  );
+                }
+                
+
+                abstract class RustLibApi extends BaseApi {
+                  Future<List<String>> crateApiStoreStoreAllExternalIds({required Store that });
+
+Future<List<(String,int,Float32List)>> crateApiStoreStoreAllVectors({required Store that , required BigInt dim });
+
+Future<int> crateApiStoreStoreAllocId({required Store that , required WriteTransaction tx });
+
+Future<WriteTransaction> crateApiStoreStoreBeginWrite({required Store that });
+
+Future<void> crateApiStoreStoreBitmapAdd({required Store that , required WriteTransaction tx , required String field , required String value , required int internal });
+
+Future<RoaringBitmap> crateApiStoreStoreBitmapGet({required Store that , required String key });
+
+Future<void> crateApiStoreStoreBitmapPut({required Store that , required WriteTransaction tx , required String key , required RoaringBitmap bitmap });
+
+Future<void> crateApiStoreStoreBitmapRemove({required Store that , required WriteTransaction tx , required String field , required String value , required int internal });
+
+Future<String> crateApiStoreStoreChildKey({required String parent , required int chunkIndex });
+
+Future<int?> crateApiStoreStoreChildLookup({required Store that , required String parent , required int chunkIndex });
+
+Future<BigInt> crateApiStoreStoreCount({required Store that });
+
+Future<int?> crateApiStoreStoreLookupInternal({required Store that , required String external_ });
+
+Future<BigInt> crateApiStoreStoreNextIdValue({required Store that });
+
+Future<void> crateApiStoreStoreNumericPut({required Store that , required WriteTransaction tx , required List<int> key });
+
+Future<void> crateApiStoreStoreNumericRemove({required Store that , required WriteTransaction tx , required List<int> key });
+
+Future<Uint32List> crateApiStoreStoreNumericScanPrefix({required Store that , required List<int> prefix });
+
+Future<Store> crateApiStoreStoreOpen({required Path path , required WaffleSchema schema , required int dimension });
+
+Future<ChunkRecord?> crateApiStoreStoreReadChunk({required Store that , required int internal });
+
+Future<Float32List?> crateApiStoreStoreReadVector({required Store that , required int internal , required BigInt dim });
+
+Future<ChunkRecord?> crateApiStoreStoreRemoveRecord({required Store that , required WriteTransaction tx , required String external_ , required int internal });
+
+Future<void> crateApiTextTextEngineAdd({required TextEngine that , required int internal , required String text });
+
+Future<void> crateApiTextTextEngineCommit({required TextEngine that });
+
+Future<void> crateApiTextTextEngineDelete({required TextEngine that , required int internal });
+
+Future<TextEngine> crateApiTextTextEngineOpen({required Path dir , required WaffleLanguage language });
+
+Future<List<(int,double)>> crateApiTextTextEngineSearch({required TextEngine that , required String text , required BigInt k });
+
+Future<void> crateApiVectorVectorEngineAdd({required VectorEngine that , required int internal , required List<double> vector });
+
+Future<bool> crateApiVectorVectorEngineContains({required VectorEngine that , required int internal });
+
+Future<VectorEngine> crateApiVectorVectorEngineOpen({required Path dir , required BigInt dimension , required WaffleMetric metric , required BigInt connectivity , required BigInt expansionAdd , required BigInt expansionSearch , required BigInt capacity });
+
+Future<void> crateApiVectorVectorEngineOverrideExpansionSearch({required VectorEngine that , required BigInt ef });
+
+Future<bool> crateApiVectorVectorEngineRemove({required VectorEngine that , required int internal });
+
+Future<void> crateApiVectorVectorEngineSave({required VectorEngine that , required Path dir });
+
+Future<List<(int,double)>> crateApiVectorVectorEngineSearch({required VectorEngine that , required List<double> query , required BigInt k , RoaringBitmap? allowed });
+
+Future<BigInt> crateApiVectorVectorEngineSize({required VectorEngine that });
+
+Future<double> crateApiMathCosineSimilarity({required List<double> a , required List<double> b });
+
+Future<BigInt> crateApiSchemaF64ToOrderedU64({required double v });
+
+Future<BigInt> crateApiSchemaFieldHash({required String field });
+
+Future<String> crateApiSchemaFieldValueKey({required String field , required String value });
+
+Future<U8Array20> crateApiSchemaNumericIndexKey({required BigInt fieldHash , required double value , required int internalId });
+
+Future<U8Array8> crateApiSchemaNumericIndexPrefix({required BigInt fieldHash });
+
+Future<FilterNode> crateApiFilterParseFilter({required String json });
+
+Future<List<(int,double,double?)>> crateApiQueryRrfFuse({required List<(int,double)> dense , required List<(int,double)> sparse , required BigInt rrfK , required double alpha , required BigInt topK });
+
+Future<ChunkRecord> crateApiSchemaUnarchiveChunk({required List<int> bytes });
+
+Future<void> crateApiWaffleDbWaffleClose({required BigInt handle });
+
+Future<WaffleConfig> crateApiConfigWaffleConfigDefault();
+
+Future<WaffleConfig> crateApiConfigWaffleConfigHighVolumeProfile({required String path , required int dimension });
+
+Future<WaffleConfig> crateApiConfigWaffleConfigMobileProfile({required String path , required int dimension });
+
+Future<WaffleConfig> crateApiConfigWaffleConfigReadHeavyProfile({required String path , required int dimension });
+
+Future<WaffleConfig> crateApiConfigWaffleConfigServerProfile({required String path , required int dimension });
+
+Future<WaffleConfig> crateApiConfigWaffleConfigWriteHeavyProfile({required String path , required int dimension });
+
+BigInt crateApiWaffleDbWaffleCount({required BigInt handle });
+
+Future<bool> crateApiWaffleDbWaffleDelete({required BigInt handle , required String id });
+
+Future<void> crateApiWaffleDbWaffleFlush({required BigInt handle });
+
+List<String> crateApiWaffleDbWaffleGetAllIds({required BigInt handle });
+
+Uint8List? crateApiWaffleDbWaffleGetMetadata({required BigInt handle , required String id });
+
+List<WaffleHit> crateApiWaffleDbWaffleGetNeighbors({required BigInt handle , required String id , required int window });
+
+WaffleHit? crateApiWaffleDbWaffleGetParent({required BigInt handle , required String id });
+
+Float32List? crateApiWaffleDbWaffleGetVector({required BigInt handle , required String id });
+
+Future<void> crateApiWaffleDbWaffleInsert({required BigInt handle , required String id , required List<double> vector , required String text , required String payloadJson , String? parentId , required int chunkIndex });
+
+Future<void> crateApiWaffleDbWaffleInsertBatch({required BigInt handle , required List<String> ids , required List<double> vectorsFlat , required List<String> texts , required List<String> payloadJsons , required List<String> parentIds , required List<int> chunkIndices });
+
+Future<BigInt> crateApiWaffleDbWaffleOpen({required WaffleConfig config , required WaffleSchema schema });
+
+List<WaffleHit> crateApiWaffleDbWaffleSearch({required BigInt handle , required WaffleSearchRequest request });
+
+RustArcIncrementStrongCountFnType get rust_arc_increment_strong_count_Path;
+
+RustArcDecrementStrongCountFnType get rust_arc_decrement_strong_count_Path;
+
+CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_PathPtr;
+
+RustArcIncrementStrongCountFnType get rust_arc_increment_strong_count_RoaringBitmap;
+
+RustArcDecrementStrongCountFnType get rust_arc_decrement_strong_count_RoaringBitmap;
+
+CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_RoaringBitmapPtr;
+
+RustArcIncrementStrongCountFnType get rust_arc_increment_strong_count_Store;
+
+RustArcDecrementStrongCountFnType get rust_arc_decrement_strong_count_Store;
+
+CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_StorePtr;
+
+RustArcIncrementStrongCountFnType get rust_arc_increment_strong_count_TextEngine;
+
+RustArcDecrementStrongCountFnType get rust_arc_decrement_strong_count_TextEngine;
+
+CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_TextEnginePtr;
+
+RustArcIncrementStrongCountFnType get rust_arc_increment_strong_count_VectorEngine;
+
+RustArcDecrementStrongCountFnType get rust_arc_decrement_strong_count_VectorEngine;
+
+CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_VectorEnginePtr;
+
+RustArcIncrementStrongCountFnType get rust_arc_increment_strong_count_WriteTransaction;
+
+RustArcDecrementStrongCountFnType get rust_arc_decrement_strong_count_WriteTransaction;
+
+CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_WriteTransactionPtr;
+
+
+                }
+                
+
+                class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
+                  RustLibApiImpl({
+                    required super.handler,
+                    required super.wire,
+                    required super.generalizedFrbRustBinding,
+                    required super.portManager,
+                  });
+
+                  @override Future<List<String>> crateApiStoreStoreAllExternalIds({required Store that })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(that, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 1, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_list_String,
+          decodeErrorData: sse_decode_waffle_error,
+        )
+        ,
+            constMeta: kCrateApiStoreStoreAllExternalIdsConstMeta,
+            argValues: [that],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiStoreStoreAllExternalIdsConstMeta => const TaskConstMeta(
+            debugName: "Store_all_external_ids",
+            argNames: ["that"],
+        );
+        
+
+@override Future<List<(String,int,Float32List)>> crateApiStoreStoreAllVectors({required Store that , required BigInt dim })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(that, serializer);
+sse_encode_usize(dim, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 2, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_list_record_string_u_32_list_prim_f_32_strict,
+          decodeErrorData: sse_decode_waffle_error,
+        )
+        ,
+            constMeta: kCrateApiStoreStoreAllVectorsConstMeta,
+            argValues: [that, dim],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiStoreStoreAllVectorsConstMeta => const TaskConstMeta(
+            debugName: "Store_all_vectors",
+            argNames: ["that", "dim"],
+        );
+        
+
+@override Future<int> crateApiStoreStoreAllocId({required Store that , required WriteTransaction tx })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(that, serializer);
+sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(tx, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 3, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_u_32,
+          decodeErrorData: sse_decode_waffle_error,
+        )
+        ,
+            constMeta: kCrateApiStoreStoreAllocIdConstMeta,
+            argValues: [that, tx],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiStoreStoreAllocIdConstMeta => const TaskConstMeta(
+            debugName: "Store_alloc_id",
+            argNames: ["that", "tx"],
+        );
+        
+
+@override Future<WriteTransaction> crateApiStoreStoreBeginWrite({required Store that })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(that, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 4, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction,
+          decodeErrorData: sse_decode_waffle_error,
+        )
+        ,
+            constMeta: kCrateApiStoreStoreBeginWriteConstMeta,
+            argValues: [that],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiStoreStoreBeginWriteConstMeta => const TaskConstMeta(
+            debugName: "Store_begin_write",
+            argNames: ["that"],
+        );
+        
+
+@override Future<void> crateApiStoreStoreBitmapAdd({required Store that , required WriteTransaction tx , required String field , required String value , required int internal })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(that, serializer);
+sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(tx, serializer);
+sse_encode_String(field, serializer);
+sse_encode_String(value, serializer);
+sse_encode_u_32(internal, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 5, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_waffle_error,
+        )
+        ,
+            constMeta: kCrateApiStoreStoreBitmapAddConstMeta,
+            argValues: [that, tx, field, value, internal],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiStoreStoreBitmapAddConstMeta => const TaskConstMeta(
+            debugName: "Store_bitmap_add",
+            argNames: ["that", "tx", "field", "value", "internal"],
+        );
+        
+
+@override Future<RoaringBitmap> crateApiStoreStoreBitmapGet({required Store that , required String key })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(that, serializer);
+sse_encode_String(key, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 6, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap,
+          decodeErrorData: sse_decode_waffle_error,
+        )
+        ,
+            constMeta: kCrateApiStoreStoreBitmapGetConstMeta,
+            argValues: [that, key],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiStoreStoreBitmapGetConstMeta => const TaskConstMeta(
+            debugName: "Store_bitmap_get",
+            argNames: ["that", "key"],
+        );
+        
+
+@override Future<void> crateApiStoreStoreBitmapPut({required Store that , required WriteTransaction tx , required String key , required RoaringBitmap bitmap })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(that, serializer);
+sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(tx, serializer);
+sse_encode_String(key, serializer);
+sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(bitmap, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 7, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_waffle_error,
+        )
+        ,
+            constMeta: kCrateApiStoreStoreBitmapPutConstMeta,
+            argValues: [that, tx, key, bitmap],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiStoreStoreBitmapPutConstMeta => const TaskConstMeta(
+            debugName: "Store_bitmap_put",
+            argNames: ["that", "tx", "key", "bitmap"],
+        );
+        
+
+@override Future<void> crateApiStoreStoreBitmapRemove({required Store that , required WriteTransaction tx , required String field , required String value , required int internal })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(that, serializer);
+sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(tx, serializer);
+sse_encode_String(field, serializer);
+sse_encode_String(value, serializer);
+sse_encode_u_32(internal, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 8, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_waffle_error,
+        )
+        ,
+            constMeta: kCrateApiStoreStoreBitmapRemoveConstMeta,
+            argValues: [that, tx, field, value, internal],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiStoreStoreBitmapRemoveConstMeta => const TaskConstMeta(
+            debugName: "Store_bitmap_remove",
+            argNames: ["that", "tx", "field", "value", "internal"],
+        );
+        
+
+@override Future<String> crateApiStoreStoreChildKey({required String parent , required int chunkIndex })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_String(parent, serializer);
+sse_encode_u_32(chunkIndex, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 9, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_String,
+          decodeErrorData: null,
+        )
+        ,
+            constMeta: kCrateApiStoreStoreChildKeyConstMeta,
+            argValues: [parent, chunkIndex],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiStoreStoreChildKeyConstMeta => const TaskConstMeta(
+            debugName: "Store_child_key",
+            argNames: ["parent", "chunkIndex"],
+        );
+        
+
+@override Future<int?> crateApiStoreStoreChildLookup({required Store that , required String parent , required int chunkIndex })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(that, serializer);
+sse_encode_String(parent, serializer);
+sse_encode_u_32(chunkIndex, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 10, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_opt_box_autoadd_u_32,
+          decodeErrorData: sse_decode_waffle_error,
+        )
+        ,
+            constMeta: kCrateApiStoreStoreChildLookupConstMeta,
+            argValues: [that, parent, chunkIndex],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiStoreStoreChildLookupConstMeta => const TaskConstMeta(
+            debugName: "Store_child_lookup",
+            argNames: ["that", "parent", "chunkIndex"],
+        );
+        
+
+@override Future<BigInt> crateApiStoreStoreCount({required Store that })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(that, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 11, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_u_64,
+          decodeErrorData: sse_decode_waffle_error,
+        )
+        ,
+            constMeta: kCrateApiStoreStoreCountConstMeta,
+            argValues: [that],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiStoreStoreCountConstMeta => const TaskConstMeta(
+            debugName: "Store_count",
+            argNames: ["that"],
+        );
+        
+
+@override Future<int?> crateApiStoreStoreLookupInternal({required Store that , required String external_ })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(that, serializer);
+sse_encode_String(external_, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 12, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_opt_box_autoadd_u_32,
+          decodeErrorData: sse_decode_waffle_error,
+        )
+        ,
+            constMeta: kCrateApiStoreStoreLookupInternalConstMeta,
+            argValues: [that, external_],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiStoreStoreLookupInternalConstMeta => const TaskConstMeta(
+            debugName: "Store_lookup_internal",
+            argNames: ["that", "external_"],
+        );
+        
+
+@override Future<BigInt> crateApiStoreStoreNextIdValue({required Store that })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(that, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 13, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_u_64,
+          decodeErrorData: sse_decode_waffle_error,
+        )
+        ,
+            constMeta: kCrateApiStoreStoreNextIdValueConstMeta,
+            argValues: [that],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiStoreStoreNextIdValueConstMeta => const TaskConstMeta(
+            debugName: "Store_next_id_value",
+            argNames: ["that"],
+        );
+        
+
+@override Future<void> crateApiStoreStoreNumericPut({required Store that , required WriteTransaction tx , required List<int> key })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(that, serializer);
+sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(tx, serializer);
+sse_encode_list_prim_u_8_loose(key, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 14, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_waffle_error,
+        )
+        ,
+            constMeta: kCrateApiStoreStoreNumericPutConstMeta,
+            argValues: [that, tx, key],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiStoreStoreNumericPutConstMeta => const TaskConstMeta(
+            debugName: "Store_numeric_put",
+            argNames: ["that", "tx", "key"],
+        );
+        
+
+@override Future<void> crateApiStoreStoreNumericRemove({required Store that , required WriteTransaction tx , required List<int> key })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(that, serializer);
+sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(tx, serializer);
+sse_encode_list_prim_u_8_loose(key, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 15, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_waffle_error,
+        )
+        ,
+            constMeta: kCrateApiStoreStoreNumericRemoveConstMeta,
+            argValues: [that, tx, key],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiStoreStoreNumericRemoveConstMeta => const TaskConstMeta(
+            debugName: "Store_numeric_remove",
+            argNames: ["that", "tx", "key"],
+        );
+        
+
+@override Future<Uint32List> crateApiStoreStoreNumericScanPrefix({required Store that , required List<int> prefix })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(that, serializer);
+sse_encode_list_prim_u_8_loose(prefix, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 16, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_list_prim_u_32_strict,
+          decodeErrorData: sse_decode_waffle_error,
+        )
+        ,
+            constMeta: kCrateApiStoreStoreNumericScanPrefixConstMeta,
+            argValues: [that, prefix],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiStoreStoreNumericScanPrefixConstMeta => const TaskConstMeta(
+            debugName: "Store_numeric_scan_prefix",
+            argNames: ["that", "prefix"],
+        );
+        
+
+@override Future<Store> crateApiStoreStoreOpen({required Path path , required WaffleSchema schema , required int dimension })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPath(path, serializer);
+sse_encode_box_autoadd_waffle_schema(schema, serializer);
+sse_encode_u_32(dimension, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 17, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore,
+          decodeErrorData: sse_decode_waffle_error,
+        )
+        ,
+            constMeta: kCrateApiStoreStoreOpenConstMeta,
+            argValues: [path, schema, dimension],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiStoreStoreOpenConstMeta => const TaskConstMeta(
+            debugName: "Store_open",
+            argNames: ["path", "schema", "dimension"],
+        );
+        
+
+@override Future<ChunkRecord?> crateApiStoreStoreReadChunk({required Store that , required int internal })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(that, serializer);
+sse_encode_u_32(internal, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 18, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_opt_box_autoadd_chunk_record,
+          decodeErrorData: sse_decode_waffle_error,
+        )
+        ,
+            constMeta: kCrateApiStoreStoreReadChunkConstMeta,
+            argValues: [that, internal],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiStoreStoreReadChunkConstMeta => const TaskConstMeta(
+            debugName: "Store_read_chunk",
+            argNames: ["that", "internal"],
+        );
+        
+
+@override Future<Float32List?> crateApiStoreStoreReadVector({required Store that , required int internal , required BigInt dim })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(that, serializer);
+sse_encode_u_32(internal, serializer);
+sse_encode_usize(dim, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 19, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_opt_list_prim_f_32_strict,
+          decodeErrorData: sse_decode_waffle_error,
+        )
+        ,
+            constMeta: kCrateApiStoreStoreReadVectorConstMeta,
+            argValues: [that, internal, dim],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiStoreStoreReadVectorConstMeta => const TaskConstMeta(
+            debugName: "Store_read_vector",
+            argNames: ["that", "internal", "dim"],
+        );
+        
+
+@override Future<ChunkRecord?> crateApiStoreStoreRemoveRecord({required Store that , required WriteTransaction tx , required String external_ , required int internal })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(that, serializer);
+sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(tx, serializer);
+sse_encode_String(external_, serializer);
+sse_encode_u_32(internal, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 20, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_opt_box_autoadd_chunk_record,
+          decodeErrorData: sse_decode_waffle_error,
+        )
+        ,
+            constMeta: kCrateApiStoreStoreRemoveRecordConstMeta,
+            argValues: [that, tx, external_, internal],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiStoreStoreRemoveRecordConstMeta => const TaskConstMeta(
+            debugName: "Store_remove_record",
+            argNames: ["that", "tx", "external_", "internal"],
+        );
+        
+
+@override Future<void> crateApiTextTextEngineAdd({required TextEngine that , required int internal , required String text })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(that, serializer);
+sse_encode_u_32(internal, serializer);
+sse_encode_String(text, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 21, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_waffle_error,
+        )
+        ,
+            constMeta: kCrateApiTextTextEngineAddConstMeta,
+            argValues: [that, internal, text],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiTextTextEngineAddConstMeta => const TaskConstMeta(
+            debugName: "TextEngine_add",
+            argNames: ["that", "internal", "text"],
+        );
+        
+
+@override Future<void> crateApiTextTextEngineCommit({required TextEngine that })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(that, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 22, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_waffle_error,
+        )
+        ,
+            constMeta: kCrateApiTextTextEngineCommitConstMeta,
+            argValues: [that],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiTextTextEngineCommitConstMeta => const TaskConstMeta(
+            debugName: "TextEngine_commit",
+            argNames: ["that"],
+        );
+        
+
+@override Future<void> crateApiTextTextEngineDelete({required TextEngine that , required int internal })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(that, serializer);
+sse_encode_u_32(internal, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 23, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_waffle_error,
+        )
+        ,
+            constMeta: kCrateApiTextTextEngineDeleteConstMeta,
+            argValues: [that, internal],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiTextTextEngineDeleteConstMeta => const TaskConstMeta(
+            debugName: "TextEngine_delete",
+            argNames: ["that", "internal"],
+        );
+        
+
+@override Future<TextEngine> crateApiTextTextEngineOpen({required Path dir , required WaffleLanguage language })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPath(dir, serializer);
+sse_encode_waffle_language(language, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 24, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine,
+          decodeErrorData: sse_decode_waffle_error,
+        )
+        ,
+            constMeta: kCrateApiTextTextEngineOpenConstMeta,
+            argValues: [dir, language],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiTextTextEngineOpenConstMeta => const TaskConstMeta(
+            debugName: "TextEngine_open",
+            argNames: ["dir", "language"],
+        );
+        
+
+@override Future<List<(int,double)>> crateApiTextTextEngineSearch({required TextEngine that , required String text , required BigInt k })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(that, serializer);
+sse_encode_String(text, serializer);
+sse_encode_usize(k, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 25, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_list_record_u_32_f_32,
+          decodeErrorData: sse_decode_waffle_error,
+        )
+        ,
+            constMeta: kCrateApiTextTextEngineSearchConstMeta,
+            argValues: [that, text, k],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiTextTextEngineSearchConstMeta => const TaskConstMeta(
+            debugName: "TextEngine_search",
+            argNames: ["that", "text", "k"],
+        );
+        
+
+@override Future<void> crateApiVectorVectorEngineAdd({required VectorEngine that , required int internal , required List<double> vector })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(that, serializer);
+sse_encode_u_32(internal, serializer);
+sse_encode_list_prim_f_32_loose(vector, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 26, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_waffle_error,
+        )
+        ,
+            constMeta: kCrateApiVectorVectorEngineAddConstMeta,
+            argValues: [that, internal, vector],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiVectorVectorEngineAddConstMeta => const TaskConstMeta(
+            debugName: "VectorEngine_add",
+            argNames: ["that", "internal", "vector"],
+        );
+        
+
+@override Future<bool> crateApiVectorVectorEngineContains({required VectorEngine that , required int internal })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(that, serializer);
+sse_encode_u_32(internal, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 27, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_bool,
+          decodeErrorData: null,
+        )
+        ,
+            constMeta: kCrateApiVectorVectorEngineContainsConstMeta,
+            argValues: [that, internal],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiVectorVectorEngineContainsConstMeta => const TaskConstMeta(
+            debugName: "VectorEngine_contains",
+            argNames: ["that", "internal"],
+        );
+        
+
+@override Future<VectorEngine> crateApiVectorVectorEngineOpen({required Path dir , required BigInt dimension , required WaffleMetric metric , required BigInt connectivity , required BigInt expansionAdd , required BigInt expansionSearch , required BigInt capacity })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPath(dir, serializer);
+sse_encode_usize(dimension, serializer);
+sse_encode_waffle_metric(metric, serializer);
+sse_encode_usize(connectivity, serializer);
+sse_encode_usize(expansionAdd, serializer);
+sse_encode_usize(expansionSearch, serializer);
+sse_encode_usize(capacity, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 28, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine,
+          decodeErrorData: sse_decode_waffle_error,
+        )
+        ,
+            constMeta: kCrateApiVectorVectorEngineOpenConstMeta,
+            argValues: [dir, dimension, metric, connectivity, expansionAdd, expansionSearch, capacity],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiVectorVectorEngineOpenConstMeta => const TaskConstMeta(
+            debugName: "VectorEngine_open",
+            argNames: ["dir", "dimension", "metric", "connectivity", "expansionAdd", "expansionSearch", "capacity"],
+        );
+        
+
+@override Future<void> crateApiVectorVectorEngineOverrideExpansionSearch({required VectorEngine that , required BigInt ef })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(that, serializer);
+sse_encode_usize(ef, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 29, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: null,
+        )
+        ,
+            constMeta: kCrateApiVectorVectorEngineOverrideExpansionSearchConstMeta,
+            argValues: [that, ef],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiVectorVectorEngineOverrideExpansionSearchConstMeta => const TaskConstMeta(
+            debugName: "VectorEngine_override_expansion_search",
+            argNames: ["that", "ef"],
+        );
+        
+
+@override Future<bool> crateApiVectorVectorEngineRemove({required VectorEngine that , required int internal })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(that, serializer);
+sse_encode_u_32(internal, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 30, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_bool,
+          decodeErrorData: sse_decode_waffle_error,
+        )
+        ,
+            constMeta: kCrateApiVectorVectorEngineRemoveConstMeta,
+            argValues: [that, internal],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiVectorVectorEngineRemoveConstMeta => const TaskConstMeta(
+            debugName: "VectorEngine_remove",
+            argNames: ["that", "internal"],
+        );
+        
+
+@override Future<void> crateApiVectorVectorEngineSave({required VectorEngine that , required Path dir })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(that, serializer);
+sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPath(dir, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 31, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_waffle_error,
+        )
+        ,
+            constMeta: kCrateApiVectorVectorEngineSaveConstMeta,
+            argValues: [that, dir],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiVectorVectorEngineSaveConstMeta => const TaskConstMeta(
+            debugName: "VectorEngine_save",
+            argNames: ["that", "dir"],
+        );
+        
+
+@override Future<List<(int,double)>> crateApiVectorVectorEngineSearch({required VectorEngine that , required List<double> query , required BigInt k , RoaringBitmap? allowed })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(that, serializer);
+sse_encode_list_prim_f_32_loose(query, serializer);
+sse_encode_usize(k, serializer);
+sse_encode_opt_box_autoadd_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(allowed, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 32, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_list_record_u_32_f_32,
+          decodeErrorData: sse_decode_waffle_error,
+        )
+        ,
+            constMeta: kCrateApiVectorVectorEngineSearchConstMeta,
+            argValues: [that, query, k, allowed],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiVectorVectorEngineSearchConstMeta => const TaskConstMeta(
+            debugName: "VectorEngine_search",
+            argNames: ["that", "query", "k", "allowed"],
+        );
+        
+
+@override Future<BigInt> crateApiVectorVectorEngineSize({required VectorEngine that })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(that, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 33, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_usize,
+          decodeErrorData: null,
+        )
+        ,
+            constMeta: kCrateApiVectorVectorEngineSizeConstMeta,
+            argValues: [that],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiVectorVectorEngineSizeConstMeta => const TaskConstMeta(
+            debugName: "VectorEngine_size",
+            argNames: ["that"],
+        );
+        
+
+@override Future<double> crateApiMathCosineSimilarity({required List<double> a , required List<double> b })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_list_prim_f_32_loose(a, serializer);
+sse_encode_list_prim_f_32_loose(b, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 34, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_f_32,
+          decodeErrorData: null,
+        )
+        ,
+            constMeta: kCrateApiMathCosineSimilarityConstMeta,
+            argValues: [a, b],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiMathCosineSimilarityConstMeta => const TaskConstMeta(
+            debugName: "cosine_similarity",
+            argNames: ["a", "b"],
+        );
+        
+
+@override Future<BigInt> crateApiSchemaF64ToOrderedU64({required double v })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_f_64(v, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 35, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_u_64,
+          decodeErrorData: null,
+        )
+        ,
+            constMeta: kCrateApiSchemaF64ToOrderedU64ConstMeta,
+            argValues: [v],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiSchemaF64ToOrderedU64ConstMeta => const TaskConstMeta(
+            debugName: "f64_to_ordered_u64",
+            argNames: ["v"],
+        );
+        
+
+@override Future<BigInt> crateApiSchemaFieldHash({required String field })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_String(field, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 36, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_u_64,
+          decodeErrorData: null,
+        )
+        ,
+            constMeta: kCrateApiSchemaFieldHashConstMeta,
+            argValues: [field],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiSchemaFieldHashConstMeta => const TaskConstMeta(
+            debugName: "field_hash",
+            argNames: ["field"],
+        );
+        
+
+@override Future<String> crateApiSchemaFieldValueKey({required String field , required String value })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_String(field, serializer);
+sse_encode_String(value, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 37, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_String,
+          decodeErrorData: null,
+        )
+        ,
+            constMeta: kCrateApiSchemaFieldValueKeyConstMeta,
+            argValues: [field, value],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiSchemaFieldValueKeyConstMeta => const TaskConstMeta(
+            debugName: "field_value_key",
+            argNames: ["field", "value"],
+        );
+        
+
+@override Future<U8Array20> crateApiSchemaNumericIndexKey({required BigInt fieldHash , required double value , required int internalId })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_u_64(fieldHash, serializer);
+sse_encode_f_64(value, serializer);
+sse_encode_u_32(internalId, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 38, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_u_8_array_20,
+          decodeErrorData: null,
+        )
+        ,
+            constMeta: kCrateApiSchemaNumericIndexKeyConstMeta,
+            argValues: [fieldHash, value, internalId],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiSchemaNumericIndexKeyConstMeta => const TaskConstMeta(
+            debugName: "numeric_index_key",
+            argNames: ["fieldHash", "value", "internalId"],
+        );
+        
+
+@override Future<U8Array8> crateApiSchemaNumericIndexPrefix({required BigInt fieldHash })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_u_64(fieldHash, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 39, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_u_8_array_8,
+          decodeErrorData: null,
+        )
+        ,
+            constMeta: kCrateApiSchemaNumericIndexPrefixConstMeta,
+            argValues: [fieldHash],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiSchemaNumericIndexPrefixConstMeta => const TaskConstMeta(
+            debugName: "numeric_index_prefix",
+            argNames: ["fieldHash"],
+        );
+        
+
+@override Future<FilterNode> crateApiFilterParseFilter({required String json })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_String(json, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 40, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_filter_node,
+          decodeErrorData: sse_decode_waffle_error,
+        )
+        ,
+            constMeta: kCrateApiFilterParseFilterConstMeta,
+            argValues: [json],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiFilterParseFilterConstMeta => const TaskConstMeta(
+            debugName: "parse_filter",
+            argNames: ["json"],
+        );
+        
+
+@override Future<List<(int,double,double?)>> crateApiQueryRrfFuse({required List<(int,double)> dense , required List<(int,double)> sparse , required BigInt rrfK , required double alpha , required BigInt topK })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_list_record_u_32_f_32(dense, serializer);
+sse_encode_list_record_u_32_f_32(sparse, serializer);
+sse_encode_usize(rrfK, serializer);
+sse_encode_f_32(alpha, serializer);
+sse_encode_usize(topK, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 41, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_list_record_u_32_f_32_opt_box_autoadd_f_32,
+          decodeErrorData: null,
+        )
+        ,
+            constMeta: kCrateApiQueryRrfFuseConstMeta,
+            argValues: [dense, sparse, rrfK, alpha, topK],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiQueryRrfFuseConstMeta => const TaskConstMeta(
+            debugName: "rrf_fuse",
+            argNames: ["dense", "sparse", "rrfK", "alpha", "topK"],
+        );
+        
+
+@override Future<ChunkRecord> crateApiSchemaUnarchiveChunk({required List<int> bytes })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_list_prim_u_8_loose(bytes, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 42, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_chunk_record,
+          decodeErrorData: sse_decode_waffle_error,
+        )
+        ,
+            constMeta: kCrateApiSchemaUnarchiveChunkConstMeta,
+            argValues: [bytes],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiSchemaUnarchiveChunkConstMeta => const TaskConstMeta(
+            debugName: "unarchive_chunk",
+            argNames: ["bytes"],
+        );
+        
+
+@override Future<void> crateApiWaffleDbWaffleClose({required BigInt handle })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_u_64(handle, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 43, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_String,
+        )
+        ,
+            constMeta: kCrateApiWaffleDbWaffleCloseConstMeta,
+            argValues: [handle],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiWaffleDbWaffleCloseConstMeta => const TaskConstMeta(
+            debugName: "waffle_close",
+            argNames: ["handle"],
+        );
+        
+
+@override Future<WaffleConfig> crateApiConfigWaffleConfigDefault()  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 44, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_waffle_config,
+          decodeErrorData: null,
+        )
+        ,
+            constMeta: kCrateApiConfigWaffleConfigDefaultConstMeta,
+            argValues: [],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiConfigWaffleConfigDefaultConstMeta => const TaskConstMeta(
+            debugName: "waffle_config_default",
+            argNames: [],
+        );
+        
+
+@override Future<WaffleConfig> crateApiConfigWaffleConfigHighVolumeProfile({required String path , required int dimension })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_String(path, serializer);
+sse_encode_u_32(dimension, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 45, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_waffle_config,
+          decodeErrorData: null,
+        )
+        ,
+            constMeta: kCrateApiConfigWaffleConfigHighVolumeProfileConstMeta,
+            argValues: [path, dimension],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiConfigWaffleConfigHighVolumeProfileConstMeta => const TaskConstMeta(
+            debugName: "waffle_config_high_volume_profile",
+            argNames: ["path", "dimension"],
+        );
+        
+
+@override Future<WaffleConfig> crateApiConfigWaffleConfigMobileProfile({required String path , required int dimension })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_String(path, serializer);
+sse_encode_u_32(dimension, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 46, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_waffle_config,
+          decodeErrorData: null,
+        )
+        ,
+            constMeta: kCrateApiConfigWaffleConfigMobileProfileConstMeta,
+            argValues: [path, dimension],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiConfigWaffleConfigMobileProfileConstMeta => const TaskConstMeta(
+            debugName: "waffle_config_mobile_profile",
+            argNames: ["path", "dimension"],
+        );
+        
+
+@override Future<WaffleConfig> crateApiConfigWaffleConfigReadHeavyProfile({required String path , required int dimension })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_String(path, serializer);
+sse_encode_u_32(dimension, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 47, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_waffle_config,
+          decodeErrorData: null,
+        )
+        ,
+            constMeta: kCrateApiConfigWaffleConfigReadHeavyProfileConstMeta,
+            argValues: [path, dimension],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiConfigWaffleConfigReadHeavyProfileConstMeta => const TaskConstMeta(
+            debugName: "waffle_config_read_heavy_profile",
+            argNames: ["path", "dimension"],
+        );
+        
+
+@override Future<WaffleConfig> crateApiConfigWaffleConfigServerProfile({required String path , required int dimension })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_String(path, serializer);
+sse_encode_u_32(dimension, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 48, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_waffle_config,
+          decodeErrorData: null,
+        )
+        ,
+            constMeta: kCrateApiConfigWaffleConfigServerProfileConstMeta,
+            argValues: [path, dimension],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiConfigWaffleConfigServerProfileConstMeta => const TaskConstMeta(
+            debugName: "waffle_config_server_profile",
+            argNames: ["path", "dimension"],
+        );
+        
+
+@override Future<WaffleConfig> crateApiConfigWaffleConfigWriteHeavyProfile({required String path , required int dimension })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_String(path, serializer);
+sse_encode_u_32(dimension, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 49, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_waffle_config,
+          decodeErrorData: null,
+        )
+        ,
+            constMeta: kCrateApiConfigWaffleConfigWriteHeavyProfileConstMeta,
+            argValues: [path, dimension],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiConfigWaffleConfigWriteHeavyProfileConstMeta => const TaskConstMeta(
+            debugName: "waffle_config_write_heavy_profile",
+            argNames: ["path", "dimension"],
+        );
+        
+
+@override BigInt crateApiWaffleDbWaffleCount({required BigInt handle })  { return handler.executeSync(SyncTask(
+            callFfi: () {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_u_64(handle, serializer);
+            return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 50)!;
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_u_64,
+          decodeErrorData: sse_decode_String,
+        )
+        ,
+            constMeta: kCrateApiWaffleDbWaffleCountConstMeta,
+            argValues: [handle],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiWaffleDbWaffleCountConstMeta => const TaskConstMeta(
+            debugName: "waffle_count",
+            argNames: ["handle"],
+        );
+        
+
+@override Future<bool> crateApiWaffleDbWaffleDelete({required BigInt handle , required String id })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_u_64(handle, serializer);
+sse_encode_String(id, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 51, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_bool,
+          decodeErrorData: sse_decode_String,
+        )
+        ,
+            constMeta: kCrateApiWaffleDbWaffleDeleteConstMeta,
+            argValues: [handle, id],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiWaffleDbWaffleDeleteConstMeta => const TaskConstMeta(
+            debugName: "waffle_delete",
+            argNames: ["handle", "id"],
+        );
+        
+
+@override Future<void> crateApiWaffleDbWaffleFlush({required BigInt handle })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_u_64(handle, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 52, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_String,
+        )
+        ,
+            constMeta: kCrateApiWaffleDbWaffleFlushConstMeta,
+            argValues: [handle],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiWaffleDbWaffleFlushConstMeta => const TaskConstMeta(
+            debugName: "waffle_flush",
+            argNames: ["handle"],
+        );
+        
+
+@override List<String> crateApiWaffleDbWaffleGetAllIds({required BigInt handle })  { return handler.executeSync(SyncTask(
+            callFfi: () {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_u_64(handle, serializer);
+            return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 53)!;
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_list_String,
+          decodeErrorData: sse_decode_String,
+        )
+        ,
+            constMeta: kCrateApiWaffleDbWaffleGetAllIdsConstMeta,
+            argValues: [handle],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiWaffleDbWaffleGetAllIdsConstMeta => const TaskConstMeta(
+            debugName: "waffle_get_all_ids",
+            argNames: ["handle"],
+        );
+        
+
+@override Uint8List? crateApiWaffleDbWaffleGetMetadata({required BigInt handle , required String id })  { return handler.executeSync(SyncTask(
+            callFfi: () {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_u_64(handle, serializer);
+sse_encode_String(id, serializer);
+            return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 54)!;
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_opt_list_prim_u_8_strict,
+          decodeErrorData: sse_decode_String,
+        )
+        ,
+            constMeta: kCrateApiWaffleDbWaffleGetMetadataConstMeta,
+            argValues: [handle, id],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiWaffleDbWaffleGetMetadataConstMeta => const TaskConstMeta(
+            debugName: "waffle_get_metadata",
+            argNames: ["handle", "id"],
+        );
+        
+
+@override List<WaffleHit> crateApiWaffleDbWaffleGetNeighbors({required BigInt handle , required String id , required int window })  { return handler.executeSync(SyncTask(
+            callFfi: () {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_u_64(handle, serializer);
+sse_encode_String(id, serializer);
+sse_encode_u_32(window, serializer);
+            return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 55)!;
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_list_waffle_hit,
+          decodeErrorData: sse_decode_String,
+        )
+        ,
+            constMeta: kCrateApiWaffleDbWaffleGetNeighborsConstMeta,
+            argValues: [handle, id, window],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiWaffleDbWaffleGetNeighborsConstMeta => const TaskConstMeta(
+            debugName: "waffle_get_neighbors",
+            argNames: ["handle", "id", "window"],
+        );
+        
+
+@override WaffleHit? crateApiWaffleDbWaffleGetParent({required BigInt handle , required String id })  { return handler.executeSync(SyncTask(
+            callFfi: () {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_u_64(handle, serializer);
+sse_encode_String(id, serializer);
+            return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 56)!;
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_opt_box_autoadd_waffle_hit,
+          decodeErrorData: sse_decode_String,
+        )
+        ,
+            constMeta: kCrateApiWaffleDbWaffleGetParentConstMeta,
+            argValues: [handle, id],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiWaffleDbWaffleGetParentConstMeta => const TaskConstMeta(
+            debugName: "waffle_get_parent",
+            argNames: ["handle", "id"],
+        );
+        
+
+@override Float32List? crateApiWaffleDbWaffleGetVector({required BigInt handle , required String id })  { return handler.executeSync(SyncTask(
+            callFfi: () {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_u_64(handle, serializer);
+sse_encode_String(id, serializer);
+            return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 57)!;
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_opt_list_prim_f_32_strict,
+          decodeErrorData: sse_decode_String,
+        )
+        ,
+            constMeta: kCrateApiWaffleDbWaffleGetVectorConstMeta,
+            argValues: [handle, id],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiWaffleDbWaffleGetVectorConstMeta => const TaskConstMeta(
+            debugName: "waffle_get_vector",
+            argNames: ["handle", "id"],
+        );
+        
+
+@override Future<void> crateApiWaffleDbWaffleInsert({required BigInt handle , required String id , required List<double> vector , required String text , required String payloadJson , String? parentId , required int chunkIndex })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_u_64(handle, serializer);
+sse_encode_String(id, serializer);
+sse_encode_list_prim_f_32_loose(vector, serializer);
+sse_encode_String(text, serializer);
+sse_encode_String(payloadJson, serializer);
+sse_encode_opt_String(parentId, serializer);
+sse_encode_u_32(chunkIndex, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 58, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_String,
+        )
+        ,
+            constMeta: kCrateApiWaffleDbWaffleInsertConstMeta,
+            argValues: [handle, id, vector, text, payloadJson, parentId, chunkIndex],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiWaffleDbWaffleInsertConstMeta => const TaskConstMeta(
+            debugName: "waffle_insert",
+            argNames: ["handle", "id", "vector", "text", "payloadJson", "parentId", "chunkIndex"],
+        );
+        
+
+@override Future<void> crateApiWaffleDbWaffleInsertBatch({required BigInt handle , required List<String> ids , required List<double> vectorsFlat , required List<String> texts , required List<String> payloadJsons , required List<String> parentIds , required List<int> chunkIndices })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_u_64(handle, serializer);
+sse_encode_list_String(ids, serializer);
+sse_encode_list_prim_f_32_loose(vectorsFlat, serializer);
+sse_encode_list_String(texts, serializer);
+sse_encode_list_String(payloadJsons, serializer);
+sse_encode_list_String(parentIds, serializer);
+sse_encode_list_prim_u_32_loose(chunkIndices, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 59, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_String,
+        )
+        ,
+            constMeta: kCrateApiWaffleDbWaffleInsertBatchConstMeta,
+            argValues: [handle, ids, vectorsFlat, texts, payloadJsons, parentIds, chunkIndices],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiWaffleDbWaffleInsertBatchConstMeta => const TaskConstMeta(
+            debugName: "waffle_insert_batch",
+            argNames: ["handle", "ids", "vectorsFlat", "texts", "payloadJsons", "parentIds", "chunkIndices"],
+        );
+        
+
+@override Future<BigInt> crateApiWaffleDbWaffleOpen({required WaffleConfig config , required WaffleSchema schema })  { return handler.executeNormal(NormalTask(
+            callFfi: (port_) {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_box_autoadd_waffle_config(config, serializer);
+sse_encode_box_autoadd_waffle_schema(schema, serializer);
+            pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 60, port: port_);
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_u_64,
+          decodeErrorData: sse_decode_String,
+        )
+        ,
+            constMeta: kCrateApiWaffleDbWaffleOpenConstMeta,
+            argValues: [config, schema],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiWaffleDbWaffleOpenConstMeta => const TaskConstMeta(
+            debugName: "waffle_open",
+            argNames: ["config", "schema"],
+        );
+        
+
+@override List<WaffleHit> crateApiWaffleDbWaffleSearch({required BigInt handle , required WaffleSearchRequest request })  { return handler.executeSync(SyncTask(
+            callFfi: () {
+              
+            final serializer = SseSerializer(generalizedFrbRustBinding);sse_encode_u_64(handle, serializer);
+sse_encode_box_autoadd_waffle_search_request(request, serializer);
+            return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 61)!;
+            
+            },
+            codec: 
+        SseCodec(
+          decodeSuccessData: sse_decode_list_waffle_hit,
+          decodeErrorData: sse_decode_String,
+        )
+        ,
+            constMeta: kCrateApiWaffleDbWaffleSearchConstMeta,
+            argValues: [handle, request],
+            apiImpl: this,
+        )); }
+
+
+        TaskConstMeta get kCrateApiWaffleDbWaffleSearchConstMeta => const TaskConstMeta(
+            debugName: "waffle_search",
+            argNames: ["handle", "request"],
+        );
+        
+
+RustArcIncrementStrongCountFnType get rust_arc_increment_strong_count_Path => wire.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPath;
+
+RustArcDecrementStrongCountFnType get rust_arc_decrement_strong_count_Path => wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPath;
+
+RustArcIncrementStrongCountFnType get rust_arc_increment_strong_count_RoaringBitmap => wire.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap;
+
+RustArcDecrementStrongCountFnType get rust_arc_decrement_strong_count_RoaringBitmap => wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap;
+
+RustArcIncrementStrongCountFnType get rust_arc_increment_strong_count_Store => wire.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore;
+
+RustArcDecrementStrongCountFnType get rust_arc_decrement_strong_count_Store => wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore;
+
+RustArcIncrementStrongCountFnType get rust_arc_increment_strong_count_TextEngine => wire.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine;
+
+RustArcDecrementStrongCountFnType get rust_arc_decrement_strong_count_TextEngine => wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine;
+
+RustArcIncrementStrongCountFnType get rust_arc_increment_strong_count_VectorEngine => wire.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine;
+
+RustArcDecrementStrongCountFnType get rust_arc_decrement_strong_count_VectorEngine => wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine;
+
+RustArcIncrementStrongCountFnType get rust_arc_increment_strong_count_WriteTransaction => wire.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction;
+
+RustArcDecrementStrongCountFnType get rust_arc_decrement_strong_count_WriteTransaction => wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction;
+
+
+
+                  @protected RoaringBitmap dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return RoaringBitmapImpl.frbInternalDcoDecode(raw as List<dynamic>); }
+
+@protected Store dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return StoreImpl.frbInternalDcoDecode(raw as List<dynamic>); }
+
+@protected TextEngine dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return TextEngineImpl.frbInternalDcoDecode(raw as List<dynamic>); }
+
+@protected VectorEngine dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return VectorEngineImpl.frbInternalDcoDecode(raw as List<dynamic>); }
+
+@protected WriteTransaction dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return WriteTransactionImpl.frbInternalDcoDecode(raw as List<dynamic>); }
+
+@protected Path dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPath(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return PathImpl.frbInternalDcoDecode(raw as List<dynamic>); }
+
+@protected RoaringBitmap dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return RoaringBitmapImpl.frbInternalDcoDecode(raw as List<dynamic>); }
+
+@protected Store dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return StoreImpl.frbInternalDcoDecode(raw as List<dynamic>); }
+
+@protected TextEngine dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return TextEngineImpl.frbInternalDcoDecode(raw as List<dynamic>); }
+
+@protected VectorEngine dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return VectorEngineImpl.frbInternalDcoDecode(raw as List<dynamic>); }
+
+@protected WriteTransaction dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return WriteTransactionImpl.frbInternalDcoDecode(raw as List<dynamic>); }
+
+@protected Path dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPath(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return PathImpl.frbInternalDcoDecode(raw as List<dynamic>); }
+
+@protected RoaringBitmap dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return RoaringBitmapImpl.frbInternalDcoDecode(raw as List<dynamic>); }
+
+@protected Store dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return StoreImpl.frbInternalDcoDecode(raw as List<dynamic>); }
+
+@protected TextEngine dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return TextEngineImpl.frbInternalDcoDecode(raw as List<dynamic>); }
+
+@protected VectorEngine dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return VectorEngineImpl.frbInternalDcoDecode(raw as List<dynamic>); }
+
+@protected WriteTransaction dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return WriteTransactionImpl.frbInternalDcoDecode(raw as List<dynamic>); }
+
+@protected Object? dco_decode_SerdeJsonValue(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return jsonDecode(raw as String); }
+
+@protected String dco_decode_String(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return raw as String; }
+
+@protected bool dco_decode_bool(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return raw as bool; }
+
+@protected RoaringBitmap dco_decode_box_autoadd_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(raw); }
+
+@protected ChunkRecord dco_decode_box_autoadd_chunk_record(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return dco_decode_chunk_record(raw); }
+
+@protected double dco_decode_box_autoadd_f_32(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return raw as double; }
+
+@protected int dco_decode_box_autoadd_u_32(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return raw as int; }
+
+@protected WaffleConfig dco_decode_box_autoadd_waffle_config(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return dco_decode_waffle_config(raw); }
+
+@protected WaffleHit dco_decode_box_autoadd_waffle_hit(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return dco_decode_waffle_hit(raw); }
+
+@protected WaffleSchema dco_decode_box_autoadd_waffle_schema(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return dco_decode_waffle_schema(raw); }
+
+@protected WaffleSearchRequest dco_decode_box_autoadd_waffle_search_request(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return dco_decode_waffle_search_request(raw); }
+
+@protected FilterNode dco_decode_box_filter_node(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return dco_decode_filter_node(raw); }
+
+@protected ChunkRecord dco_decode_chunk_record(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+final arr = raw as List<dynamic>;
+                if (arr.length != 5) throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
+                return ChunkRecord(externalId: dco_decode_String(arr[0]),
+parentId: dco_decode_opt_String(arr[1]),
+chunkIndex: dco_decode_u_32(arr[2]),
+text: dco_decode_String(arr[3]),
+payloadJson: dco_decode_String(arr[4]),); }
+
+@protected double dco_decode_f_32(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return raw as double; }
+
+@protected double dco_decode_f_64(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return raw as double; }
+
+@protected FilterNode dco_decode_filter_node(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+switch (raw[0]) {
+                case 0: return FilterNode_Eq(field: dco_decode_String(raw[1]),value: dco_decode_SerdeJsonValue(raw[2]),);
+case 1: return FilterNode_In(field: dco_decode_String(raw[1]),values: dco_decode_list_SerdeJsonValue(raw[2]),);
+case 2: return FilterNode_And(filters: dco_decode_list_filter_node(raw[1]),);
+case 3: return FilterNode_Or(filters: dco_decode_list_filter_node(raw[1]),);
+case 4: return FilterNode_Not(filter: dco_decode_box_filter_node(raw[1]),);
+                default: throw Exception("unreachable");
+            } }
+
+@protected int dco_decode_i_32(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return raw as int; }
+
+@protected List<Object?> dco_decode_list_SerdeJsonValue(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return (raw as List<dynamic>).map(dco_decode_SerdeJsonValue).toList(); }
+
+@protected List<String> dco_decode_list_String(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return (raw as List<dynamic>).map(dco_decode_String).toList(); }
+
+@protected List<FilterNode> dco_decode_list_filter_node(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return (raw as List<dynamic>).map(dco_decode_filter_node).toList(); }
+
+@protected List<double> dco_decode_list_prim_f_32_loose(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return raw as List<double>; }
+
+@protected Float32List dco_decode_list_prim_f_32_strict(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return raw as Float32List; }
+
+@protected List<int> dco_decode_list_prim_u_32_loose(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return raw as List<int>; }
+
+@protected Uint32List dco_decode_list_prim_u_32_strict(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return raw as Uint32List; }
+
+@protected List<int> dco_decode_list_prim_u_8_loose(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return raw as List<int>; }
+
+@protected Uint8List dco_decode_list_prim_u_8_strict(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return raw as Uint8List; }
+
+@protected List<(String,int,Float32List)> dco_decode_list_record_string_u_32_list_prim_f_32_strict(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return (raw as List<dynamic>).map(dco_decode_record_string_u_32_list_prim_f_32_strict).toList(); }
+
+@protected List<(int,double)> dco_decode_list_record_u_32_f_32(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return (raw as List<dynamic>).map(dco_decode_record_u_32_f_32).toList(); }
+
+@protected List<(int,double,double?)> dco_decode_list_record_u_32_f_32_opt_box_autoadd_f_32(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return (raw as List<dynamic>).map(dco_decode_record_u_32_f_32_opt_box_autoadd_f_32).toList(); }
+
+@protected List<WaffleField> dco_decode_list_waffle_field(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return (raw as List<dynamic>).map(dco_decode_waffle_field).toList(); }
+
+@protected List<WaffleHit> dco_decode_list_waffle_hit(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return (raw as List<dynamic>).map(dco_decode_waffle_hit).toList(); }
+
+@protected String? dco_decode_opt_String(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return raw == null ? null : dco_decode_String(raw); }
+
+@protected RoaringBitmap? dco_decode_opt_box_autoadd_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return raw == null ? null : dco_decode_box_autoadd_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(raw); }
+
+@protected ChunkRecord? dco_decode_opt_box_autoadd_chunk_record(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return raw == null ? null : dco_decode_box_autoadd_chunk_record(raw); }
+
+@protected double? dco_decode_opt_box_autoadd_f_32(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return raw == null ? null : dco_decode_box_autoadd_f_32(raw); }
+
+@protected int? dco_decode_opt_box_autoadd_u_32(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return raw == null ? null : dco_decode_box_autoadd_u_32(raw); }
+
+@protected WaffleHit? dco_decode_opt_box_autoadd_waffle_hit(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return raw == null ? null : dco_decode_box_autoadd_waffle_hit(raw); }
+
+@protected Float32List? dco_decode_opt_list_prim_f_32_strict(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return raw == null ? null : dco_decode_list_prim_f_32_strict(raw); }
+
+@protected Uint8List? dco_decode_opt_list_prim_u_8_strict(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return raw == null ? null : dco_decode_list_prim_u_8_strict(raw); }
+
+@protected (String,int,Float32List) dco_decode_record_string_u_32_list_prim_f_32_strict(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+final arr = raw as List<dynamic>;
+            if (arr.length != 3) {
+                throw Exception('Expected 3 elements, got ${arr.length}');
+            }
+            return (dco_decode_String(arr[0]),dco_decode_u_32(arr[1]),dco_decode_list_prim_f_32_strict(arr[2]),); }
+
+@protected (int,double) dco_decode_record_u_32_f_32(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+final arr = raw as List<dynamic>;
+            if (arr.length != 2) {
+                throw Exception('Expected 2 elements, got ${arr.length}');
+            }
+            return (dco_decode_u_32(arr[0]),dco_decode_f_32(arr[1]),); }
+
+@protected (int,double,double?) dco_decode_record_u_32_f_32_opt_box_autoadd_f_32(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+final arr = raw as List<dynamic>;
+            if (arr.length != 3) {
+                throw Exception('Expected 3 elements, got ${arr.length}');
+            }
+            return (dco_decode_u_32(arr[0]),dco_decode_f_32(arr[1]),dco_decode_opt_box_autoadd_f_32(arr[2]),); }
+
+@protected int dco_decode_u_32(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return raw as int; }
+
+@protected BigInt dco_decode_u_64(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return dcoDecodeU64(raw); }
+
+@protected int dco_decode_u_8(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return raw as int; }
+
+@protected U8Array20 dco_decode_u_8_array_20(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return U8Array20(dco_decode_list_prim_u_8_strict(raw)); }
+
+@protected U8Array8 dco_decode_u_8_array_8(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return U8Array8(dco_decode_list_prim_u_8_strict(raw)); }
+
+@protected void dco_decode_unit(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return; }
+
+@protected BigInt dco_decode_usize(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return dcoDecodeU64(raw); }
+
+@protected WaffleConfig dco_decode_waffle_config(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+final arr = raw as List<dynamic>;
+                if (arr.length != 7) throw Exception('unexpected arr length: expect 7 but see ${arr.length}');
+                return WaffleConfig(dimension: dco_decode_u_32(arr[0]),
+path: dco_decode_String(arr[1]),
+graphConfig: dco_decode_waffle_graph_config(arr[2]),
+maxElements: dco_decode_u_32(arr[3]),
+useQuantization: dco_decode_bool(arr[4]),
+cacheSizeBytes: dco_decode_u_64(arr[5]),
+workerThreads: dco_decode_u_32(arr[6]),); }
+
+@protected WaffleError dco_decode_waffle_error(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+switch (raw[0]) {
+                case 0: return WaffleError_Storage(dco_decode_String(raw[1]),);
+case 1: return WaffleError_Vector(dco_decode_String(raw[1]),);
+case 2: return WaffleError_Text(dco_decode_String(raw[1]),);
+case 3: return WaffleError_Dimension(expected: dco_decode_usize(raw[1]),actual: dco_decode_usize(raw[2]),);
+case 4: return WaffleError_Schema(dco_decode_String(raw[1]),);
+case 5: return WaffleError_Filter(dco_decode_String(raw[1]),);
+case 6: return WaffleError_DuplicateId(dco_decode_String(raw[1]),);
+case 7: return WaffleError_NotSupported(dco_decode_String(raw[1]),);
+case 8: return WaffleError_InvalidHandle(dco_decode_u_64(raw[1]),);
+case 9: return WaffleError_Serialization(dco_decode_String(raw[1]),);
+                default: throw Exception("unreachable");
+            } }
+
+@protected WaffleField dco_decode_waffle_field(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+final arr = raw as List<dynamic>;
+                if (arr.length != 3) throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+                return WaffleField(name: dco_decode_String(arr[0]),
+fieldType: dco_decode_waffle_field_type(arr[1]),
+indexed: dco_decode_bool(arr[2]),); }
+
+@protected WaffleFieldType dco_decode_waffle_field_type(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return WaffleFieldType.values[raw as int]; }
+
+@protected WaffleGraphConfig dco_decode_waffle_graph_config(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+final arr = raw as List<dynamic>;
+                if (arr.length != 4) throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+                return WaffleGraphConfig(m: dco_decode_u_32(arr[0]),
+metric: dco_decode_waffle_metric(arr[1]),
+efConstruction: dco_decode_u_32(arr[2]),
+efSearch: dco_decode_u_32(arr[3]),); }
+
+@protected WaffleHit dco_decode_waffle_hit(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+final arr = raw as List<dynamic>;
+                if (arr.length != 5) throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
+                return WaffleHit(id: dco_decode_String(arr[0]),
+score: dco_decode_f_32(arr[1]),
+distance: dco_decode_opt_box_autoadd_f_32(arr[2]),
+text: dco_decode_opt_String(arr[3]),
+payloadJson: dco_decode_opt_String(arr[4]),); }
+
+@protected WaffleLanguage dco_decode_waffle_language(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return WaffleLanguage.values[raw as int]; }
+
+@protected WaffleMetric dco_decode_waffle_metric(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+return WaffleMetric.values[raw as int]; }
+
+@protected WaffleSchema dco_decode_waffle_schema(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+final arr = raw as List<dynamic>;
+                if (arr.length != 2) throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+                return WaffleSchema(fields: dco_decode_list_waffle_field(arr[0]),
+textLanguage: dco_decode_waffle_language(arr[1]),); }
+
+@protected WaffleSearchRequest dco_decode_waffle_search_request(dynamic raw){ // Codec=Dco (DartCObject based), see doc to use other codecs
+final arr = raw as List<dynamic>;
+                if (arr.length != 7) throw Exception('unexpected arr length: expect 7 but see ${arr.length}');
+                return WaffleSearchRequest(vector: dco_decode_opt_list_prim_f_32_strict(arr[0]),
+text: dco_decode_opt_String(arr[1]),
+topK: dco_decode_u_32(arr[2]),
+filterJson: dco_decode_opt_String(arr[3]),
+alpha: dco_decode_opt_box_autoadd_f_32(arr[4]),
+rrfK: dco_decode_opt_box_autoadd_u_32(arr[5]),
+efSearch: dco_decode_u_32(arr[6]),); }
+
+@protected RoaringBitmap sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+return RoaringBitmapImpl.frbInternalSseDecode(sse_decode_usize(deserializer), sse_decode_i_32(deserializer)); }
+
+@protected Store sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+return StoreImpl.frbInternalSseDecode(sse_decode_usize(deserializer), sse_decode_i_32(deserializer)); }
+
+@protected TextEngine sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+return TextEngineImpl.frbInternalSseDecode(sse_decode_usize(deserializer), sse_decode_i_32(deserializer)); }
+
+@protected VectorEngine sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+return VectorEngineImpl.frbInternalSseDecode(sse_decode_usize(deserializer), sse_decode_i_32(deserializer)); }
+
+@protected WriteTransaction sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+return WriteTransactionImpl.frbInternalSseDecode(sse_decode_usize(deserializer), sse_decode_i_32(deserializer)); }
+
+@protected Path sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPath(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+return PathImpl.frbInternalSseDecode(sse_decode_usize(deserializer), sse_decode_i_32(deserializer)); }
+
+@protected RoaringBitmap sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+return RoaringBitmapImpl.frbInternalSseDecode(sse_decode_usize(deserializer), sse_decode_i_32(deserializer)); }
+
+@protected Store sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+return StoreImpl.frbInternalSseDecode(sse_decode_usize(deserializer), sse_decode_i_32(deserializer)); }
+
+@protected TextEngine sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+return TextEngineImpl.frbInternalSseDecode(sse_decode_usize(deserializer), sse_decode_i_32(deserializer)); }
+
+@protected VectorEngine sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+return VectorEngineImpl.frbInternalSseDecode(sse_decode_usize(deserializer), sse_decode_i_32(deserializer)); }
+
+@protected WriteTransaction sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+return WriteTransactionImpl.frbInternalSseDecode(sse_decode_usize(deserializer), sse_decode_i_32(deserializer)); }
+
+@protected Path sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPath(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+return PathImpl.frbInternalSseDecode(sse_decode_usize(deserializer), sse_decode_i_32(deserializer)); }
+
+@protected RoaringBitmap sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+return RoaringBitmapImpl.frbInternalSseDecode(sse_decode_usize(deserializer), sse_decode_i_32(deserializer)); }
+
+@protected Store sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+return StoreImpl.frbInternalSseDecode(sse_decode_usize(deserializer), sse_decode_i_32(deserializer)); }
+
+@protected TextEngine sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+return TextEngineImpl.frbInternalSseDecode(sse_decode_usize(deserializer), sse_decode_i_32(deserializer)); }
+
+@protected VectorEngine sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+return VectorEngineImpl.frbInternalSseDecode(sse_decode_usize(deserializer), sse_decode_i_32(deserializer)); }
+
+@protected WriteTransaction sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+return WriteTransactionImpl.frbInternalSseDecode(sse_decode_usize(deserializer), sse_decode_i_32(deserializer)); }
+
+@protected Object? sse_decode_SerdeJsonValue(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+var inner = sse_decode_String(deserializer);
+        return jsonDecode(inner); }
+
+@protected String sse_decode_String(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+var inner = sse_decode_list_prim_u_8_strict(deserializer);
+        return utf8.decoder.convert(inner); }
+
+@protected bool sse_decode_bool(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+return deserializer.buffer.getUint8() != 0; }
+
+@protected RoaringBitmap sse_decode_box_autoadd_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+return (sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(deserializer)); }
+
+@protected ChunkRecord sse_decode_box_autoadd_chunk_record(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+return (sse_decode_chunk_record(deserializer)); }
+
+@protected double sse_decode_box_autoadd_f_32(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+return (sse_decode_f_32(deserializer)); }
+
+@protected int sse_decode_box_autoadd_u_32(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+return (sse_decode_u_32(deserializer)); }
+
+@protected WaffleConfig sse_decode_box_autoadd_waffle_config(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+return (sse_decode_waffle_config(deserializer)); }
+
+@protected WaffleHit sse_decode_box_autoadd_waffle_hit(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+return (sse_decode_waffle_hit(deserializer)); }
+
+@protected WaffleSchema sse_decode_box_autoadd_waffle_schema(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+return (sse_decode_waffle_schema(deserializer)); }
+
+@protected WaffleSearchRequest sse_decode_box_autoadd_waffle_search_request(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+return (sse_decode_waffle_search_request(deserializer)); }
+
+@protected FilterNode sse_decode_box_filter_node(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+return (sse_decode_filter_node(deserializer)); }
+
+@protected ChunkRecord sse_decode_chunk_record(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+var var_externalId = sse_decode_String(deserializer);
+var var_parentId = sse_decode_opt_String(deserializer);
+var var_chunkIndex = sse_decode_u_32(deserializer);
+var var_text = sse_decode_String(deserializer);
+var var_payloadJson = sse_decode_String(deserializer);
+return ChunkRecord(externalId: var_externalId, parentId: var_parentId, chunkIndex: var_chunkIndex, text: var_text, payloadJson: var_payloadJson); }
+
+@protected double sse_decode_f_32(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+return deserializer.buffer.getFloat32(); }
+
+@protected double sse_decode_f_64(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+return deserializer.buffer.getFloat64(); }
+
+@protected FilterNode sse_decode_filter_node(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+
+            var tag_ = sse_decode_i_32(deserializer);
+            switch (tag_) { case 0: var var_field = sse_decode_String(deserializer);
+var var_value = sse_decode_SerdeJsonValue(deserializer);
+return FilterNode_Eq(field: var_field, value: var_value);case 1: var var_field = sse_decode_String(deserializer);
+var var_values = sse_decode_list_SerdeJsonValue(deserializer);
+return FilterNode_In(field: var_field, values: var_values);case 2: var var_filters = sse_decode_list_filter_node(deserializer);
+return FilterNode_And(filters: var_filters);case 3: var var_filters = sse_decode_list_filter_node(deserializer);
+return FilterNode_Or(filters: var_filters);case 4: var var_filter = sse_decode_box_filter_node(deserializer);
+return FilterNode_Not(filter: var_filter); default: throw UnimplementedError(''); }
+             }
+
+@protected int sse_decode_i_32(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+return deserializer.buffer.getInt32(); }
+
+@protected List<Object?> sse_decode_list_SerdeJsonValue(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+
+        var len_ = sse_decode_i_32(deserializer);
+        var ans_ = <Object?>[];
+        for (var idx_ = 0; idx_ < len_; ++idx_) { ans_.add(sse_decode_SerdeJsonValue(deserializer)); }
+        return ans_;
+         }
+
+@protected List<String> sse_decode_list_String(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+
+        var len_ = sse_decode_i_32(deserializer);
+        var ans_ = <String>[];
+        for (var idx_ = 0; idx_ < len_; ++idx_) { ans_.add(sse_decode_String(deserializer)); }
+        return ans_;
+         }
+
+@protected List<FilterNode> sse_decode_list_filter_node(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+
+        var len_ = sse_decode_i_32(deserializer);
+        var ans_ = <FilterNode>[];
+        for (var idx_ = 0; idx_ < len_; ++idx_) { ans_.add(sse_decode_filter_node(deserializer)); }
+        return ans_;
+         }
+
+@protected List<double> sse_decode_list_prim_f_32_loose(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+var len_ = sse_decode_i_32(deserializer);
+                return deserializer.buffer.getFloat32List(len_); }
+
+@protected Float32List sse_decode_list_prim_f_32_strict(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+var len_ = sse_decode_i_32(deserializer);
+                return deserializer.buffer.getFloat32List(len_); }
+
+@protected List<int> sse_decode_list_prim_u_32_loose(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+var len_ = sse_decode_i_32(deserializer);
+                return deserializer.buffer.getUint32List(len_); }
+
+@protected Uint32List sse_decode_list_prim_u_32_strict(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+var len_ = sse_decode_i_32(deserializer);
+                return deserializer.buffer.getUint32List(len_); }
+
+@protected List<int> sse_decode_list_prim_u_8_loose(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+var len_ = sse_decode_i_32(deserializer);
+                return deserializer.buffer.getUint8List(len_); }
+
+@protected Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+var len_ = sse_decode_i_32(deserializer);
+                return deserializer.buffer.getUint8List(len_); }
+
+@protected List<(String,int,Float32List)> sse_decode_list_record_string_u_32_list_prim_f_32_strict(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+
+        var len_ = sse_decode_i_32(deserializer);
+        var ans_ = <(String,int,Float32List)>[];
+        for (var idx_ = 0; idx_ < len_; ++idx_) { ans_.add(sse_decode_record_string_u_32_list_prim_f_32_strict(deserializer)); }
+        return ans_;
+         }
+
+@protected List<(int,double)> sse_decode_list_record_u_32_f_32(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+
+        var len_ = sse_decode_i_32(deserializer);
+        var ans_ = <(int,double)>[];
+        for (var idx_ = 0; idx_ < len_; ++idx_) { ans_.add(sse_decode_record_u_32_f_32(deserializer)); }
+        return ans_;
+         }
+
+@protected List<(int,double,double?)> sse_decode_list_record_u_32_f_32_opt_box_autoadd_f_32(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+
+        var len_ = sse_decode_i_32(deserializer);
+        var ans_ = <(int,double,double?)>[];
+        for (var idx_ = 0; idx_ < len_; ++idx_) { ans_.add(sse_decode_record_u_32_f_32_opt_box_autoadd_f_32(deserializer)); }
+        return ans_;
+         }
+
+@protected List<WaffleField> sse_decode_list_waffle_field(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+
+        var len_ = sse_decode_i_32(deserializer);
+        var ans_ = <WaffleField>[];
+        for (var idx_ = 0; idx_ < len_; ++idx_) { ans_.add(sse_decode_waffle_field(deserializer)); }
+        return ans_;
+         }
+
+@protected List<WaffleHit> sse_decode_list_waffle_hit(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+
+        var len_ = sse_decode_i_32(deserializer);
+        var ans_ = <WaffleHit>[];
+        for (var idx_ = 0; idx_ < len_; ++idx_) { ans_.add(sse_decode_waffle_hit(deserializer)); }
+        return ans_;
+         }
+
+@protected String? sse_decode_opt_String(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+
+            if (sse_decode_bool(deserializer)) {
+                return (sse_decode_String(deserializer));
+            } else {
+                return null;
+            }
+             }
+
+@protected RoaringBitmap? sse_decode_opt_box_autoadd_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+
+            if (sse_decode_bool(deserializer)) {
+                return (sse_decode_box_autoadd_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(deserializer));
+            } else {
+                return null;
+            }
+             }
+
+@protected ChunkRecord? sse_decode_opt_box_autoadd_chunk_record(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+
+            if (sse_decode_bool(deserializer)) {
+                return (sse_decode_box_autoadd_chunk_record(deserializer));
+            } else {
+                return null;
+            }
+             }
+
+@protected double? sse_decode_opt_box_autoadd_f_32(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+
+            if (sse_decode_bool(deserializer)) {
+                return (sse_decode_box_autoadd_f_32(deserializer));
+            } else {
+                return null;
+            }
+             }
+
+@protected int? sse_decode_opt_box_autoadd_u_32(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+
+            if (sse_decode_bool(deserializer)) {
+                return (sse_decode_box_autoadd_u_32(deserializer));
+            } else {
+                return null;
+            }
+             }
+
+@protected WaffleHit? sse_decode_opt_box_autoadd_waffle_hit(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+
+            if (sse_decode_bool(deserializer)) {
+                return (sse_decode_box_autoadd_waffle_hit(deserializer));
+            } else {
+                return null;
+            }
+             }
+
+@protected Float32List? sse_decode_opt_list_prim_f_32_strict(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+
+            if (sse_decode_bool(deserializer)) {
+                return (sse_decode_list_prim_f_32_strict(deserializer));
+            } else {
+                return null;
+            }
+             }
+
+@protected Uint8List? sse_decode_opt_list_prim_u_8_strict(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+
+            if (sse_decode_bool(deserializer)) {
+                return (sse_decode_list_prim_u_8_strict(deserializer));
+            } else {
+                return null;
+            }
+             }
+
+@protected (String,int,Float32List) sse_decode_record_string_u_32_list_prim_f_32_strict(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+var var_field0 = sse_decode_String(deserializer);
+var var_field1 = sse_decode_u_32(deserializer);
+var var_field2 = sse_decode_list_prim_f_32_strict(deserializer);
+return (var_field0, var_field1, var_field2); }
+
+@protected (int,double) sse_decode_record_u_32_f_32(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+var var_field0 = sse_decode_u_32(deserializer);
+var var_field1 = sse_decode_f_32(deserializer);
+return (var_field0, var_field1); }
+
+@protected (int,double,double?) sse_decode_record_u_32_f_32_opt_box_autoadd_f_32(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+var var_field0 = sse_decode_u_32(deserializer);
+var var_field1 = sse_decode_f_32(deserializer);
+var var_field2 = sse_decode_opt_box_autoadd_f_32(deserializer);
+return (var_field0, var_field1, var_field2); }
+
+@protected int sse_decode_u_32(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+return deserializer.buffer.getUint32(); }
+
+@protected BigInt sse_decode_u_64(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+return deserializer.buffer.getBigUint64(); }
+
+@protected int sse_decode_u_8(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+return deserializer.buffer.getUint8(); }
+
+@protected U8Array20 sse_decode_u_8_array_20(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+var inner = sse_decode_list_prim_u_8_strict(deserializer);
+        return U8Array20(inner); }
+
+@protected U8Array8 sse_decode_u_8_array_8(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+var inner = sse_decode_list_prim_u_8_strict(deserializer);
+        return U8Array8(inner); }
+
+@protected void sse_decode_unit(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+ }
+
+@protected BigInt sse_decode_usize(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+return deserializer.buffer.getBigUint64(); }
+
+@protected WaffleConfig sse_decode_waffle_config(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+var var_dimension = sse_decode_u_32(deserializer);
+var var_path = sse_decode_String(deserializer);
+var var_graphConfig = sse_decode_waffle_graph_config(deserializer);
+var var_maxElements = sse_decode_u_32(deserializer);
+var var_useQuantization = sse_decode_bool(deserializer);
+var var_cacheSizeBytes = sse_decode_u_64(deserializer);
+var var_workerThreads = sse_decode_u_32(deserializer);
+return WaffleConfig(dimension: var_dimension, path: var_path, graphConfig: var_graphConfig, maxElements: var_maxElements, useQuantization: var_useQuantization, cacheSizeBytes: var_cacheSizeBytes, workerThreads: var_workerThreads); }
+
+@protected WaffleError sse_decode_waffle_error(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+
+            var tag_ = sse_decode_i_32(deserializer);
+            switch (tag_) { case 0: var var_field0 = sse_decode_String(deserializer);
+return WaffleError_Storage(var_field0);case 1: var var_field0 = sse_decode_String(deserializer);
+return WaffleError_Vector(var_field0);case 2: var var_field0 = sse_decode_String(deserializer);
+return WaffleError_Text(var_field0);case 3: var var_expected = sse_decode_usize(deserializer);
+var var_actual = sse_decode_usize(deserializer);
+return WaffleError_Dimension(expected: var_expected, actual: var_actual);case 4: var var_field0 = sse_decode_String(deserializer);
+return WaffleError_Schema(var_field0);case 5: var var_field0 = sse_decode_String(deserializer);
+return WaffleError_Filter(var_field0);case 6: var var_field0 = sse_decode_String(deserializer);
+return WaffleError_DuplicateId(var_field0);case 7: var var_field0 = sse_decode_String(deserializer);
+return WaffleError_NotSupported(var_field0);case 8: var var_field0 = sse_decode_u_64(deserializer);
+return WaffleError_InvalidHandle(var_field0);case 9: var var_field0 = sse_decode_String(deserializer);
+return WaffleError_Serialization(var_field0); default: throw UnimplementedError(''); }
+             }
+
+@protected WaffleField sse_decode_waffle_field(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+var var_name = sse_decode_String(deserializer);
+var var_fieldType = sse_decode_waffle_field_type(deserializer);
+var var_indexed = sse_decode_bool(deserializer);
+return WaffleField(name: var_name, fieldType: var_fieldType, indexed: var_indexed); }
+
+@protected WaffleFieldType sse_decode_waffle_field_type(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+var inner = sse_decode_i_32(deserializer);
+        return WaffleFieldType.values[inner]; }
+
+@protected WaffleGraphConfig sse_decode_waffle_graph_config(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+var var_m = sse_decode_u_32(deserializer);
+var var_metric = sse_decode_waffle_metric(deserializer);
+var var_efConstruction = sse_decode_u_32(deserializer);
+var var_efSearch = sse_decode_u_32(deserializer);
+return WaffleGraphConfig(m: var_m, metric: var_metric, efConstruction: var_efConstruction, efSearch: var_efSearch); }
+
+@protected WaffleHit sse_decode_waffle_hit(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+var var_id = sse_decode_String(deserializer);
+var var_score = sse_decode_f_32(deserializer);
+var var_distance = sse_decode_opt_box_autoadd_f_32(deserializer);
+var var_text = sse_decode_opt_String(deserializer);
+var var_payloadJson = sse_decode_opt_String(deserializer);
+return WaffleHit(id: var_id, score: var_score, distance: var_distance, text: var_text, payloadJson: var_payloadJson); }
+
+@protected WaffleLanguage sse_decode_waffle_language(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+var inner = sse_decode_i_32(deserializer);
+        return WaffleLanguage.values[inner]; }
+
+@protected WaffleMetric sse_decode_waffle_metric(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+var inner = sse_decode_i_32(deserializer);
+        return WaffleMetric.values[inner]; }
+
+@protected WaffleSchema sse_decode_waffle_schema(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+var var_fields = sse_decode_list_waffle_field(deserializer);
+var var_textLanguage = sse_decode_waffle_language(deserializer);
+return WaffleSchema(fields: var_fields, textLanguage: var_textLanguage); }
+
+@protected WaffleSearchRequest sse_decode_waffle_search_request(SseDeserializer deserializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+var var_vector = sse_decode_opt_list_prim_f_32_strict(deserializer);
+var var_text = sse_decode_opt_String(deserializer);
+var var_topK = sse_decode_u_32(deserializer);
+var var_filterJson = sse_decode_opt_String(deserializer);
+var var_alpha = sse_decode_opt_box_autoadd_f_32(deserializer);
+var var_rrfK = sse_decode_opt_box_autoadd_u_32(deserializer);
+var var_efSearch = sse_decode_u_32(deserializer);
+return WaffleSearchRequest(vector: var_vector, text: var_text, topK: var_topK, filterJson: var_filterJson, alpha: var_alpha, rrfK: var_rrfK, efSearch: var_efSearch); }
+
+@protected void sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(RoaringBitmap self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_usize((self as RoaringBitmapImpl).frbInternalSseEncode(move: true), serializer); }
+
+@protected void sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(Store self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_usize((self as StoreImpl).frbInternalSseEncode(move: true), serializer); }
+
+@protected void sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(TextEngine self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_usize((self as TextEngineImpl).frbInternalSseEncode(move: true), serializer); }
+
+@protected void sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(VectorEngine self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_usize((self as VectorEngineImpl).frbInternalSseEncode(move: true), serializer); }
+
+@protected void sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(WriteTransaction self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_usize((self as WriteTransactionImpl).frbInternalSseEncode(move: true), serializer); }
+
+@protected void sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPath(Path self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_usize((self as PathImpl).frbInternalSseEncode(move: false), serializer); }
+
+@protected void sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(RoaringBitmap self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_usize((self as RoaringBitmapImpl).frbInternalSseEncode(move: false), serializer); }
+
+@protected void sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(Store self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_usize((self as StoreImpl).frbInternalSseEncode(move: false), serializer); }
+
+@protected void sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(TextEngine self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_usize((self as TextEngineImpl).frbInternalSseEncode(move: false), serializer); }
+
+@protected void sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(VectorEngine self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_usize((self as VectorEngineImpl).frbInternalSseEncode(move: false), serializer); }
+
+@protected void sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(WriteTransaction self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_usize((self as WriteTransactionImpl).frbInternalSseEncode(move: false), serializer); }
+
+@protected void sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPath(Path self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_usize((self as PathImpl).frbInternalSseEncode(move: null), serializer); }
+
+@protected void sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(RoaringBitmap self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_usize((self as RoaringBitmapImpl).frbInternalSseEncode(move: null), serializer); }
+
+@protected void sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(Store self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_usize((self as StoreImpl).frbInternalSseEncode(move: null), serializer); }
+
+@protected void sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(TextEngine self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_usize((self as TextEngineImpl).frbInternalSseEncode(move: null), serializer); }
+
+@protected void sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(VectorEngine self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_usize((self as VectorEngineImpl).frbInternalSseEncode(move: null), serializer); }
+
+@protected void sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(WriteTransaction self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_usize((self as WriteTransactionImpl).frbInternalSseEncode(move: null), serializer); }
+
+@protected void sse_encode_SerdeJsonValue(Object? self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_String(jsonEncode(self), serializer); }
+
+@protected void sse_encode_String(String self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_list_prim_u_8_strict(utf8.encoder.convert(self), serializer); }
+
+@protected void sse_encode_bool(bool self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+serializer.buffer.putUint8(self ? 1 : 0); }
+
+@protected void sse_encode_box_autoadd_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(RoaringBitmap self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(self, serializer); }
+
+@protected void sse_encode_box_autoadd_chunk_record(ChunkRecord self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_chunk_record(self, serializer); }
+
+@protected void sse_encode_box_autoadd_f_32(double self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_f_32(self, serializer); }
+
+@protected void sse_encode_box_autoadd_u_32(int self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_u_32(self, serializer); }
+
+@protected void sse_encode_box_autoadd_waffle_config(WaffleConfig self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_waffle_config(self, serializer); }
+
+@protected void sse_encode_box_autoadd_waffle_hit(WaffleHit self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_waffle_hit(self, serializer); }
+
+@protected void sse_encode_box_autoadd_waffle_schema(WaffleSchema self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_waffle_schema(self, serializer); }
+
+@protected void sse_encode_box_autoadd_waffle_search_request(WaffleSearchRequest self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_waffle_search_request(self, serializer); }
+
+@protected void sse_encode_box_filter_node(FilterNode self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_filter_node(self, serializer); }
+
+@protected void sse_encode_chunk_record(ChunkRecord self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_String(self.externalId, serializer);
+sse_encode_opt_String(self.parentId, serializer);
+sse_encode_u_32(self.chunkIndex, serializer);
+sse_encode_String(self.text, serializer);
+sse_encode_String(self.payloadJson, serializer);
+ }
+
+@protected void sse_encode_f_32(double self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+serializer.buffer.putFloat32(self); }
+
+@protected void sse_encode_f_64(double self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+serializer.buffer.putFloat64(self); }
+
+@protected void sse_encode_filter_node(FilterNode self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+switch (self) { case FilterNode_Eq(field: final field,value: final value): sse_encode_i_32(0, serializer); sse_encode_String(field, serializer);
+sse_encode_SerdeJsonValue(value, serializer);
+case FilterNode_In(field: final field,values: final values): sse_encode_i_32(1, serializer); sse_encode_String(field, serializer);
+sse_encode_list_SerdeJsonValue(values, serializer);
+case FilterNode_And(filters: final filters): sse_encode_i_32(2, serializer); sse_encode_list_filter_node(filters, serializer);
+case FilterNode_Or(filters: final filters): sse_encode_i_32(3, serializer); sse_encode_list_filter_node(filters, serializer);
+case FilterNode_Not(filter: final filter): sse_encode_i_32(4, serializer); sse_encode_box_filter_node(filter, serializer);
+  } }
+
+@protected void sse_encode_i_32(int self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+serializer.buffer.putInt32(self); }
+
+@protected void sse_encode_list_SerdeJsonValue(List<Object?> self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_i_32(self.length, serializer);
+        for (final item in self) { sse_encode_SerdeJsonValue(item, serializer); } }
+
+@protected void sse_encode_list_String(List<String> self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_i_32(self.length, serializer);
+        for (final item in self) { sse_encode_String(item, serializer); } }
+
+@protected void sse_encode_list_filter_node(List<FilterNode> self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_i_32(self.length, serializer);
+        for (final item in self) { sse_encode_filter_node(item, serializer); } }
+
+@protected void sse_encode_list_prim_f_32_loose(List<double> self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_i_32(self.length, serializer);
+                    serializer.buffer.putFloat32List(self is Float32List ? self : Float32List.fromList(self)); }
+
+@protected void sse_encode_list_prim_f_32_strict(Float32List self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_i_32(self.length, serializer);
+                    serializer.buffer.putFloat32List(self); }
+
+@protected void sse_encode_list_prim_u_32_loose(List<int> self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_i_32(self.length, serializer);
+                    serializer.buffer.putUint32List(self is Uint32List ? self : Uint32List.fromList(self)); }
+
+@protected void sse_encode_list_prim_u_32_strict(Uint32List self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_i_32(self.length, serializer);
+                    serializer.buffer.putUint32List(self); }
+
+@protected void sse_encode_list_prim_u_8_loose(List<int> self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_i_32(self.length, serializer);
+                    serializer.buffer.putUint8List(self is Uint8List ? self : Uint8List.fromList(self)); }
+
+@protected void sse_encode_list_prim_u_8_strict(Uint8List self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_i_32(self.length, serializer);
+                    serializer.buffer.putUint8List(self); }
+
+@protected void sse_encode_list_record_string_u_32_list_prim_f_32_strict(List<(String,int,Float32List)> self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_i_32(self.length, serializer);
+        for (final item in self) { sse_encode_record_string_u_32_list_prim_f_32_strict(item, serializer); } }
+
+@protected void sse_encode_list_record_u_32_f_32(List<(int,double)> self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_i_32(self.length, serializer);
+        for (final item in self) { sse_encode_record_u_32_f_32(item, serializer); } }
+
+@protected void sse_encode_list_record_u_32_f_32_opt_box_autoadd_f_32(List<(int,double,double?)> self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_i_32(self.length, serializer);
+        for (final item in self) { sse_encode_record_u_32_f_32_opt_box_autoadd_f_32(item, serializer); } }
+
+@protected void sse_encode_list_waffle_field(List<WaffleField> self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_i_32(self.length, serializer);
+        for (final item in self) { sse_encode_waffle_field(item, serializer); } }
+
+@protected void sse_encode_list_waffle_hit(List<WaffleHit> self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_i_32(self.length, serializer);
+        for (final item in self) { sse_encode_waffle_hit(item, serializer); } }
+
+@protected void sse_encode_opt_String(String? self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+
+                sse_encode_bool(self != null, serializer);
+                if (self != null) {
+                    sse_encode_String(self, serializer);
+                }
+                 }
+
+@protected void sse_encode_opt_box_autoadd_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(RoaringBitmap? self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+
+                sse_encode_bool(self != null, serializer);
+                if (self != null) {
+                    sse_encode_box_autoadd_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(self, serializer);
+                }
+                 }
+
+@protected void sse_encode_opt_box_autoadd_chunk_record(ChunkRecord? self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+
+                sse_encode_bool(self != null, serializer);
+                if (self != null) {
+                    sse_encode_box_autoadd_chunk_record(self, serializer);
+                }
+                 }
+
+@protected void sse_encode_opt_box_autoadd_f_32(double? self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+
+                sse_encode_bool(self != null, serializer);
+                if (self != null) {
+                    sse_encode_box_autoadd_f_32(self, serializer);
+                }
+                 }
+
+@protected void sse_encode_opt_box_autoadd_u_32(int? self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+
+                sse_encode_bool(self != null, serializer);
+                if (self != null) {
+                    sse_encode_box_autoadd_u_32(self, serializer);
+                }
+                 }
+
+@protected void sse_encode_opt_box_autoadd_waffle_hit(WaffleHit? self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+
+                sse_encode_bool(self != null, serializer);
+                if (self != null) {
+                    sse_encode_box_autoadd_waffle_hit(self, serializer);
+                }
+                 }
+
+@protected void sse_encode_opt_list_prim_f_32_strict(Float32List? self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+
+                sse_encode_bool(self != null, serializer);
+                if (self != null) {
+                    sse_encode_list_prim_f_32_strict(self, serializer);
+                }
+                 }
+
+@protected void sse_encode_opt_list_prim_u_8_strict(Uint8List? self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+
+                sse_encode_bool(self != null, serializer);
+                if (self != null) {
+                    sse_encode_list_prim_u_8_strict(self, serializer);
+                }
+                 }
+
+@protected void sse_encode_record_string_u_32_list_prim_f_32_strict((String,int,Float32List) self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_String(self.$1, serializer);
+sse_encode_u_32(self.$2, serializer);
+sse_encode_list_prim_f_32_strict(self.$3, serializer);
+ }
+
+@protected void sse_encode_record_u_32_f_32((int,double) self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_u_32(self.$1, serializer);
+sse_encode_f_32(self.$2, serializer);
+ }
+
+@protected void sse_encode_record_u_32_f_32_opt_box_autoadd_f_32((int,double,double?) self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_u_32(self.$1, serializer);
+sse_encode_f_32(self.$2, serializer);
+sse_encode_opt_box_autoadd_f_32(self.$3, serializer);
+ }
+
+@protected void sse_encode_u_32(int self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+serializer.buffer.putUint32(self); }
+
+@protected void sse_encode_u_64(BigInt self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+serializer.buffer.putBigUint64(self); }
+
+@protected void sse_encode_u_8(int self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+serializer.buffer.putUint8(self); }
+
+@protected void sse_encode_u_8_array_20(U8Array20 self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_list_prim_u_8_strict(self.inner, serializer); }
+
+@protected void sse_encode_u_8_array_8(U8Array8 self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_list_prim_u_8_strict(self.inner, serializer); }
+
+@protected void sse_encode_unit(void self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+ }
+
+@protected void sse_encode_usize(BigInt self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+serializer.buffer.putBigUint64(self); }
+
+@protected void sse_encode_waffle_config(WaffleConfig self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_u_32(self.dimension, serializer);
+sse_encode_String(self.path, serializer);
+sse_encode_waffle_graph_config(self.graphConfig, serializer);
+sse_encode_u_32(self.maxElements, serializer);
+sse_encode_bool(self.useQuantization, serializer);
+sse_encode_u_64(self.cacheSizeBytes, serializer);
+sse_encode_u_32(self.workerThreads, serializer);
+ }
+
+@protected void sse_encode_waffle_error(WaffleError self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+switch (self) { case WaffleError_Storage(field0: final field0): sse_encode_i_32(0, serializer); sse_encode_String(field0, serializer);
+case WaffleError_Vector(field0: final field0): sse_encode_i_32(1, serializer); sse_encode_String(field0, serializer);
+case WaffleError_Text(field0: final field0): sse_encode_i_32(2, serializer); sse_encode_String(field0, serializer);
+case WaffleError_Dimension(expected: final expected,actual: final actual): sse_encode_i_32(3, serializer); sse_encode_usize(expected, serializer);
+sse_encode_usize(actual, serializer);
+case WaffleError_Schema(field0: final field0): sse_encode_i_32(4, serializer); sse_encode_String(field0, serializer);
+case WaffleError_Filter(field0: final field0): sse_encode_i_32(5, serializer); sse_encode_String(field0, serializer);
+case WaffleError_DuplicateId(field0: final field0): sse_encode_i_32(6, serializer); sse_encode_String(field0, serializer);
+case WaffleError_NotSupported(field0: final field0): sse_encode_i_32(7, serializer); sse_encode_String(field0, serializer);
+case WaffleError_InvalidHandle(field0: final field0): sse_encode_i_32(8, serializer); sse_encode_u_64(field0, serializer);
+case WaffleError_Serialization(field0: final field0): sse_encode_i_32(9, serializer); sse_encode_String(field0, serializer);
+  } }
+
+@protected void sse_encode_waffle_field(WaffleField self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_String(self.name, serializer);
+sse_encode_waffle_field_type(self.fieldType, serializer);
+sse_encode_bool(self.indexed, serializer);
+ }
+
+@protected void sse_encode_waffle_field_type(WaffleFieldType self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_i_32(self.index, serializer); }
+
+@protected void sse_encode_waffle_graph_config(WaffleGraphConfig self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_u_32(self.m, serializer);
+sse_encode_waffle_metric(self.metric, serializer);
+sse_encode_u_32(self.efConstruction, serializer);
+sse_encode_u_32(self.efSearch, serializer);
+ }
+
+@protected void sse_encode_waffle_hit(WaffleHit self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_String(self.id, serializer);
+sse_encode_f_32(self.score, serializer);
+sse_encode_opt_box_autoadd_f_32(self.distance, serializer);
+sse_encode_opt_String(self.text, serializer);
+sse_encode_opt_String(self.payloadJson, serializer);
+ }
+
+@protected void sse_encode_waffle_language(WaffleLanguage self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_i_32(self.index, serializer); }
+
+@protected void sse_encode_waffle_metric(WaffleMetric self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_i_32(self.index, serializer); }
+
+@protected void sse_encode_waffle_schema(WaffleSchema self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_list_waffle_field(self.fields, serializer);
+sse_encode_waffle_language(self.textLanguage, serializer);
+ }
+
+@protected void sse_encode_waffle_search_request(WaffleSearchRequest self, SseSerializer serializer){ // Codec=Sse (Serialization based), see doc to use other codecs
+sse_encode_opt_list_prim_f_32_strict(self.vector, serializer);
+sse_encode_opt_String(self.text, serializer);
+sse_encode_u_32(self.topK, serializer);
+sse_encode_opt_String(self.filterJson, serializer);
+sse_encode_opt_box_autoadd_f_32(self.alpha, serializer);
+sse_encode_opt_box_autoadd_u_32(self.rrfK, serializer);
+sse_encode_u_32(self.efSearch, serializer);
+ }
+                }
+                
+
+            @sealed class PathImpl extends RustOpaque implements Path {
+                // Not to be used by end users
+                PathImpl.frbInternalDcoDecode(List<dynamic> wire):
+                    super.frbInternalDcoDecode(wire, _kStaticData);
+
+                // Not to be used by end users
+                PathImpl.frbInternalSseDecode(BigInt ptr, int externalSizeOnNative):
+                    super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
+
+                static final _kStaticData = RustArcStaticData(
+                    rustArcIncrementStrongCount: RustLib.instance.api.rust_arc_increment_strong_count_Path,
+                    rustArcDecrementStrongCount: RustLib.instance.api.rust_arc_decrement_strong_count_Path,
+                    rustArcDecrementStrongCountPtr: RustLib.instance.api.rust_arc_decrement_strong_count_PathPtr,
+                );
+
+                
+            }
+            @sealed class RoaringBitmapImpl extends RustOpaque implements RoaringBitmap {
+                // Not to be used by end users
+                RoaringBitmapImpl.frbInternalDcoDecode(List<dynamic> wire):
+                    super.frbInternalDcoDecode(wire, _kStaticData);
+
+                // Not to be used by end users
+                RoaringBitmapImpl.frbInternalSseDecode(BigInt ptr, int externalSizeOnNative):
+                    super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
+
+                static final _kStaticData = RustArcStaticData(
+                    rustArcIncrementStrongCount: RustLib.instance.api.rust_arc_increment_strong_count_RoaringBitmap,
+                    rustArcDecrementStrongCount: RustLib.instance.api.rust_arc_decrement_strong_count_RoaringBitmap,
+                    rustArcDecrementStrongCountPtr: RustLib.instance.api.rust_arc_decrement_strong_count_RoaringBitmapPtr,
+                );
+
+                
+            }
+            @sealed class StoreImpl extends RustOpaque implements Store {
+                // Not to be used by end users
+                StoreImpl.frbInternalDcoDecode(List<dynamic> wire):
+                    super.frbInternalDcoDecode(wire, _kStaticData);
+
+                // Not to be used by end users
+                StoreImpl.frbInternalSseDecode(BigInt ptr, int externalSizeOnNative):
+                    super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
+
+                static final _kStaticData = RustArcStaticData(
+                    rustArcIncrementStrongCount: RustLib.instance.api.rust_arc_increment_strong_count_Store,
+                    rustArcDecrementStrongCount: RustLib.instance.api.rust_arc_decrement_strong_count_Store,
+                    rustArcDecrementStrongCountPtr: RustLib.instance.api.rust_arc_decrement_strong_count_StorePtr,
+                );
+
+                 Future<List<String>>  allExternalIds()=>RustLib.instance.api.crateApiStoreStoreAllExternalIds(that: this, );
+
+
+ Future<List<(String,int,Float32List)>>  allVectors({required BigInt dim })=>RustLib.instance.api.crateApiStoreStoreAllVectors(that: this, dim: dim);
+
+
+ Future<int>  allocId({required WriteTransaction tx })=>RustLib.instance.api.crateApiStoreStoreAllocId(that: this, tx: tx);
+
+
+ Future<WriteTransaction>  beginWrite()=>RustLib.instance.api.crateApiStoreStoreBeginWrite(that: this, );
+
+
+ Future<void>  bitmapAdd({required WriteTransaction tx , required String field , required String value , required int internal })=>RustLib.instance.api.crateApiStoreStoreBitmapAdd(that: this, tx: tx, field: field, value: value, internal: internal);
+
+
+ Future<RoaringBitmap>  bitmapGet({required String key })=>RustLib.instance.api.crateApiStoreStoreBitmapGet(that: this, key: key);
+
+
+ Future<void>  bitmapPut({required WriteTransaction tx , required String key , required RoaringBitmap bitmap })=>RustLib.instance.api.crateApiStoreStoreBitmapPut(that: this, tx: tx, key: key, bitmap: bitmap);
+
+
+ Future<void>  bitmapRemove({required WriteTransaction tx , required String field , required String value , required int internal })=>RustLib.instance.api.crateApiStoreStoreBitmapRemove(that: this, tx: tx, field: field, value: value, internal: internal);
+
+
+ Future<int?>  childLookup({required String parent , required int chunkIndex })=>RustLib.instance.api.crateApiStoreStoreChildLookup(that: this, parent: parent, chunkIndex: chunkIndex);
+
+
+ Future<BigInt>  count()=>RustLib.instance.api.crateApiStoreStoreCount(that: this, );
+
+
+ Future<int?>  lookupInternal({required String external_ })=>RustLib.instance.api.crateApiStoreStoreLookupInternal(that: this, external_: external_);
+
+
+ Future<BigInt>  nextIdValue()=>RustLib.instance.api.crateApiStoreStoreNextIdValue(that: this, );
+
+
+ Future<void>  numericPut({required WriteTransaction tx , required List<int> key })=>RustLib.instance.api.crateApiStoreStoreNumericPut(that: this, tx: tx, key: key);
+
+
+ Future<void>  numericRemove({required WriteTransaction tx , required List<int> key })=>RustLib.instance.api.crateApiStoreStoreNumericRemove(that: this, tx: tx, key: key);
+
+
+ Future<Uint32List>  numericScanPrefix({required List<int> prefix })=>RustLib.instance.api.crateApiStoreStoreNumericScanPrefix(that: this, prefix: prefix);
+
+
+ Future<ChunkRecord?>  readChunk({required int internal })=>RustLib.instance.api.crateApiStoreStoreReadChunk(that: this, internal: internal);
+
+
+ Future<Float32List?>  readVector({required int internal , required BigInt dim })=>RustLib.instance.api.crateApiStoreStoreReadVector(that: this, internal: internal, dim: dim);
+
+
+ Future<ChunkRecord?>  removeRecord({required WriteTransaction tx , required String external_ , required int internal })=>RustLib.instance.api.crateApiStoreStoreRemoveRecord(that: this, tx: tx, external_: external_, internal: internal);
+
+
+            }
+            @sealed class TextEngineImpl extends RustOpaque implements TextEngine {
+                // Not to be used by end users
+                TextEngineImpl.frbInternalDcoDecode(List<dynamic> wire):
+                    super.frbInternalDcoDecode(wire, _kStaticData);
+
+                // Not to be used by end users
+                TextEngineImpl.frbInternalSseDecode(BigInt ptr, int externalSizeOnNative):
+                    super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
+
+                static final _kStaticData = RustArcStaticData(
+                    rustArcIncrementStrongCount: RustLib.instance.api.rust_arc_increment_strong_count_TextEngine,
+                    rustArcDecrementStrongCount: RustLib.instance.api.rust_arc_decrement_strong_count_TextEngine,
+                    rustArcDecrementStrongCountPtr: RustLib.instance.api.rust_arc_decrement_strong_count_TextEnginePtr,
+                );
+
+                 Future<void>  add({required int internal , required String text })=>RustLib.instance.api.crateApiTextTextEngineAdd(that: this, internal: internal, text: text);
+
+
+ Future<void>  commit()=>RustLib.instance.api.crateApiTextTextEngineCommit(that: this, );
+
+
+ Future<void>  delete({required int internal })=>RustLib.instance.api.crateApiTextTextEngineDelete(that: this, internal: internal);
+
+
+ Future<List<(int,double)>>  search({required String text , required BigInt k })=>RustLib.instance.api.crateApiTextTextEngineSearch(that: this, text: text, k: k);
+
+
+            }
+            @sealed class VectorEngineImpl extends RustOpaque implements VectorEngine {
+                // Not to be used by end users
+                VectorEngineImpl.frbInternalDcoDecode(List<dynamic> wire):
+                    super.frbInternalDcoDecode(wire, _kStaticData);
+
+                // Not to be used by end users
+                VectorEngineImpl.frbInternalSseDecode(BigInt ptr, int externalSizeOnNative):
+                    super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
+
+                static final _kStaticData = RustArcStaticData(
+                    rustArcIncrementStrongCount: RustLib.instance.api.rust_arc_increment_strong_count_VectorEngine,
+                    rustArcDecrementStrongCount: RustLib.instance.api.rust_arc_decrement_strong_count_VectorEngine,
+                    rustArcDecrementStrongCountPtr: RustLib.instance.api.rust_arc_decrement_strong_count_VectorEnginePtr,
+                );
+
+                 Future<void>  add({required int internal , required List<double> vector })=>RustLib.instance.api.crateApiVectorVectorEngineAdd(that: this, internal: internal, vector: vector);
+
+
+ Future<bool>  contains({required int internal })=>RustLib.instance.api.crateApiVectorVectorEngineContains(that: this, internal: internal);
+
+
+ Future<void>  overrideExpansionSearch({required BigInt ef })=>RustLib.instance.api.crateApiVectorVectorEngineOverrideExpansionSearch(that: this, ef: ef);
+
+
+ Future<bool>  remove({required int internal })=>RustLib.instance.api.crateApiVectorVectorEngineRemove(that: this, internal: internal);
+
+
+ Future<void>  save({required Path dir })=>RustLib.instance.api.crateApiVectorVectorEngineSave(that: this, dir: dir);
+
+
+ Future<List<(int,double)>>  search({required List<double> query , required BigInt k , RoaringBitmap? allowed })=>RustLib.instance.api.crateApiVectorVectorEngineSearch(that: this, query: query, k: k, allowed: allowed);
+
+
+ Future<BigInt>  size()=>RustLib.instance.api.crateApiVectorVectorEngineSize(that: this, );
+
+
+            }
+            @sealed class WriteTransactionImpl extends RustOpaque implements WriteTransaction {
+                // Not to be used by end users
+                WriteTransactionImpl.frbInternalDcoDecode(List<dynamic> wire):
+                    super.frbInternalDcoDecode(wire, _kStaticData);
+
+                // Not to be used by end users
+                WriteTransactionImpl.frbInternalSseDecode(BigInt ptr, int externalSizeOnNative):
+                    super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
+
+                static final _kStaticData = RustArcStaticData(
+                    rustArcIncrementStrongCount: RustLib.instance.api.rust_arc_increment_strong_count_WriteTransaction,
+                    rustArcDecrementStrongCount: RustLib.instance.api.rust_arc_decrement_strong_count_WriteTransaction,
+                    rustArcDecrementStrongCountPtr: RustLib.instance.api.rust_arc_decrement_strong_count_WriteTransactionPtr,
+                );
+
+                
+            }

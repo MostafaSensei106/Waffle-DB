@@ -5,128 +5,40 @@
 
 import '../frb_generated.dart';
 import 'config.dart';
-import 'models.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
+import 'query.dart';
+import 'schema.dart';
 
-// These functions are ignored because they are not marked as `pub`: `registry`, `with_engine`
-// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `IdRegistry`, `WaffleEngine`
 
-/// Open (or create) a WaffleDB instance. Returns a handle ID.
-///
-/// Example:
-/// ```dart
-/// final handle = await waffleOpen(config: myConfig);
-/// ```
-Future<BigInt> waffleOpen({required WaffleConfig config}) =>
-    RustLib.instance.api.crateApiWaffleDbWaffleOpen(config: config);
+            // These functions are ignored because they are not marked as `pub`: `hit_from_internal`, `indexed_values`, `insert_one`, `registry`, `with_engine`
+// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `WaffleEngine`
 
-/// Close a WaffleDB instance: flush to disk and release resources.
-///
-/// Example:
-/// ```dart
-/// await waffleClose(handle: myHandle);
-/// ```
-Future<void> waffleClose({required BigInt handle}) =>
-    RustLib.instance.api.crateApiWaffleDbWaffleClose(handle: handle);
 
-/// Insert a single vector with metadata.
-///
-/// Example:
-/// ```dart
-/// await waffleInsert(handle: myHandle, id: "doc1", vector: [0.1, 0.2], metadata: []);
-/// ```
-Future<void> waffleInsert(
-        {required BigInt handle,
-        required String id,
-        required List<double> vector,
-        required List<int> metadata}) =>
-    RustLib.instance.api.crateApiWaffleDbWaffleInsert(
-        handle: handle, id: id, vector: vector, metadata: metadata);
+            Future<BigInt>  waffleOpen({required WaffleConfig config , required WaffleSchema schema }) => RustLib.instance.api.crateApiWaffleDbWaffleOpen(config: config, schema: schema);
 
-Future<void> waffleInsertBatch(
-        {required BigInt handle,
-        required List<String> ids,
-        required List<double> vectorsFlat,
-        required List<Uint8List> metadataList}) =>
-    RustLib.instance.api.crateApiWaffleDbWaffleInsertBatch(
-        handle: handle,
-        ids: ids,
-        vectorsFlat: vectorsFlat,
-        metadataList: metadataList);
+Future<void>  waffleClose({required BigInt handle }) => RustLib.instance.api.crateApiWaffleDbWaffleClose(handle: handle);
 
-/// K-nearest neighbor search. Returns results sorted by distance (ascending).
-/// `ef_search` overrides the config value if > 0, otherwise uses config default.
-///
-/// Example:
-/// ```dart
-/// final results = await waffleQuery(handle: h, vector: [0.1], k: 5, efSearch: 0, includeMetadata: true);
-/// ```
-List<WaffleQueryResult> waffleQuery(
-        {required BigInt handle,
-        required List<double> vector,
-        required int k,
-        required int efSearch,
-        required bool includeMetadata}) =>
-    RustLib.instance.api.crateApiWaffleDbWaffleQuery(
-        handle: handle,
-        vector: vector,
-        k: k,
-        efSearch: efSearch,
-        includeMetadata: includeMetadata);
+Future<void>  waffleInsert({required BigInt handle , required String id , required List<double> vector , required String text , required String payloadJson , String? parentId , required int chunkIndex }) => RustLib.instance.api.crateApiWaffleDbWaffleInsert(handle: handle, id: id, vector: vector, text: text, payloadJson: payloadJson, parentId: parentId, chunkIndex: chunkIndex);
 
-/// Delete a vector by its string ID. Removes from storage.
-/// Note: HNSW doesn't support true deletion — the index entry remains until rebuild.
-///
-/// Example:
-/// ```dart
-/// final removed = await waffleDelete(handle: h, id: "doc1");
-/// ```
-Future<bool> waffleDelete({required BigInt handle, required String id}) =>
-    RustLib.instance.api.crateApiWaffleDbWaffleDelete(handle: handle, id: id);
+Future<void>  waffleInsertBatch({required BigInt handle , required List<String> ids , required List<double> vectorsFlat , required List<String> texts , required List<String> payloadJsons , required List<String> parentIds , required List<int> chunkIndices }) => RustLib.instance.api.crateApiWaffleDbWaffleInsertBatch(handle: handle, ids: ids, vectorsFlat: vectorsFlat, texts: texts, payloadJsons: payloadJsons, parentIds: parentIds, chunkIndices: chunkIndices);
 
-/// Get metadata bytes for a vector by ID.
-///
-/// Example:
-/// ```dart
-/// final meta = await waffleGetMetadata(handle: h, id: "doc1");
-/// ```
-Uint8List? waffleGetMetadata({required BigInt handle, required String id}) =>
-    RustLib.instance.api
-        .crateApiWaffleDbWaffleGetMetadata(handle: handle, id: id);
+List<WaffleHit>  waffleSearch({required BigInt handle , required WaffleSearchRequest request }) => RustLib.instance.api.crateApiWaffleDbWaffleSearch(handle: handle, request: request);
 
-/// Get a stored vector by ID.
-///
-/// Example:
-/// ```dart
-/// final vec = await waffleGetVector(handle: h, id: "doc1");
-/// ```
-Float32List? waffleGetVector({required BigInt handle, required String id}) =>
-    RustLib.instance.api
-        .crateApiWaffleDbWaffleGetVector(handle: handle, id: id);
+Future<bool>  waffleDelete({required BigInt handle , required String id }) => RustLib.instance.api.crateApiWaffleDbWaffleDelete(handle: handle, id: id);
 
-/// Get the number of vectors stored on disk.
-///
-/// Example:
-/// ```dart
-/// final count = await waffleCount(handle: h);
-/// ```
-BigInt waffleCount({required BigInt handle}) =>
-    RustLib.instance.api.crateApiWaffleDbWaffleCount(handle: handle);
+Uint8List?  waffleGetMetadata({required BigInt handle , required String id }) => RustLib.instance.api.crateApiWaffleDbWaffleGetMetadata(handle: handle, id: id);
 
-/// Force flush all pending writes to disk.
-///
-/// Example:
-/// ```dart
-/// await waffleFlush(handle: h);
-/// ```
-Future<void> waffleFlush({required BigInt handle}) =>
-    RustLib.instance.api.crateApiWaffleDbWaffleFlush(handle: handle);
+Float32List?  waffleGetVector({required BigInt handle , required String id }) => RustLib.instance.api.crateApiWaffleDbWaffleGetVector(handle: handle, id: id);
 
-/// Get all stored string IDs.
-///
-/// Example:
-/// ```dart
-/// final ids = await waffleGetAllIds(handle: h);
-/// ```
-List<String> waffleGetAllIds({required BigInt handle}) =>
-    RustLib.instance.api.crateApiWaffleDbWaffleGetAllIds(handle: handle);
+BigInt  waffleCount({required BigInt handle }) => RustLib.instance.api.crateApiWaffleDbWaffleCount(handle: handle);
+
+Future<void>  waffleFlush({required BigInt handle }) => RustLib.instance.api.crateApiWaffleDbWaffleFlush(handle: handle);
+
+List<String>  waffleGetAllIds({required BigInt handle }) => RustLib.instance.api.crateApiWaffleDbWaffleGetAllIds(handle: handle);
+
+List<WaffleHit>  waffleGetNeighbors({required BigInt handle , required String id , required int window }) => RustLib.instance.api.crateApiWaffleDbWaffleGetNeighbors(handle: handle, id: id, window: window);
+
+WaffleHit?  waffleGetParent({required BigInt handle , required String id }) => RustLib.instance.api.crateApiWaffleDbWaffleGetParent(handle: handle, id: id);
+
+            
+            

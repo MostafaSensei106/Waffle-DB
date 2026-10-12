@@ -8,6 +8,7 @@ use crate::api::schema::{
 use crate::api::store::Store;
 
 #[derive(Debug, serde::Deserialize)]
+#[flutter_rust_bridge::frb(ignore)]
 #[serde(tag = "op")]
 pub enum FilterNode {
     #[serde(rename = "eq")]

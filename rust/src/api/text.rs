@@ -125,7 +125,8 @@ impl TextEngine {
         let parser = QueryParser::for_index(&self.index, fields);
         let query = parser.parse_query(text)?;
         let searcher = self.reader.searcher();
-        let top: Vec<(f32, DocAddress)> = searcher.search(&query, &TopDocs::with_limit(k))?;
+        let top: Vec<(f32, DocAddress)> =
+            searcher.search(&query, &TopDocs::with_limit(k).order_by_score())?;
         let mut out = Vec::with_capacity(top.len());
         for (score, addr) in top {
             let stored: TantivyDocument = searcher.doc(addr)?;

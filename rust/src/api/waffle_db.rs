@@ -90,7 +90,7 @@ fn indexed_values(
                     )))
                 }
             },
-            WaffleFieldType::Integer => match v.and_then(|x| x.as_i64()) {
+            WaffleFieldType::Integer => match v.as_i64() {
                 Some(i) => (i.to_string(), Some(i as f64)),
                 None => {
                     return Err(WaffleError::Schema(format!(
@@ -99,7 +99,7 @@ fn indexed_values(
                     )))
                 }
             },
-            WaffleFieldType::Double => match v.and_then(|x| x.as_f64()) {
+            WaffleFieldType::Double => match v.as_f64() {
                 Some(f) => (f.to_string(), Some(f)),
                 None => {
                     return Err(WaffleError::Schema(format!(
@@ -144,7 +144,7 @@ fn insert_one(
     if engine.store.lookup_internal(id)?.is_some() {
         return Err(WaffleError::DuplicateId(id.to_owned()));
     }
-    let internal = engine.store.alloc_id(&tx, id)?;
+    let internal = engine.store.alloc_id(&tx)?;
     let record = ChunkRecord {
         external_id: id.to_owned(),
         parent_id,
@@ -252,7 +252,7 @@ pub fn waffle_insert_batch(
     vectors_flat: Vec<f32>,
     texts: Vec<String>,
     payload_jsons: Vec<String>,
-    parent_ids: Vec<Option<String>>,
+    parent_ids: Vec<String>,
     chunk_indices: Vec<u32>,
 ) -> std::result::Result<(), String> {
     with_engine(handle, |engine| {
@@ -264,17 +264,23 @@ pub fn waffle_insert_batch(
                 actual: vectors_flat.len(),
             });
         }
-        for (list, name) in [
-            (&texts, "texts"),
-            (&payload_jsons, "payload_jsons"),
-            (&chunk_indices, "chunk_indices"),
-        ] {
-            if list.len() != n {
-                return Err(WaffleError::Storage(format!(
-                    "{name} length {} != {n} ids",
-                    list.len()
-                )));
-            }
+        if texts.len() != n {
+            return Err(WaffleError::Storage(format!(
+                "texts length {} != {n} ids",
+                texts.len()
+            )));
+        }
+        if payload_jsons.len() != n {
+            return Err(WaffleError::Storage(format!(
+                "payload_jsons length {} != {n} ids",
+                payload_jsons.len()
+            )));
+        }
+        if chunk_indices.len() != n {
+            return Err(WaffleError::Storage(format!(
+                "chunk_indices length {} != {n} ids",
+                chunk_indices.len()
+            )));
         }
         if parent_ids.len() != n {
             return Err(WaffleError::Storage(format!(
@@ -285,13 +291,15 @@ pub fn waffle_insert_batch(
         let mut parent_iter = parent_ids.into_iter();
         for i in 0..n {
             let start = i * dim;
+            let parent = parent_iter.next().unwrap_or_default();
+            let parent = if parent.is_empty() { None } else { Some(parent) };
             insert_one(
                 engine,
                 &ids[i],
                 &vectors_flat[start..start + dim],
                 &texts[i],
                 &payload_jsons[i],
-                parent_iter.next().unwrap_or(None),
+                parent,
                 chunk_indices[i],
                 false,
             )?;

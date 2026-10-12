@@ -6,20 +6,10 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `HnswIndexEnum`, `HnswIndex`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `drop`
-// These functions are ignored (category: IgnoreBecauseOwnerTyShouldIgnore): `get_nb_point`, `insert_slice`, `insert`, `load`, `new`, `save`, `search`
 
-/// Standalone cosine similarity for Dart FFI use.
-///
-/// Calculates the cosine similarity between two vectors.
-/// Returns a value between -1.0 and 1.0 (1.0 means identical direction).
-///
-/// Example:
-/// ```dart
-/// final similarity = await cosineSimilarity(a: [1.0, 0.0], b: [1.0, 0.0]);
-/// print(similarity); // 1.0
-/// ```
-Future<double> cosineSimilarity(
-        {required List<double> a, required List<double> b}) =>
-    RustLib.instance.api.crateApiMathCosineSimilarity(a: a, b: b);
+            
+
+            Future<double>  cosineSimilarity({required List<double> a , required List<double> b }) => RustLib.instance.api.crateApiMathCosineSimilarity(a: a, b: b);
+
+            
+            
