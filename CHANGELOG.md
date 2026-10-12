@@ -1,5 +1,8 @@
 # 0.1.0
-- 
+- ** dependency overhaul (Rust)**: added `usearch 2` (SIMD vector engine with predicate pre-filtering), `tantivy 0.26` (BM25 text engine, EN+AR stemming), `redb 2` (ACID/MVCC storage), `roaring 0.11` with `serde`+`simd` (filter bitmaps), `crossbeam-channel 0.5` (background ingestion queue), `thiserror 2` (typed errors alongside `anyhow`).
+- **Removed (Rust)**: direct `rand` (unused in code; remains only as `hnsw_rs` transitive dep), `criterion` + `rand` dev-dependencies (no Rust benches exist; Dart benchmarks use `benchmark_harness`), `getrandom`/`getrandom_0_2` WASM shims (Flutter Web dropped for v1 and no plugin web platform is declared).
+- **Transitional**: `sled` + `hnsw_rs` stay until the Month-1 `redb` + `usearch` rewrite; marked as such in `rust/Cargo.toml`. Old databases will require a reindex (no auto-migration).
+- **Dart**: added `uuid ^4.6.0` (external String/UUIDv7 IDs for the dual-mapping design) and `collection ^1.19.1` (RRF/result utilities); removed unused `ffi`/`ffigen` dev-dependencies; SDK floor raised to `>=3.4.0` (required by `collection`).
 # 0.0.3
 - **Performance**: Optimized insertion and queries for datasets with 1,000,000+ vectors.
 - **Performance**: Replaced `Mutex` with `RwLock` for concurrent read queries.

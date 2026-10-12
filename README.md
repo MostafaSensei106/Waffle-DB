@@ -30,7 +30,11 @@ Most local databases in Flutter are designed for standard JSON or SQL data. They
 | Feature | Standard Local DB | Pure Dart Vector DB | **Waffle-DB** |
 | :--- | :---: | :---: | :--- |
 | **Parsing Engine** | SQLite / Hive | Dart | **🚀 High-Perf Rust Native Core** |
-| **Indexing Precision** | Linear Scan | Linear / LSH | **✅ HNSW Graph (Native)** |
+| **Dense Indexing** | Linear Scan | Linear / LSH | **✅ HNSW Graph (`usearch`, SIMD)** |
+| **Sparse Indexing** | ❌ | ❌ | **✅ BM25 Full-Text (`tantivy`, EN+AR)** |
+| **Hybrid Search** | ❌ | ❌ | **✅ Dense + Sparse with RRF Fusion** |
+| **Filtered Search** | SQL WHERE | Post-filter | **✅ True Pre-filtering (`roaring` bitmaps)** |
+| **Storage Guarantees** | ACID | ❌ | **✅ ACID + MVCC (`redb`)** |
 | **Memory Efficiency** | 🔴 High | 🔴 High | **🔋 Zero-Copy FFI Buffers** |
 | **UI Responsiveness** | ✅ | ⚠️ | **⚡ Zero UI-Thread Blocking** |
 | **Detailed Metadata** | ❌ | ✅ | **🩺 Full Metadata Access** |
@@ -38,11 +42,18 @@ Most local databases in Flutter are designed for standard JSON or SQL data. They
 
 ### 🛠️ Tech Stack
 
-* **Host Languages**: Dart 3.0+ (Flutter) & Rust 1.75+
-* **Bridge Engine**: `flutter_rust_bridge` v2.12.0
-* **Indexing Core**: `hnsw_rs` (High Performance Hierarchical Navigable Small World graphs)
-* **Persistence Engine**: `sled` (Embedded key-value transactional database)
-* **Parallel processing**: `rayon` (data-parallelism library for Rust)
+* **Host Languages**: Dart 3.4+ (Flutter) & Rust 1.75+
+* **Bridge Engine**: `flutter_rust_bridge` v2.13.0
+* **Vector Engine**: `usearch` (SIMD-accelerated HNSW with predicate pre-filtering)
+* **Text Engine**: `tantivy` (BM25 inverted index, English + Arabic stemming)
+* **Storage Engine**: `redb` (ACID, MVCC, zero-copy embedded database)
+* **Filter Engine**: `roaring` (compressed bitmaps for O(1) metadata filtering)
+* **Parallelism**: `rayon` (parallel dense+sparse execution) + `crossbeam-channel` (background ingestion queue)
+* **Error Handling**: `anyhow` + `thiserror` (unified, typed FFI errors)
+* **Dart Side**: `uuid` (external String IDs) + `collection` (RRF/result utilities)
+
+> [!NOTE]
+> The previous `sled` + `hnsw_rs` core is transitional and will be fully replaced by `redb` + `usearch` during the Month-1 engine rewrite. No new code should depend on them. Databases created with `sled` require a reindex (no auto-migration).
 
 ---
 
@@ -76,6 +87,7 @@ During rigorous stress testing (5000+ operations in a tight loop), Waffle-DB gua
 
 > [!NOTE]
 > Benchmarks are run inside a Dart test environment calling the Rust engine via native FFI bindings. You can reproduce these measurements by running `flutter test test/vector_db_real_world_benchmark_test.dart` and `flutter test test/stress_test.dart`.
+> These figures reflect the pre- core (`sled` + `hnsw_rs`) and will be re-run after the Month-1 `redb` + `usearch` migration.
 
 ---
 
@@ -104,7 +116,7 @@ Add the package to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  waffle_db: ^0.0.1
+  waffle_db: ^0.1.0
 ```
 
 ---
@@ -297,7 +309,7 @@ await db.close();
 
 ### Dependency Injection (DI) Architecture
 
-For enterprise apps, inject a custom `VectorStoreService` to handle different embedding backends (Local, OpenAI, etc.).
+For  apps, inject a custom `VectorStoreService` to handle different embedding backends (Local, OpenAI, etc.).
 
 ```dart
 // 1. Define the service with a specific database instance
@@ -328,6 +340,35 @@ for (var res in results) {
   }
 }
 ```
+---
+
+## 🧠  RAG Architecture (LLM-Native Engine)
+
+Waffle-DB is moving from a pure vector store to a multi-engine local RAG database. Each engine owns one concern:
+
+| Engine | Crate | Responsibility |
+| :--- | :--- | :--- |
+| **Vector** | `usearch` | Dense K-NN with SIMD + predicate pre-filtering during traversal (no oversampling hacks) |
+| **Text** | `tantivy` | Sparse BM25 search, per-collection English/Arabic tokenizers |
+| **Storage** | `redb` | Chunks, metadata and parent relations — ACID + MVCC (multi-reader, single-writer, zero read blocking) |
+| **Filter** | `roaring` | `field=value → bitmap` indexes; one `AND`/`OR` pass produces the allowed-ID set |
+
+Key design decisions (locked):
+
+* **Strict Schema + free payload** — indexed fields are declared up front (`WaffleSchema`); arbitrary JSON rides along unindexed.
+* **Dual ID mapping** — developers use external `String` IDs (UUIDv7, Firebase IDs); the engine maps them to dense internal `u32` keys (optimal for `roaring`, zero-cost cast to `usearch` `u64`). Deleted keys are recycled via a FreeList.
+* **Buffered writes + explicit flush** — inserts go through an MPSC background queue; `flush()` gives durability without blocking the UI.
+* **Unified hybrid query** — one `WaffleSearchRequest { vector?, text?, filter?, alpha?, rrf_k? }`; dense + sparse run in parallel (`rayon::join`) and fuse via RRF (k=60) inside Rust.
+* **Async true delete** — physical removal from `usearch` + `tantivy` tombstone/merge + `redb` cleanup + bitmap pruning.
+* **Embeddings via Adapter** — local ONNX and remote (OpenAI/Gemini) embedders behind one interface; plus a `waffle_db_langchain` `VectorStore` bridge package.
+* **Platform scope v1**: Android / iOS / Linux / macOS / Windows. Flutter Web is dropped until a dedicated fallback exists.
+
+### 🗺️ 3-Month Roadmap
+
+1. **Month 1 — Core replacement**: `storage.rs` → `redb`, `math.rs` → `usearch`, dual-mapping tables, strict schema, reindex tool (breaking: old `sled` databases are incompatible).
+2. **Month 2 — Filtering + text**: `BITMAP_STR` + write-only `NUMERIC_IDX` (EQ/IN first, GT/LT later via range scan), `tantivy` EN/AR tokenizers, parent/neighbor chunk APIs.
+3. **Month 3 — Hybrid + hardening**: RRF fusion, embedder adapter, async true delete + FreeList, LangChain bridge, recall/latency benchmarks (incl. Arabic eval).
+
 ---
 
 ## 🤝 Contributing
