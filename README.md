@@ -35,7 +35,7 @@ Most local databases in Flutter are designed for standard JSON or SQL data. They
 | **Hybrid Search** | ❌ | ❌ | **✅ Dense + Sparse with RRF Fusion** |
 | **Filtered Search** | SQL WHERE | Post-filter | **✅ True Pre-filtering (`roaring` bitmaps)** |
 | **Storage Guarantees** | ACID | ❌ | **✅ ACID + MVCC (`redb`)** |
-| **Memory Efficiency** | 🔴 High | 🔴 High | **🔋 Zero-Copy FFI Buffers** |
+| **Memory Efficiency** | 🔴 High | 🔴 High | **🔋  FFI Buffers** |
 | **UI Responsiveness** | ✅ | ⚠️ | **⚡ Zero UI-Thread Blocking** |
 | **Detailed Metadata** | ❌ | ✅ | **🩺 Full Metadata Access** |
 | **OpenAI Ready**| ❌ | ❌ | **📈 Native 1536d / 4096d Support** |
@@ -46,7 +46,7 @@ Most local databases in Flutter are designed for standard JSON or SQL data. They
 * **Bridge Engine**: `flutter_rust_bridge` v2.13.0
 * **Vector Engine**: `usearch` (SIMD-accelerated HNSW with predicate pre-filtering)
 * **Text Engine**: `tantivy` (BM25 inverted index, English + Arabic stemming)
-* **Storage Engine**: `redb` (ACID, MVCC, zero-copy embedded database)
+* **Storage Engine**: `redb` (ACID, MVCC,  embedded database)
 * **Filter Engine**: `roaring` (compressed bitmaps for O(1) metadata filtering)
 * **Parallelism**: `rayon` (parallel dense+sparse execution) + `crossbeam-channel` (background ingestion queue)
 * **Error Handling**: `anyhow` + `thiserror` (unified, typed FFI errors)
