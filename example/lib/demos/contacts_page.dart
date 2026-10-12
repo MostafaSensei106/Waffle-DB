@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
@@ -290,16 +291,44 @@ class _ContactsPageState extends State<ContactsPage> {
             itemCount: _hits.length,
             itemBuilder: (context, i) {
               final h = _hits[i];
-              return ListTile(
-                dense: true,
-                leading: const Icon(Icons.person),
-                title: Text(h.id),
-                subtitle: Text(h.payloadJson ?? '{}',
-                    maxLines: 2, overflow: TextOverflow.ellipsis),
-                trailing: Text(
-                  's=${h.score.toStringAsFixed(3)}\nd=${h.distance?.toStringAsFixed(3) ?? '-'}',
-                  textAlign: TextAlign.right,
-                  style: Theme.of(context).textTheme.bodySmall,
+              final payload = jsonDecode(h.payloadJson ?? '{}')
+                  as Map<String, dynamic>;
+              final starred = payload['starred'] == true;
+              return Card(
+                margin:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                child: ListTile(
+                  leading: CircleAvatar(
+                    child: Text(
+                      (payload['name']?.toString() ?? '?').substring(0, 1),
+                    ),
+                  ),
+                  title: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          payload['name']?.toString() ?? h.id,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      if (starred)
+                        const Icon(Icons.star,
+                            size: 16, color: Colors.amber),
+                    ],
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(payload['phone']?.toString() ?? ''),
+                      const SizedBox(height: 4),
+                      Chip(
+                        label: Text(payload['group']?.toString() ?? '-'),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ],
+                  ),
+                  isThreeLine: true,
                 ),
               );
             },

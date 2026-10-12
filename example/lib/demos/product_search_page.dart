@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
@@ -293,16 +294,57 @@ class _ProductSearchPageState extends State<ProductSearchPage> {
             itemCount: _hits.length,
             itemBuilder: (context, i) {
               final h = _hits[i];
-              final payload = h.payloadJson ?? '{}';
-              return ListTile(
-                dense: true,
-                title: Text(h.id),
-                subtitle: Text(payload,
-                    maxLines: 2, overflow: TextOverflow.ellipsis),
-                trailing: Text(
-                  's=${h.score.toStringAsFixed(3)}\nd=${h.distance?.toStringAsFixed(3) ?? '-'}',
-                  textAlign: TextAlign.right,
-                  style: Theme.of(context).textTheme.bodySmall,
+              final payload = jsonDecode(h.payloadJson ?? '{}')
+                  as Map<String, dynamic>;
+              final inStock = payload['inStock'] == true;
+              return Card(
+                margin:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                child: ListTile(
+                  title: Text(payload['name']?.toString() ?? h.id,
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 4),
+                      Wrap(
+                        spacing: 6,
+                        children: [
+                          Chip(
+                            label: Text(
+                                payload['category']?.toString() ?? '-'),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                          Chip(
+                            label: Text(payload['band']?.toString() ?? '-'),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                          Chip(
+                            label: Text(
+                                '\$${payload['price']?.toString() ?? '-'}'),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                          Chip(
+                            label: Text(inStock ? 'In stock' : 'Out'),
+                            visualDensity: VisualDensity.compact,
+                            backgroundColor: inStock
+                                ? Colors.green.shade100
+                                : Colors.red.shade100,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          const Icon(Icons.star,
+                              size: 14, color: Colors.amber),
+                          Text(
+                              ' ${payload['rating']?.toString() ?? '-'}   score ${h.score.toStringAsFixed(3)}'),
+                        ],
+                      ),
+                    ],
+                  ),
+                  isThreeLine: true,
                 ),
               );
             },

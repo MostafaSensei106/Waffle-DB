@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
@@ -293,15 +294,50 @@ class _RecipesPageState extends State<RecipesPage> {
             itemCount: _hits.length,
             itemBuilder: (context, i) {
               final h = _hits[i];
-              return ListTile(
-                dense: true,
-                title: Text(h.id),
-                subtitle: Text(h.payloadJson ?? '{}',
-                    maxLines: 2, overflow: TextOverflow.ellipsis),
-                trailing: Text(
-                  's=${h.score.toStringAsFixed(3)}\nd=${h.distance?.toStringAsFixed(3) ?? '-'}',
-                  textAlign: TextAlign.right,
-                  style: Theme.of(context).textTheme.bodySmall,
+              final payload = jsonDecode(h.payloadJson ?? '{}')
+                  as Map<String, dynamic>;
+              return Card(
+                margin:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                child: ListTile(
+                  leading: const Icon(Icons.restaurant_menu),
+                  title: Text(payload['title']?.toString() ?? h.id,
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 4),
+                      Wrap(
+                        spacing: 6,
+                        children: [
+                          Chip(
+                            label:
+                                Text(payload['diet']?.toString() ?? '-'),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                          Chip(
+                            label: Text(
+                                payload['cuisine']?.toString() ?? '-'),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                          Chip(
+                            label: Text(
+                                '${payload['minutes']?.toString() ?? '-'} min'),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                          Chip(
+                            label: Text(
+                                '${payload['calories']?.toString() ?? '-'} kcal'),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(h.text ?? '',
+                          maxLines: 2, overflow: TextOverflow.ellipsis),
+                    ],
+                  ),
+                  isThreeLine: true,
                 ),
               );
             },

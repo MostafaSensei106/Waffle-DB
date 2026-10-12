@@ -320,12 +320,7 @@ class _MyHomePageState extends State<MyHomePage> {
     );
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Waffle-DB'),
-        centerTitle: true,
-        backgroundColor: theme.colorScheme.primaryContainer,
-        foregroundColor: theme.colorScheme.onPrimaryContainer,
-      ),
+      appBar: AppBar(title: const Text('Colors')),
       body: _isInitializing
           ? const Center(
               child: Column(
