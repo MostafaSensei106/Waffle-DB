@@ -18,6 +18,20 @@ rand = "0.8.5"
 serde_json = "1.0.150"
 getrandom = { version = "0.3", features = ["wasm_js"] }
 getrandom_0_2 = { package = "getrandom", version = "0.2", features = ["js"] }
+anyhow = "1.0.104"
+thiserror = "2"
+
+# --- Enterprise RAG engines (usearch + tantivy + redb + roaring) ---
+# Vector Engine: SIMD K-NN + predicate pre-filtering during traversal.
+usearch = "2"
+# Text Engine: BM25 inverted index + tokenization/stemming (EN + AR via rust-stemmers).
+tantivy = "0.26"
+# Storage Engine: ACID + MVCC (MRSW reads during writes). Pinned to v2 for edition 2021.
+redb = "2"
+# Filter Engine: compressed u32 bitmaps; serde for redb persistence, simd for fast builds.
+roaring = { version = "0.11", features = ["serde", "simd"] }
+# Background ingestion queue: MPSC worker so Flutter UI never blocks on writes.
+crossbeam-channel = "0.5"
 
 [dev-dependencies]
 criterion = "0.5.1"

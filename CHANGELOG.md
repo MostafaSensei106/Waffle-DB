@@ -1,3 +1,5 @@
+# 0.1.0
+- 
 # 0.0.3
 - **Performance**: Optimized insertion and queries for datasets with 1,000,000+ vectors.
 - **Performance**: Replaced `Mutex` with `RwLock` for concurrent read queries.
