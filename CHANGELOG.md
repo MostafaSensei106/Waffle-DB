@@ -13,7 +13,7 @@
 - **Docs**: README rewritten around the multi-engine RAG architecture, locked design decisions, 3-month roadmap and v1 platform scope.
 - **Tests**: new roundtrip coverage (filtered search, hybrid fusion, keyword search, neighbors, delete-across-engines, schema/duplicate/dimension violations); benchmarks and example app migrated to the new API.
 - **Hygiene**: `cargo clippy` is warning-free (bundled `InsertInput`/`IndexedValues`, scoped iterator borrows, `for` loops, `if let` restores); internal engine types are `pub(crate)` so generated bindings stay minimal.
-- **Examples**: new `Products` demo (faceted hybrid search with pre-filters and alpha blending) and Arabic `RAG Notes` demo (stemming search, chunk windows, parent lookup, true delete), plus headless `rag_demos_test.dart` coverage.
+- **Examples**: `Products` demo (faceted hybrid search with pre-filters and alpha blending), `Recipes` demo (ingredient keywords + diet/time/cuisine pre-filters + nutrition similarity), `Contacts` demo (exact name/number match + group/starred pre-filters + interaction-profile similarity), and Arabic `RAG Notes` demo (stemming search, chunk windows, parent lookup, true delete), plus headless `rag_demos_test.dart` / `life_demos_test.dart` coverage.
 # 0.0.3
 - **Performance**: Optimized insertion and queries for datasets with 1,000,000+ vectors.
 - **Performance**: Replaced `Mutex` with `RwLock` for concurrent read queries.

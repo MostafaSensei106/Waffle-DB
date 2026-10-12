@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:waffle_db/waffle_db.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'demos/contacts_page.dart';
 import 'demos/notes_rag_page.dart';
 import 'demos/product_search_page.dart';
+import 'demos/recipes_page.dart';
 
 final _benchSchema = WaffleSchema(
   fields: [WaffleFields.string('tag', indexed: false)],
@@ -51,6 +53,8 @@ class _DemoHubState extends State<DemoHub> {
   static const _pages = [
     MyHomePage(),
     ProductSearchPage(),
+    RecipesPage(),
+    ContactsPage(),
     NotesRagPage(),
   ];
 
@@ -66,6 +70,10 @@ class _DemoHubState extends State<DemoHub> {
               icon: Icon(Icons.palette), label: 'Colors'),
           NavigationDestination(
               icon: Icon(Icons.shopping_bag), label: 'Products'),
+          NavigationDestination(
+              icon: Icon(Icons.restaurant), label: 'Recipes'),
+          NavigationDestination(
+              icon: Icon(Icons.contacts), label: 'Contacts'),
           NavigationDestination(
               icon: Icon(Icons.auto_stories), label: 'RAG Notes'),
         ],

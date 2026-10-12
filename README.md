@@ -403,15 +403,17 @@ Key design decisions (locked):
 
 ## 📱 Example Apps
 
-The `example/` app ships three runnable demos, each backed by a real on-device database:
+The `example/` app ships five runnable demos, each backed by a real on-device database:
 
 | Demo | Engines exercised |
 | :--- | :--- |
 | **Colors** (dense baseline) | `usearch` Euclidean k-NN over RGB space, up to 12M vectors |
 | **Products** (faceted hybrid search) | BM25 keywords + profile similarity fused with RRF, `category`/`band`/`inStock` pre-filters, alpha blending |
+| **Recipes** (weeknight cooking) | Ingredient keywords + `diet`/`timeBand`/`cuisine` pre-filters + nutrition-profile similarity |
+| **Contacts** (exact match) | Name/number/note keyword match (where vectors fail) + `group`/`starred` pre-filters + interaction-profile similarity |
 | **RAG Notes** (Arabic) | Arabic stemming search, chunk window context, parent lookup, true delete across both engines |
 
-Headless versions of the product and notes flows live in `example/integration_test/rag_demos_test.dart` and run on-device with `flutter test integration_test`.
+Headless versions of the flows live in `example/integration_test/rag_demos_test.dart` and `example/integration_test/life_demos_test.dart` and run on-device with `flutter test integration_test`.
 
 ---
 
