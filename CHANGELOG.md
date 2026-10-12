@@ -1,5 +1,5 @@
 # 0.1.0
-- **dependency overhaul (Rust)**: added `usearch 2` (SIMD vector engine with predicate pre-filtering), `tantivy 0.26` (BM25 text engine, EN+AR stemming), `redb 2` (ACID/MVCC storage), `roaring 0.11` with `serde` (filter bitmaps), `crossbeam-channel 0.5` (background ingestion queue), `cxx 1.0` (usearch error bridge), `anyhow` (single unified error type end to end).
+- **dependency overhaul (Rust)**: added `usearch 2` with `default-features = false` (SIMD vector engine with predicate pre-filtering; the optional `numkong` C++ backend is off because its `syscall` declaration conflicts with Android NDK r28 headers, blocking APK builds), `tantivy 0.26` (BM25 text engine, EN+AR stemming), `redb 2` (ACID/MVCC storage), `roaring 0.11` with `serde` (filter bitmaps), `crossbeam-channel 0.5` (background ingestion queue), `cxx 1.0` (usearch error bridge), `anyhow` (single unified error type end to end).
 - **Removed (Rust)**: `sled`, `hnsw_rs` (replaced by the  core), direct `rand` (was unused), `criterion` + `rand` dev-dependencies (no Rust benches exist; Dart benchmarks use `benchmark_harness`), `getrandom`/`getrandom_0_2` WASM shims (Flutter Web dropped for v1 and no plugin web platform is declared).
 - **Engine rewrite (breaking)**: `redb` (8 tables) + `usearch` (`filtered_search` predicates) + `tantivy` (BM25, EN/AR stemming) + `roaring` bitmaps. Removed `storage.rs`/`models.rs`; `math.rs` keeps only `cosineSimilarity`.
 - **Strict schema**: `WaffleSchema` with typed indexed fields is mandatory at open; payloads are validated; schema/dimension mismatches on reopen are hard errors.
@@ -14,6 +14,7 @@
 - **Tests**: new roundtrip coverage (filtered search, hybrid fusion, keyword search, neighbors, delete-across-engines, schema/duplicate/dimension violations); benchmarks and example app migrated to the new API.
 - **Hygiene**: `cargo clippy` is warning-free (bundled `InsertInput`/`IndexedValues`, scoped iterator borrows, `for` loops, `if let` restores); internal engine types are `pub(crate)` so generated bindings stay minimal.
 - **Examples**: `Products` demo (faceted hybrid search with pre-filters and alpha blending), `Recipes` demo (ingredient keywords + diet/time/cuisine pre-filters + nutrition similarity), `Contacts` demo (exact name/number match + group/starred pre-filters + interaction-profile similarity), and Arabic `RAG Notes` demo (stemming search, chunk windows, parent lookup, true delete), plus headless `rag_demos_test.dart` / `life_demos_test.dart` coverage.
+- **Fix**: `NativeLibraryLoader` no longer throws `Unsupported OS` on Android/iOS (correct `libwaffle_db` names, mobile rethrows the real bundled-lib error instead of falling back to a checkout path); verified `app-debug.apk` bundles `libwaffle_db.so` for arm64-v8a, armeabi-v7a and x86_64.
 # 0.0.3
 - **Performance**: Optimized insertion and queries for datasets with 1,000,000+ vectors.
 - **Performance**: Replaced `Mutex` with `RwLock` for concurrent read queries.

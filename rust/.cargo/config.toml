@@ -1,0 +1,15 @@
+# Android: statically link libc++ into the cdylib so the APK does not
+# depend on a bundled libc++_shared.so (Flutter does not ship one for
+# plugin native libs). Symbols from static archives are hidden to avoid
+# interposing with the engine's own C++ runtime.
+[target.aarch64-linux-android]
+rustflags = ["-C", "link-arg=-lc++_static", "-C", "link-arg=-Wl,--exclude-libs,ALL"]
+
+[target.armv7-linux-androideabi]
+rustflags = ["-C", "link-arg=-lc++_static", "-C", "link-arg=-Wl,--exclude-libs,ALL"]
+
+[target.x86_64-linux-android]
+rustflags = ["-C", "link-arg=-lc++_static", "-C", "link-arg=-Wl,--exclude-libs,ALL"]
+
+[target.i686-linux-android]
+rustflags = ["-C", "link-arg=-lc++_static", "-C", "link-arg=-Wl,--exclude-libs,ALL"]

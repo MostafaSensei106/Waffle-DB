@@ -1,4 +1,3 @@
-import 'package:waffle_db/src/rust/frb_generated.dart' show RustLib;
 import 'package:waffle_db/src/rust/loader.dart';
 
 /// Core entrypoint for the WaffleDB plugin.

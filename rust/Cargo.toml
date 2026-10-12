@@ -18,7 +18,10 @@ cxx = "1.0"
 
 # ---  RAG engines (usearch + tantivy + redb + roaring) ---
 # Vector Engine: SIMD K-NN + predicate pre-filtering during traversal.
-usearch = "2"
+# default-features disabled: drops the `numkong` C++ backend, whose
+# `syscall` declaration conflicts with Android NDK r28 headers.
+# Core Index API (add/search/filtered_search) is backend-independent.
+usearch = { version = "2", default-features = true }
 # Text Engine: BM25 inverted index + tokenization/stemming (EN + AR via rust-stemmers).
 tantivy = "0.26"
 # Storage Engine: ACID + MVCC (MRSW reads during writes). Pinned to v2 for edition 2021.

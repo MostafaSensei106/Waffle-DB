@@ -4,24 +4,26 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 import 'frb_generated.dart';
 
-/// Internal native-library bootstrap (moved out of `example/tool/` so all
-/// entry points — app, tests, benchmarks — share one path).
+/// Internal native-library bootstrap shared by the app, tests and benchmarks.
 ///
 /// Resolution order:
-/// 1. [explicitPath] when given (from [MathOptConfig.libraryPath]).
-/// 2. Default FRB loader (works under flutter/cargokit where the
-///    library is already bundled).
+/// 1. [explicitPath] when given.
+/// 2. Default FRB loader (used on mobile/desktop where flutter/cargokit
+///    bundles the library inside the app).
 /// 3. Script-relative `rust/target/release/<lib>` (plain `dart run` /
-///    `dart test` from source checkout; requires a prior
+///    `dart test` from a source checkout; requires a prior
 ///    `cargo build --release --manifest-path rust/Cargo.toml`).
+///    Desktop only: application sandboxes have no checkout layout.
 @internal
 class NativeLibraryLoader {
   const NativeLibraryLoader._();
 
   static String platformLibName() {
-    if (Platform.isLinux) return 'libdart_mathopt.so';
-    if (Platform.isMacOS) return 'libdart_mathopt.dylib';
-    if (Platform.isWindows) return 'dart_mathopt.dll';
+    if (Platform.isAndroid) return 'libwaffle_db.so';
+    if (Platform.isIOS) return 'libwaffle_db.dylib';
+    if (Platform.isLinux) return 'libwaffle_db.so';
+    if (Platform.isMacOS) return 'libwaffle_db.dylib';
+    if (Platform.isWindows) return 'waffle_db.dll';
     throw UnsupportedError('Unsupported OS: ${Platform.operatingSystem}');
   }
 
@@ -40,8 +42,8 @@ class NativeLibraryLoader {
     try {
       await RustLib.init();
       return;
-    } on Object {
-      // Fall through to script-relative resolution below.
+    } catch (e) {
+      if (Platform.isAndroid || Platform.isIOS) rethrow;
     }
     final libPath = _findCheckoutLibrary();
     if (!File(libPath).existsSync()) {
