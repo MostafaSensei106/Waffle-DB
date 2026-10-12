@@ -1,33 +1,50 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
-/// Represents a single vector record to be inserted into WaffleDB.
+import 'package:uuid/uuid.dart';
+
+const _uuid = Uuid();
+
+String newWaffleId() => _uuid.v7();
+
 class WaffleRecord {
-  /// A unique string identifier for this vector.
   final String id;
-
-  /// The embedding vector. Length must match the configured dimension.
   final Float32List vector;
+  final String text;
+  final Map<String, dynamic> payload;
+  final String? parentId;
+  final int chunkIndex;
 
-  /// Optional arbitrary metadata bytes associated with this vector.
-  final Uint8List? metadata;
+  const WaffleRecord({
+    required this.id,
+    required this.vector,
+    this.text = '',
+    this.payload = const {},
+    this.parentId,
+    this.chunkIndex = 0,
+  });
 
-  /// Default constructor for creating a [WaffleRecord].
-  const WaffleRecord({required this.id, required this.vector, this.metadata});
-
-  /// Convenience constructor from a regular `List<double>`.
   factory WaffleRecord.fromList({
     required String id,
     required List<double> vector,
-    Uint8List? metadata,
+    String text = '',
+    Map<String, dynamic> payload = const {},
+    String? parentId,
+    int chunkIndex = 0,
   }) {
     return WaffleRecord(
       id: id,
       vector: Float32List.fromList(vector),
-      metadata: metadata,
+      text: text,
+      payload: payload,
+      parentId: parentId,
+      chunkIndex: chunkIndex,
     );
   }
 
+  String get payloadJson => jsonEncode(payload);
+
   @override
   String toString() =>
-      'WaffleRecord(id: $id, dim: ${vector.length}, hasMeta: ${metadata != null})';
+      'WaffleRecord(id: $id, dim: ${vector.length}, text: ${text.length} chars)';
 }

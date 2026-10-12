@@ -1,5 +1,10 @@
 pub mod config;
+pub mod error;
+pub mod filter;
 pub mod math;
-pub mod models;
-pub mod storage;
+pub mod query;
+pub mod schema;
+pub mod store;
+pub mod text;
+pub mod vector;
 pub mod waffle_db;

@@ -1,43 +1,30 @@
-//! WaffleDB FFI facade — the single entry point for Dart to interact with the database.
-//!
-//! Uses a handle-based design: Dart receives a `u64` handle ID after opening a database,
-//! and passes it to all subsequent operations. This avoids exposing Rust types with
-//! lifetimes (like `Hnsw<'static, ...>`) across FFI.
-
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{OnceLock, RwLock};
+use std::sync::{Mutex, OnceLock, RwLock};
+
+use roaring::RoaringBitmap;
 
 use crate::api::config::WaffleConfig;
-use crate::api::math::HnswIndex;
-use crate::api::models::WaffleQueryResult;
-use crate::api::storage::WaffleStorage;
-use std::fs;
-use std::path::Path;
+use crate::api::error::{Result, WaffleError};
+use crate::api::filter::{evaluate_filter, parse_filter};
+use crate::api::query::{WaffleHit, WaffleSearchRequest, rrf_fuse};
+use crate::api::schema::{
+    ChunkRecord, WaffleFieldType, WaffleSchema, field_hash, numeric_index_key,
+};
+use crate::api::store::Store;
+use crate::api::text::TextEngine;
+use crate::api::vector::VectorEngine;
 
-/// Internal engine holding both the HNSW index and the sled storage.
-/// Thread-safe registry for mapping string IDs to/from internal integer IDs.
-struct IdRegistry {
-    /// Maps HNSW internal integer IDs → user-facing string IDs.
-    id_map: HashMap<usize, String>,
-    /// Maps user-facing string IDs → HNSW internal integer IDs.
-    reverse_id_map: HashMap<String, usize>,
-}
-
-/// Internal engine holding both the HNSW index and the sled storage.
 struct WaffleEngine {
-    index: HnswIndex,
-    storage: WaffleStorage,
     config: WaffleConfig,
-    /// Monotonically increasing internal ID counter for HNSW node IDs.
-    next_internal_id: AtomicU64,
-    /// Registry mapping internal IDs to/from user-facing string IDs.
-    id_registry: RwLock<IdRegistry>,
+    schema: WaffleSchema,
+    store: Store,
+    vector: VectorEngine,
+    text: TextEngine,
+    ef_guard: Mutex<()>,
+    dir: PathBuf,
 }
-
-// ---------------------------------------------------------------------------
-// Global handle registry
-// ---------------------------------------------------------------------------
 
 static HANDLE_COUNTER: AtomicU64 = AtomicU64::new(1);
 
@@ -46,448 +33,520 @@ fn registry() -> &'static RwLock<HashMap<u64, WaffleEngine>> {
     REGISTRY.get_or_init(|| RwLock::new(HashMap::new()))
 }
 
-fn with_engine<F, R>(handle: u64, f: F) -> Result<R, String>
+fn with_engine<F, R>(handle: u64, f: F) -> std::result::Result<R, String>
 where
-    F: FnOnce(&WaffleEngine) -> Result<R, String>,
+    F: FnOnce(&WaffleEngine) -> Result<R>,
 {
     let reg = registry()
         .read()
-        .map_err(|e| format!("Lock poisoned: {}", e))?;
+        .map_err(|e| format!("lock poisoned: {e}"))?;
     let engine = reg
         .get(&handle)
-        .ok_or_else(|| format!("Invalid WaffleDB handle: {}", handle))?;
-    f(engine)
+        .ok_or_else(|| format!("invalid WaffleDB handle: {handle}"))?;
+    f(engine).map_err(|e| e.to_string())
 }
 
-// ---------------------------------------------------------------------------
-// Public FFI functions (all live inside crate::api so FRB picks them up)
-// ---------------------------------------------------------------------------
-
-/// Open (or create) a WaffleDB instance. Returns a handle ID.
-///
-/// Example:
-/// ```dart
-/// final handle = await waffleOpen(config: myConfig);
-/// ```
-pub fn waffle_open(config: WaffleConfig) -> Result<u64, String> {
-    let storage = WaffleStorage::init(&config)?;
-
-    let index_file = Path::new(&config.path).join("index.hnsw.hnsw.graph");
-    let map_file = Path::new(&config.path).join("id_map.json");
-
-    if map_file.exists() {
-        // Read old JSON, write to sled trees, delete JSON file
-        if let Ok(map_data) = fs::read_to_string(&map_file) {
-            if let Ok(id_map) = serde_json::from_str::<HashMap<usize, String>>(&map_data) {
-                for (internal_id, string_id) in id_map {
-                    let _ = storage.write_id_mapping(internal_id, &string_id);
-                }
-            }
-        }
-        let _ = fs::remove_file(&map_file);
+fn hit_from_internal(store: &Store, internal: u32, score: f32, distance: Option<f32>) -> Result<Option<WaffleHit>> {
+    match store.read_chunk(internal)? {
+        Some(rec) => Ok(Some(WaffleHit {
+            id: rec.external_id,
+            score,
+            distance,
+            text: Some(rec.text),
+            payload_json: Some(rec.payload_json),
+        })),
+        None => Ok(None),
     }
-
-    let mut id_map = HashMap::new();
-    let mut reverse_id_map = HashMap::new();
-    let mut next_id: u64 = 0;
-
-    let index = if index_file.exists() {
-        let (loaded_id_map, loaded_reverse_id_map, loaded_next_id) = storage.load_all_id_mappings()?;
-        id_map = loaded_id_map;
-        reverse_id_map = loaded_reverse_id_map;
-        next_id = loaded_next_id;
-        
-        HnswIndex::load(
-            Path::new(&config.path),
-            "index.hnsw",
-            &config.graph_config.metric,
-        )?
-    } else {
-        let idx = HnswIndex::new(
-            config.max_elements as usize,
-            config.dimension as usize,
-            config.graph_config.m as usize,
-            config.graph_config.ef_construction as usize,
-            &config.graph_config.metric,
-        );
-        let dim = config.dimension as usize;
-
-        storage.load_vectors_in_batches(dim, 10_000, |batch| {
-            let mut insert_data: Vec<(Vec<f32>, usize)> = Vec::with_capacity(batch.len());
-
-            for (string_id, vec_data) in batch {
-                let internal_id = next_id as usize;
-                id_map.insert(internal_id, string_id.clone());
-                reverse_id_map.insert(string_id.clone(), internal_id);
-                insert_data.push((vec_data, internal_id));
-                let _ = storage.write_id_mapping(internal_id, &string_id);
-                next_id += 1;
-            }
-
-            let refs: Vec<(&Vec<f32>, usize)> =
-                insert_data.iter().map(|(v, id)| (v, *id)).collect();
-
-            idx.insert_slice(&refs);
-            Ok(())
-        })?;
-        idx
-    };
-
-    let engine = WaffleEngine {
-        index,
-        storage,
-        config,
-        next_internal_id: AtomicU64::new(next_id),
-        id_registry: RwLock::new(IdRegistry {
-            id_map,
-            reverse_id_map,
-        }),
-    };
-
-    let handle = HANDLE_COUNTER.fetch_add(1, Ordering::Relaxed);
-    registry()
-        .write()
-        .map_err(|e| format!("Lock poisoned: {}", e))?
-        .insert(handle, engine);
-
-    Ok(handle)
 }
 
-/// Close a WaffleDB instance: flush to disk and release resources.
-///
-/// Example:
-/// ```dart
-/// await waffleClose(handle: myHandle);
-/// ```
-pub fn waffle_close(handle: u64) -> Result<(), String> {
-    let mut reg = registry()
-        .write()
-        .map_err(|e| format!("Lock poisoned: {}", e))?;
-    if let Some(engine) = reg.remove(&handle) {
-        engine
-            .storage
-            .flush()
-            .map_err(|e| format!("Storage flush failed: {}", e))?;
-        if engine.index.get_nb_point() > 0 {
-            engine
-                .index
-                .save(Path::new(&engine.config.path), "index.hnsw")
-                .map_err(|e| format!("Hnsw save failed: {}", e))?;
+fn indexed_values(
+    schema: &WaffleSchema,
+    payload: &serde_json::Value,
+) -> Result<Vec<(String, WaffleFieldType, String, Option<f64>)>> {
+    let obj = payload.as_object().ok_or_else(|| {
+        WaffleError::Schema("payload must be a JSON object".to_owned())
+    })?;
+    let mut out = Vec::new();
+    for field in schema.fields.iter().filter(|f| f.indexed) {
+        let v = obj.get(&field.name).ok_or_else(|| {
+            WaffleError::Schema(format!("payload is missing indexed field {:?}", field.name))
+        })?;
+        let (canonical, numeric) = match &field.field_type {
+            WaffleFieldType::String | WaffleFieldType::Text => match v {
+                serde_json::Value::String(s) => (s.clone(), None),
+                _ => {
+                    return Err(WaffleError::Schema(format!(
+                        "field {:?} expects a string",
+                        field.name
+                    )))
+                }
+            },
+            WaffleFieldType::Boolean => match v {
+                serde_json::Value::Bool(b) => (b.to_string(), None),
+                _ => {
+                    return Err(WaffleError::Schema(format!(
+                        "field {:?} expects true/false",
+                        field.name
+                    )))
+                }
+            },
+            WaffleFieldType::Integer => match v.and_then(|x| x.as_i64()) {
+                Some(i) => (i.to_string(), Some(i as f64)),
+                None => {
+                    return Err(WaffleError::Schema(format!(
+                        "field {:?} expects an integer",
+                        field.name
+                    )))
+                }
+            },
+            WaffleFieldType::Double => match v.and_then(|x| x.as_f64()) {
+                Some(f) => (f.to_string(), Some(f)),
+                None => {
+                    return Err(WaffleError::Schema(format!(
+                        "field {:?} expects a number",
+                        field.name
+                    )))
+                }
+            },
+        };
+        out.push((field.name.clone(), field.field_type.clone(), canonical, numeric));
+    }
+    Ok(out)
+}
+
+fn insert_one(
+    engine: &WaffleEngine,
+    id: &str,
+    vector: &[f32],
+    text: &str,
+    payload_json: &str,
+    parent_id: Option<String>,
+    chunk_index: u32,
+    commit_text: bool,
+) -> Result<()> {
+    let dim = engine.config.dimension as usize;
+    if vector.len() != dim {
+        return Err(WaffleError::Dimension {
+            expected: dim,
+            actual: vector.len(),
+        });
+    }
+    let payload: serde_json::Value = if payload_json.trim().is_empty() {
+        serde_json::Value::Object(Default::default())
+    } else {
+        serde_json::from_str(payload_json).map_err(|e| {
+            WaffleError::Schema(format!("payload is not valid JSON: {e}"))
+        })?
+    };
+    let values = indexed_values(&engine.schema, &payload)?;
+
+    let tx = engine.store.begin_write()?;
+    if engine.store.lookup_internal(id)?.is_some() {
+        return Err(WaffleError::DuplicateId(id.to_owned()));
+    }
+    let internal = engine.store.alloc_id(&tx, id)?;
+    let record = ChunkRecord {
+        external_id: id.to_owned(),
+        parent_id,
+        chunk_index,
+        text: text.to_owned(),
+        payload_json: payload_json.to_owned(),
+    };
+    engine.store.write_record(&tx, id, internal, &record, vector)?;
+    for (field, _ft, canonical, numeric) in &values {
+        match numeric {
+            Some(n) => {
+                let key = numeric_index_key(field_hash(field), *n, internal);
+                engine.store.numeric_put(&tx, &key)?;
+            }
+            None => {
+                engine.store.bitmap_add(&tx, field, canonical, internal)?;
+            }
         }
+    }
+    tx.commit()?;
+
+    engine.vector.add(internal, vector)?;
+    engine.text.add(internal, text)?;
+    if commit_text {
+        engine.text.commit()?;
     }
     Ok(())
 }
 
-/// Insert a single vector with metadata.
-///
-/// Example:
-/// ```dart
-/// await waffleInsert(handle: myHandle, id: "doc1", vector: [0.1, 0.2], metadata: []);
-/// ```
+pub fn waffle_open(config: WaffleConfig, schema: WaffleSchema) -> std::result::Result<u64, String> {
+    (|| -> Result<u64> {
+        let dir = PathBuf::from(&config.path);
+        std::fs::create_dir_all(&dir)
+            .map_err(|e| WaffleError::Storage(format!("cannot create db dir: {e}")))?;
+        let dim = config.dimension as usize;
+        let store = Store::open(&dir, &schema, config.dimension)?;
+        let vector = VectorEngine::open(
+            &dir,
+            dim,
+            &config.graph_config.metric,
+            config.graph_config.m as usize,
+            config.graph_config.ef_construction as usize,
+            config.graph_config.ef_search as usize,
+            config.max_elements as usize,
+        )?;
+        if vector.size() as u64 != store.count()? {
+            for (_, internal, vec) in store.all_vectors(dim)? {
+                if !vector.contains(internal) {
+                    vector.add(internal, &vec)?;
+                }
+            }
+            vector.save(&dir)?;
+        }
+        let text = TextEngine::open(&dir.join("tantivy"), &schema.text_language)?;
+        let engine = WaffleEngine {
+            config,
+            schema,
+            store,
+            vector,
+            text,
+            ef_guard: Mutex::new(()),
+            dir,
+        };
+        let handle = HANDLE_COUNTER.fetch_add(1, Ordering::Relaxed);
+        registry()
+            .write()
+            .map_err(|e| WaffleError::Storage(format!("lock poisoned: {e}")))?
+            .insert(handle, engine);
+        Ok(handle)
+    })()
+    .map_err(|e| e.to_string())
+}
+
+pub fn waffle_close(handle: u64) -> std::result::Result<(), String> {
+    let mut reg = registry()
+        .write()
+        .map_err(|e| format!("lock poisoned: {e}"))?;
+    if let Some(engine) = reg.remove(&handle) {
+        engine
+            .text
+            .commit()
+            .map_err(|e| e.to_string())?;
+        engine.vector.save(&engine.dir).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
 pub fn waffle_insert(
     handle: u64,
     id: String,
     vector: Vec<f32>,
-    metadata: Vec<u8>,
-) -> Result<(), String> {
+    text: String,
+    payload_json: String,
+    parent_id: Option<String>,
+    chunk_index: u32,
+) -> std::result::Result<(), String> {
     with_engine(handle, |engine| {
-        let dim = engine.config.dimension as usize;
-        if vector.len() != dim {
-            return Err(format!(
-                "Vector dimension mismatch: expected {}, got {}",
-                dim,
-                vector.len()
-            ));
-        }
-
-        // Persist to disk first
-        engine.storage.write_record(&id, &vector, &metadata)?;
-
-        // Assign an internal HNSW ID
-        let internal_id = engine.next_internal_id.fetch_add(1, Ordering::Relaxed) as usize;
-
-        // Update maps inside a single lock acquisition to avoid deadlock
-        {
-            let mut registry = engine
-                .id_registry
-                .write()
-                .map_err(|e| format!("Lock: {}", e))?;
-            registry.id_map.insert(internal_id, id.clone());
-            registry.reverse_id_map.insert(id.clone(), internal_id);
-        }
-        
-        let _ = engine.storage.write_id_mapping(internal_id, &id);
-
-        // Insert into HNSW index
-        engine.index.insert(&vector, internal_id);
-
-        Ok(())
+        insert_one(engine, &id, &vector, &text, &payload_json, parent_id, chunk_index, true)
     })
 }
-
-/// Batch insert multiple vectors. Vectors are passed as a flat f32 array.
-/// `vectors_flat` has length `ids.len() * dimension`.
-/// `metadata_list` has the same length as `ids`.
-///
-/// Example:
-/// ```dart
-/// await waffleInsertBatch(handle: h, ids: ["1"], vectorsFlat: [0.1], metadataList: [[]]);
-/// ```
-const BATCH_CHUNK_SIZE: usize = 50_000;
 
 pub fn waffle_insert_batch(
     handle: u64,
     ids: Vec<String>,
     vectors_flat: Vec<f32>,
-    metadata_list: Vec<Vec<u8>>,
-) -> Result<(), String> {
+    texts: Vec<String>,
+    payload_jsons: Vec<String>,
+    parent_ids: Vec<Option<String>>,
+    chunk_indices: Vec<u32>,
+) -> std::result::Result<(), String> {
     with_engine(handle, |engine| {
         let dim = engine.config.dimension as usize;
         let n = ids.len();
-
         if vectors_flat.len() != n * dim {
-            return Err(format!(
-                "Flat vector length {} does not match {} items × {} dim",
-                vectors_flat.len(),
-                n,
-                dim
-            ));
-        }
-        if metadata_list.len() != n {
-            return Err(format!(
-                "Metadata list length {} does not match {} items",
-                metadata_list.len(),
-                n
-            ));
-        }
-
-        // Assign internal IDs
-        let base_id = engine
-            .next_internal_id
-            .fetch_add(n as u64, Ordering::Relaxed) as usize;
-
-        for chunk_start in (0..n).step_by(BATCH_CHUNK_SIZE) {
-            let chunk_end = (chunk_start + BATCH_CHUNK_SIZE).min(n);
-            let chunk_size = chunk_end - chunk_start;
-
-            let mut mappings = Vec::with_capacity(chunk_size);
-            {
-                let mut registry = engine
-                    .id_registry
-                    .write()
-                    .map_err(|e| format!("Lock: {}", e))?;
-                
-                for (offset, string_id) in ids[chunk_start..chunk_end].iter().enumerate() {
-                    let internal_id = base_id + chunk_start + offset;
-                    registry.id_map.insert(internal_id, string_id.clone());
-                    registry
-                        .reverse_id_map
-                        .insert(string_id.clone(), internal_id);
-                    mappings.push((internal_id, string_id.as_str()));
-                }
-            }
-
-            let _ = engine.storage.write_id_mappings_batch(&mappings);
-
-            // Persist all records to disk directly using flat vector slices to avoid cloning/allocating Vecs
-            for i in chunk_start..chunk_end {
-                let string_id = &ids[i];
-                let start = i * dim;
-                let end = start + dim;
-                engine
-                    .storage
-                    .write_record(string_id, &vectors_flat[start..end], &metadata_list[i])?;
-            }
-
-            // Copy vectors once for HNSW index insertion
-            let mut insert_data: Vec<(Vec<f32>, usize)> = Vec::with_capacity(chunk_size);
-            for i in chunk_start..chunk_end {
-                let start = i * dim;
-                let end = start + dim;
-                insert_data.push((vectors_flat[start..end].to_vec(), base_id + i));
-            }
-
-            // Parallel insert into HNSW
-            let refs: Vec<(&Vec<f32>, usize)> = insert_data.iter().map(|(v, id)| (v, *id)).collect();
-            engine.index.insert_slice(&refs);
-        }
-
-        Ok(())
-    })
-}
-
-/// K-nearest neighbor search. Returns results sorted by distance (ascending).
-/// `ef_search` overrides the config value if > 0, otherwise uses config default.
-///
-/// Example:
-/// ```dart
-/// final results = await waffleQuery(handle: h, vector: [0.1], k: 5, efSearch: 0, includeMetadata: true);
-/// ```
-#[flutter_rust_bridge::frb(sync)]
-pub fn waffle_query(
-    handle: u64,
-    vector: Vec<f32>,
-    k: u32,
-    ef_search: u32,
-    include_metadata: bool,
-) -> Result<Vec<WaffleQueryResult>, String> {
-    with_engine(handle, |engine| {
-        let dim = engine.config.dimension as usize;
-        if vector.len() != dim {
-            return Err(format!(
-                "Query vector dimension mismatch: expected {}, got {}",
-                dim,
-                vector.len()
-            ));
-        }
-
-        let effective_ef = if ef_search > 0 {
-            ef_search as usize
-        } else {
-            engine.config.graph_config.ef_search as usize
-        };
-
-        let raw_results = engine.index.search(&vector, k as usize, effective_ef);
-
-        let registry = engine
-            .id_registry
-            .read()
-            .map_err(|e| format!("Lock: {}", e))?;
-
-        let mut results: Vec<WaffleQueryResult> = Vec::with_capacity(raw_results.len());
-        for (internal_id, distance) in raw_results {
-            let string_id = registry
-                .id_map
-                .get(&internal_id)
-                .cloned()
-                .unwrap_or_else(|| format!("__unknown_{}", internal_id));
-
-            let metadata = if include_metadata {
-                engine.storage.read_metadata(&string_id)?
-            } else {
-                None
-            };
-
-            results.push(WaffleQueryResult {
-                id: string_id,
-                distance,
-                metadata,
+            return Err(WaffleError::Dimension {
+                expected: n * dim,
+                actual: vectors_flat.len(),
             });
         }
-
-        // Sort by distance ascending
-        results.sort_by(|a, b| {
-            a.distance
-                .partial_cmp(&b.distance)
-                .unwrap_or(std::cmp::Ordering::Equal)
-        });
-
-        Ok(results)
-    })
-}
-
-/// Delete a vector by its string ID. Removes from storage.
-/// Note: HNSW doesn't support true deletion — the index entry remains until rebuild.
-///
-/// Example:
-/// ```dart
-/// final removed = await waffleDelete(handle: h, id: "doc1");
-/// ```
-pub fn waffle_delete(handle: u64, id: String) -> Result<bool, String> {
-    with_engine(handle, |engine| {
-        let removed = engine.storage.delete_record(&id)?;
-
-        // Remove from reverse map (HNSW entry stays as stale — filtered at query time)
-        {
-            let mut registry = engine
-                .id_registry
-                .write()
-                .map_err(|e| format!("Lock: {}", e))?;
-            if let Some(internal_id) = registry.reverse_id_map.remove(&id) {
-                registry.id_map.remove(&internal_id);
-                let _ = engine.storage.remove_id_mapping(internal_id, &id);
+        for (list, name) in [
+            (&texts, "texts"),
+            (&payload_jsons, "payload_jsons"),
+            (&chunk_indices, "chunk_indices"),
+        ] {
+            if list.len() != n {
+                return Err(WaffleError::Storage(format!(
+                    "{name} length {} != {n} ids",
+                    list.len()
+                )));
             }
         }
-
-        Ok(removed)
-    })
-}
-
-/// Get metadata bytes for a vector by ID.
-///
-/// Example:
-/// ```dart
-/// final meta = await waffleGetMetadata(handle: h, id: "doc1");
-/// ```
-#[flutter_rust_bridge::frb(sync)]
-pub fn waffle_get_metadata(handle: u64, id: String) -> Result<Option<Vec<u8>>, String> {
-    with_engine(handle, |engine| engine.storage.read_metadata(&id))
-}
-
-/// Get a stored vector by ID.
-///
-/// Example:
-/// ```dart
-/// final vec = await waffleGetVector(handle: h, id: "doc1");
-/// ```
-#[flutter_rust_bridge::frb(sync)]
-pub fn waffle_get_vector(handle: u64, id: String) -> Result<Option<Vec<f32>>, String> {
-    with_engine(handle, |engine| {
-        let dim = engine.config.dimension as usize;
-        engine.storage.read_vector(&id, dim)
-    })
-}
-
-/// Get the number of vectors stored on disk.
-///
-/// Example:
-/// ```dart
-/// final count = await waffleCount(handle: h);
-/// ```
-#[flutter_rust_bridge::frb(sync)]
-pub fn waffle_count(handle: u64) -> Result<u64, String> {
-    with_engine(handle, |engine| Ok(engine.storage.count()))
-}
-
-/// Force flush all pending writes to disk.
-///
-/// Example:
-/// ```dart
-/// await waffleFlush(handle: h);
-/// ```
-pub fn waffle_flush(handle: u64) -> Result<(), String> {
-    with_engine(handle, |engine| {
-        engine.storage.flush()?;
-        if engine.index.get_nb_point() > 0 {
-            engine
-                .index
-                .save(Path::new(&engine.config.path), "index.hnsw")?;
+        if parent_ids.len() != n {
+            return Err(WaffleError::Storage(format!(
+                "parent_ids length {} != {n} ids",
+                parent_ids.len()
+            )));
         }
+        let mut parent_iter = parent_ids.into_iter();
+        for i in 0..n {
+            let start = i * dim;
+            insert_one(
+                engine,
+                &ids[i],
+                &vectors_flat[start..start + dim],
+                &texts[i],
+                &payload_jsons[i],
+                parent_iter.next().unwrap_or(None),
+                chunk_indices[i],
+                false,
+            )?;
+        }
+        engine.text.commit()?;
         Ok(())
     })
 }
 
-/// Get all stored string IDs.
-///
-/// Example:
-/// ```dart
-/// final ids = await waffleGetAllIds(handle: h);
-/// ```
 #[flutter_rust_bridge::frb(sync)]
-pub fn waffle_get_all_ids(handle: u64) -> Result<Vec<String>, String> {
-    with_engine(handle, |engine| engine.storage.get_all_ids())
+pub fn waffle_search(
+    handle: u64,
+    request: WaffleSearchRequest,
+) -> std::result::Result<Vec<WaffleHit>, String> {
+    with_engine(handle, |engine| {
+        let dim = engine.config.dimension as usize;
+        if let Some(v) = &request.vector {
+            if v.len() != dim {
+                return Err(WaffleError::Dimension {
+                    expected: dim,
+                    actual: v.len(),
+                });
+            }
+        }
+        if request.vector.is_none() && request.text.is_none() {
+            return Err(WaffleError::Filter(
+                "search request needs a vector, a text, or both".to_owned(),
+            ));
+        }
+        let top_k = (request.top_k as usize).clamp(1, 10_000);
+        let allowed: Option<RoaringBitmap> = match &request.filter_json {
+            Some(json) => Some(evaluate_filter(&engine.store, &engine.schema, &parse_filter(json)?)?),
+            None => None,
+        };
+
+        let (dense, sparse) = rayon::join(
+            || -> Result<Option<Vec<(u32, f32)>>> {
+                match &request.vector {
+                    Some(v) => {
+                        let res = if request.ef_search > 0 {
+                            let _guard = engine.ef_guard.lock().map_err(|e| {
+                                WaffleError::Storage(format!("lock poisoned: {e}"))
+                            })?;
+                            engine.vector.override_expansion_search(request.ef_search as usize);
+                            let r = engine.vector.search(v, top_k, allowed.as_ref());
+                            engine.vector.override_expansion_search(
+                                engine.config.graph_config.ef_search as usize,
+                            );
+                            r?
+                        } else {
+                            engine.vector.search(v, top_k, allowed.as_ref())?
+                        };
+                        Ok(Some(res))
+                    }
+                    None => Ok(None),
+                }
+            },
+            || -> Result<Option<Vec<(u32, f32)>>> {
+                match &request.text {
+                    Some(t) => Ok(Some(engine.text.search(t, top_k)?)),
+                    None => Ok(None),
+                }
+            },
+        );
+        let dense = dense?;
+        let sparse = sparse?;
+
+        let fused: Vec<(u32, f32, Option<f32>)> = match (dense, sparse) {
+            (Some(d), Some(s)) => {
+                let rrf_k = request.rrf_k.unwrap_or(60) as usize;
+                let alpha = request.alpha.unwrap_or(0.5).clamp(0.0, 1.0);
+                rrf_fuse(&d, &s, rrf_k, alpha, top_k)
+            }
+            (Some(d), None) => {
+                let mut v: Vec<(u32, f32, Option<f32>)> = d
+                    .into_iter()
+                    .map(|(id, dist)| (id, 1.0 / (1.0 + dist), Some(dist)))
+                    .collect();
+                v.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+                v.truncate(top_k);
+                v
+            }
+            (None, Some(s)) => {
+                let mut v: Vec<(u32, f32, Option<f32>)> =
+                    s.into_iter().map(|(id, score)| (id, score, None)).collect();
+                v.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+                v.truncate(top_k);
+                v
+            }
+            (None, None) => unreachable!(),
+        };
+
+        let mut hits = Vec::with_capacity(fused.len());
+        for (internal, score, distance) in fused {
+            if let Some(hit) = hit_from_internal(&engine.store, internal, score, distance)? {
+                hits.push(hit);
+            }
+        }
+        Ok(hits)
+    })
+}
+
+pub fn waffle_delete(handle: u64, id: String) -> std::result::Result<bool, String> {
+    with_engine(handle, |engine| {
+        let internal = match engine.store.lookup_internal(&id)? {
+            Some(v) => v,
+            None => return Ok(false),
+        };
+        let tx = engine.store.begin_write()?;
+        let old = engine.store.remove_record(&tx, &id, internal)?;
+        if let Some(rec) = &old {
+            if let Ok(payload) = serde_json::from_str::<serde_json::Value>(&rec.payload_json) {
+                if let Ok(values) = indexed_values(&engine.schema, &payload) {
+                    for (field, _ft, canonical, numeric) in &values {
+                        match numeric {
+                            Some(n) => {
+                                let key = numeric_index_key(field_hash(field), *n, internal);
+                                engine.store.numeric_remove(&tx, &key)?;
+                            }
+                            None => {
+                                engine.store.bitmap_remove(&tx, field, canonical, internal)?;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        tx.commit()?;
+        engine.vector.remove(internal)?;
+        engine.text.delete(internal)?;
+        engine.text.commit()?;
+        Ok(true)
+    })
+}
+
+#[flutter_rust_bridge::frb(sync)]
+pub fn waffle_get_metadata(handle: u64, id: String) -> std::result::Result<Option<Vec<u8>>, String> {
+    with_engine(handle, |engine| match engine.store.lookup_internal(&id)? {
+        Some(internal) => Ok(engine
+            .store
+            .read_chunk(internal)?
+            .map(|rec| rec.payload_json.into_bytes())),
+        None => Ok(None),
+    })
+}
+
+#[flutter_rust_bridge::frb(sync)]
+pub fn waffle_get_vector(handle: u64, id: String) -> std::result::Result<Option<Vec<f32>>, String> {
+    with_engine(handle, |engine| {
+        let dim = engine.config.dimension as usize;
+        match engine.store.lookup_internal(&id)? {
+            Some(internal) => Ok(engine.store.read_vector(internal, dim)?),
+            None => Ok(None),
+        }
+    })
+}
+
+#[flutter_rust_bridge::frb(sync)]
+pub fn waffle_count(handle: u64) -> std::result::Result<u64, String> {
+    with_engine(handle, |engine| Ok(engine.store.count()?))
+}
+
+pub fn waffle_flush(handle: u64) -> std::result::Result<(), String> {
+    with_engine(handle, |engine| {
+        engine.text.commit()?;
+        engine.vector.save(&engine.dir)?;
+        Ok(())
+    })
+}
+
+#[flutter_rust_bridge::frb(sync)]
+pub fn waffle_get_all_ids(handle: u64) -> std::result::Result<Vec<String>, String> {
+    with_engine(handle, |engine| Ok(engine.store.all_external_ids()?))
+}
+
+#[flutter_rust_bridge::frb(sync)]
+pub fn waffle_get_neighbors(
+    handle: u64,
+    id: String,
+    window: u32,
+) -> std::result::Result<Vec<WaffleHit>, String> {
+    with_engine(handle, |engine| {
+        let internal = engine.store.lookup_internal(&id)?.ok_or_else(|| {
+            WaffleError::Storage(format!("unknown id {id:?}"))
+        })?;
+        let rec = engine.store.read_chunk(internal)?.ok_or_else(|| {
+            WaffleError::Storage(format!("missing record for {id:?}"))
+        })?;
+        let parent = rec.parent_id.clone().ok_or_else(|| {
+            WaffleError::NotSupported("record has no parent document".to_owned())
+        })?;
+        let mut hits = Vec::new();
+        let lo = rec.chunk_index.saturating_sub(window);
+        let hi = rec.chunk_index.saturating_add(window);
+        for idx in lo..=hi {
+            if let Some(sibling) = engine.store.child_lookup(&parent, idx)? {
+                if let Some(hit) = hit_from_internal(&engine.store, sibling, 1.0, None)? {
+                    hits.push(hit);
+                }
+            }
+        }
+        Ok(hits)
+    })
+}
+
+#[flutter_rust_bridge::frb(sync)]
+pub fn waffle_get_parent(handle: u64, id: String) -> std::result::Result<Option<WaffleHit>, String> {
+    with_engine(handle, |engine| {
+        let internal = match engine.store.lookup_internal(&id)? {
+            Some(v) => v,
+            None => return Ok(None),
+        };
+        let rec = match engine.store.read_chunk(internal)? {
+            Some(r) => r,
+            None => return Ok(None),
+        };
+        let parent = match rec.parent_id {
+            Some(p) => p,
+            None => return Ok(None),
+        };
+        match engine.store.lookup_internal(&parent)? {
+            Some(p_internal) => Ok(hit_from_internal(&engine.store, p_internal, 1.0, None)?),
+            None => Ok(None),
+        }
+    })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::api::config::{WaffleConfig, WaffleGraphConfig, WaffleMetric};
+    use crate::api::schema::{WaffleField, WaffleFieldType, WaffleLanguage};
 
-    #[test]
-    fn test_open_close_rust() {
-        let config = WaffleConfig {
-            dimension: 128,
-            path: "/tmp/waffle_rust_test_db".to_string(),
+    fn test_schema() -> WaffleSchema {
+        WaffleSchema {
+            fields: vec![
+                WaffleField {
+                    name: "category".to_owned(),
+                    field_type: WaffleFieldType::String,
+                    indexed: true,
+                },
+                WaffleField {
+                    name: "price".to_owned(),
+                    field_type: WaffleFieldType::Integer,
+                    indexed: true,
+                },
+            ],
+            text_language: WaffleLanguage::English,
+        }
+    }
+
+    fn test_config(path: &str) -> WaffleConfig {
+        WaffleConfig {
+            dimension: 8,
+            path: path.to_owned(),
             graph_config: WaffleGraphConfig {
                 m: 16,
                 metric: WaffleMetric::Cosine,
@@ -498,14 +557,93 @@ mod tests {
             use_quantization: false,
             cache_size_bytes: 8 * 1024 * 1024,
             worker_threads: 2,
-        };
-        // Clean up first
-        let _ = std::fs::remove_dir_all("/tmp/waffle_rust_test_db");
+        }
+    }
 
-        println!("Running waffle_open in Rust test...");
-        let handle = waffle_open(config).unwrap();
-        println!("Running waffle_close in Rust test...");
+    #[test]
+    fn enterprise_roundtrip() {
+        let path = "/tmp/waffle_enterprise_test_db";
+        let _ = std::fs::remove_dir_all(path);
+        let handle = waffle_open(test_config(path), test_schema()).unwrap();
+
+        let vec_a = vec![1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+        let vec_b = vec![0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+        waffle_insert(
+            handle,
+            "doc-a".to_owned(),
+            vec_a.clone(),
+            "fast red car".to_owned(),
+            r#"{"category":"auto","price":100}"#.to_owned(),
+            Some("parent-1".to_owned()),
+            0,
+        )
+        .unwrap();
+        waffle_insert(
+            handle,
+            "doc-b".to_owned(),
+            vec_b.clone(),
+            "slow blue boat".to_owned(),
+            r#"{"category":"marine","price":200}"#.to_owned(),
+            Some("parent-1".to_owned()),
+            1,
+        )
+        .unwrap();
+
+        assert_eq!(waffle_count(handle).unwrap(), 2);
+
+        let hits = waffle_search(
+            handle,
+            WaffleSearchRequest {
+                vector: Some(vec_a.clone()),
+                text: None,
+                top_k: 5,
+                filter_json: Some(r#"{"op":"eq","field":"category","value":"auto"}"#.to_owned()),
+                alpha: None,
+                rrf_k: None,
+                ef_search: 0,
+            },
+        )
+        .unwrap();
+        assert_eq!(hits.len(), 1);
+        assert_eq!(hits[0].id, "doc-a");
+
+        let empty = waffle_search(
+            handle,
+            WaffleSearchRequest {
+                vector: Some(vec_a.clone()),
+                text: None,
+                top_k: 5,
+                filter_json: Some(r#"{"op":"eq","field":"category","value":"marine"}"#.to_owned()),
+                alpha: None,
+                rrf_k: None,
+                ef_search: 0,
+            },
+        )
+        .unwrap();
+        assert_eq!(empty.len(), 1);
+        assert_eq!(empty[0].id, "doc-b");
+
+        let neighbors = waffle_get_neighbors(handle, "doc-a".to_owned(), 1).unwrap();
+        assert_eq!(neighbors.len(), 2);
+
+        assert!(waffle_delete(handle, "doc-a".to_owned()).unwrap());
+        assert_eq!(waffle_count(handle).unwrap(), 1);
+        let after = waffle_search(
+            handle,
+            WaffleSearchRequest {
+                vector: Some(vec_a),
+                text: None,
+                top_k: 5,
+                filter_json: None,
+                alpha: None,
+                rrf_k: None,
+                ef_search: 0,
+            },
+        )
+        .unwrap();
+        assert!(after.iter().all(|h| h.id != "doc-a"));
+
         waffle_close(handle).unwrap();
-        println!("Completed waffle_close in Rust test!");
+        let _ = std::fs::remove_dir_all(path);
     }
 }
