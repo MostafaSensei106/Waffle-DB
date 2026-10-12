@@ -1,5 +1,5 @@
 # 0.1.0
-- ** dependency overhaul (Rust)**: added `usearch 2` (SIMD vector engine with predicate pre-filtering), `tantivy 0.26` (BM25 text engine, EN+AR stemming), `redb 2` (ACID/MVCC storage), `roaring 0.11` with `serde` (filter bitmaps), `crossbeam-channel 0.5` (background ingestion queue), `thiserror 2` + `cxx 1.0` (typed errors alongside `anyhow`).
+- **dependency overhaul (Rust)**: added `usearch 2` (SIMD vector engine with predicate pre-filtering), `tantivy 0.26` (BM25 text engine, EN+AR stemming), `redb 2` (ACID/MVCC storage), `roaring 0.11` with `serde` (filter bitmaps), `crossbeam-channel 0.5` (background ingestion queue), `cxx 1.0` (usearch error bridge), `anyhow` (single unified error type end to end).
 - **Removed (Rust)**: `sled`, `hnsw_rs` (replaced by the  core), direct `rand` (was unused), `criterion` + `rand` dev-dependencies (no Rust benches exist; Dart benchmarks use `benchmark_harness`), `getrandom`/`getrandom_0_2` WASM shims (Flutter Web dropped for v1 and no plugin web platform is declared).
 - **Engine rewrite (breaking)**: `redb` (8 tables) + `usearch` (`filtered_search` predicates) + `tantivy` (BM25, EN/AR stemming) + `roaring` bitmaps. Removed `storage.rs`/`models.rs`; `math.rs` keeps only `cosineSimilarity`.
 - **Strict schema**: `WaffleSchema` with typed indexed fields is mandatory at open; payloads are validated; schema/dimension mismatches on reopen are hard errors.
@@ -10,6 +10,10 @@
 - **Crash recovery**: vectors persisted in `redb`; on open the engine rebuilds `usearch` when it diverges from storage.
 - **Dart API**: `insert`/`insertBatch` take text + payload + parent linkage; `search` + `WaffleQueryBuilder` (vector/text/hybrid, eq/inList, alpha); `WaffleFields`/`WaffleFilter` DSL; `newWaffleId()` (UUIDv7); `WaffleHit` replaces `WaffleQueryResult`.
 - **Dart**: added `uuid ^4.6.0` (external String/UUIDv7 IDs for the dual-mapping design) and `collection ^1.19.1` (RRF/result utilities); removed unused `ffi`/`ffigen` dev-dependencies; SDK floor raised to `>=3.4.0` (required by `collection`).
+- **Docs**: README rewritten around the multi-engine RAG architecture, locked design decisions, 3-month roadmap and v1 platform scope.
+- **Tests**: new roundtrip coverage (filtered search, hybrid fusion, keyword search, neighbors, delete-across-engines, schema/duplicate/dimension violations); benchmarks and example app migrated to the new API.
+- **Hygiene**: `cargo clippy` is warning-free (bundled `InsertInput`/`IndexedValues`, scoped iterator borrows, `for` loops, `if let` restores); internal engine types are `pub(crate)` so generated bindings stay minimal.
+- **Examples**: new `Products` demo (faceted hybrid search with pre-filters and alpha blending) and Arabic `RAG Notes` demo (stemming search, chunk windows, parent lookup, true delete), plus headless `rag_demos_test.dart` coverage.
 # 0.0.3
 - **Performance**: Optimized insertion and queries for datasets with 1,000,000+ vectors.
 - **Performance**: Replaced `Mutex` with `RwLock` for concurrent read queries.

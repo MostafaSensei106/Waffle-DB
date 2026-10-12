@@ -27,7 +27,7 @@ fn analyzer_for(language: &WaffleLanguage) -> TextAnalyzer {
         .build()
 }
 
-pub struct TextEngine {
+pub(crate) struct TextEngine {
     index: Index,
     writer: Mutex<IndexWriter>,
     reader: IndexReader,
@@ -37,7 +37,7 @@ pub struct TextEngine {
 }
 
 impl TextEngine {
-    pub fn open(dir: &Path, language: &WaffleLanguage) -> Result<Self> {
+    pub(crate) fn open(dir: &Path, language: &WaffleLanguage) -> Result<Self> {
         std::fs::create_dir_all(dir)
             .map_err(|e| anyhow!("cannot create tantivy dir: {e}"))?;
         let mut schema_builder = Schema::builder();
@@ -78,7 +78,7 @@ impl TextEngine {
         })
     }
 
-    pub fn add(&self, internal: u32, text: &str) -> Result<()> {
+    pub(crate) fn add(&self, internal: u32, text: &str) -> Result<()> {
         if text.trim().is_empty() {
             return Ok(());
         }
@@ -93,7 +93,7 @@ impl TextEngine {
         Ok(())
     }
 
-    pub fn delete(&self, internal: u32) -> Result<()> {
+    pub(crate) fn delete(&self, internal: u32) -> Result<()> {
         let writer = self
             .writer
             .lock()
@@ -102,7 +102,7 @@ impl TextEngine {
         Ok(())
     }
 
-    pub fn commit(&self) -> Result<()> {
+    pub(crate) fn commit(&self) -> Result<()> {
         let mut writer = self
             .writer
             .lock()
@@ -113,7 +113,7 @@ impl TextEngine {
         Ok(())
     }
 
-    pub fn search(&self, text: &str, k: usize) -> Result<Vec<(u32, f32)>> {
+    pub(crate) fn search(&self, text: &str, k: usize) -> Result<Vec<(u32, f32)>> {
         if k == 0 || text.trim().is_empty() {
             return Ok(Vec::new());
         }

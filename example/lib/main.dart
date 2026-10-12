@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:waffle_db/waffle_db.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'demos/notes_rag_page.dart';
+import 'demos/product_search_page.dart';
+
 final _benchSchema = WaffleSchema(
   fields: [WaffleFields.string('tag', indexed: false)],
   textLanguage: WaffleLanguage.english,
@@ -30,7 +33,43 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const MyHomePage(),
+      home: const DemoHub(),
+    );
+  }
+}
+
+class DemoHub extends StatefulWidget {
+  const DemoHub({super.key});
+
+  @override
+  State<DemoHub> createState() => _DemoHubState();
+}
+
+class _DemoHubState extends State<DemoHub> {
+  int _index = 0;
+
+  static const _pages = [
+    MyHomePage(),
+    ProductSearchPage(),
+    NotesRagPage(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: IndexedStack(index: _index, children: _pages),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _index,
+        onDestinationSelected: (i) => setState(() => _index = i),
+        destinations: const [
+          NavigationDestination(
+              icon: Icon(Icons.palette), label: 'Colors'),
+          NavigationDestination(
+              icon: Icon(Icons.shopping_bag), label: 'Products'),
+          NavigationDestination(
+              icon: Icon(Icons.auto_stories), label: 'RAG Notes'),
+        ],
+      ),
     );
   }
 }

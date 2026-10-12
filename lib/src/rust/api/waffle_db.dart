@@ -10,7 +10,7 @@ import 'query.dart';
 import 'schema.dart';
 
 // These functions are ignored because they are not marked as `pub`: `hit_from_internal`, `indexed_values`, `insert_one`, `registry`, `with_engine`
-// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `WaffleEngine`
+// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `InsertInput`, `WaffleEngine`
 
 Future<BigInt> waffleOpen(
         {required WaffleConfig config, required WaffleSchema schema}) =>

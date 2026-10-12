@@ -6,7 +6,7 @@ use usearch::{Index, IndexOptions, MetricKind, ScalarKind};
 use crate::api::config::WaffleMetric;
 use anyhow::{Result, anyhow};
 
-pub struct VectorEngine {
+pub(crate) struct VectorEngine {
     index: Index,
 }
 
@@ -19,7 +19,7 @@ fn map_metric(metric: &WaffleMetric) -> MetricKind {
 }
 
 impl VectorEngine {
-    pub fn open(
+    pub(crate) fn open(
         dir: &Path,
         dimension: usize,
         metric: &WaffleMetric,
@@ -30,9 +30,8 @@ impl VectorEngine {
     ) -> Result<Self> {
         let file = dir.join("vectors.usearch");
         if file.exists() {
-            match Index::restore(file.to_string_lossy().as_ref()) {
-                Ok(index) => return Ok(Self { index }),
-                Err(_) => {}
+            if let Ok(index) = Index::restore(file.to_string_lossy().as_ref()) {
+                return Ok(Self { index });
             }
         }
         let options = IndexOptions {
@@ -49,12 +48,12 @@ impl VectorEngine {
         Ok(Self { index })
     }
 
-    pub fn add(&self, internal: u32, vector: &[f32]) -> Result<()> {
+    pub(crate) fn add(&self, internal: u32, vector: &[f32]) -> Result<()> {
         self.index.add(internal as u64, vector)?;
         Ok(())
     }
 
-    pub fn search(
+    pub(crate) fn search(
         &self,
         query: &[f32],
         k: usize,
@@ -77,23 +76,23 @@ impl VectorEngine {
             .collect())
     }
 
-    pub fn override_expansion_search(&self, ef: usize) {
+    pub(crate) fn override_expansion_search(&self, ef: usize) {
         self.index.change_expansion_search(ef);
     }
 
-    pub fn remove(&self, internal: u32) -> Result<bool> {
+    pub(crate) fn remove(&self, internal: u32) -> Result<bool> {
         Ok(self.index.remove(internal as u64)? > 0)
     }
 
-    pub fn contains(&self, internal: u32) -> bool {
+    pub(crate) fn contains(&self, internal: u32) -> bool {
         self.index.contains(internal as u64)
     }
 
-    pub fn size(&self) -> usize {
+    pub(crate) fn size(&self) -> usize {
         self.index.size()
     }
 
-    pub fn save(&self, dir: &Path) -> Result<()> {
+    pub(crate) fn save(&self, dir: &Path) -> Result<()> {
         if self.index.size() == 0 {
             return Ok(());
         }

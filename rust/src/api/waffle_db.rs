@@ -62,7 +62,7 @@ fn hit_from_internal(store: &Store, internal: u32, score: f32, distance: Option<
 fn indexed_values(
     schema: &WaffleSchema,
     payload: &serde_json::Value,
-) -> Result<Vec<(String, WaffleFieldType, String, Option<f64>)>> {
+) -> Result<IndexedValues> {
     let obj = payload.as_object().ok_or_else(|| {
         anyhow!("payload must be a JSON object")
     })?;
@@ -114,45 +114,50 @@ fn indexed_values(
     Ok(out)
 }
 
-fn insert_one(
-    engine: &WaffleEngine,
-    id: &str,
-    vector: &[f32],
-    text: &str,
-    payload_json: &str,
+pub(crate) type IndexedValues = Vec<(String, WaffleFieldType, String, Option<f64>)>;
+
+pub(crate) struct InsertInput<'a> {
+    id: &'a str,
+    vector: &'a [f32],
+    text: &'a str,
+    payload_json: &'a str,
     parent_id: Option<String>,
     chunk_index: u32,
     commit_text: bool,
-) -> Result<()> {
+}
+
+fn insert_one(engine: &WaffleEngine, input: InsertInput<'_>) -> Result<()> {
     let dim = engine.config.dimension as usize;
-    if vector.len() != dim {
+    if input.vector.len() != dim {
         return Err(anyhow!(
             "dimension mismatch: expected {dim}, got {}",
-            vector.len()
+            input.vector.len()
         ));
     }
-    let payload: serde_json::Value = if payload_json.trim().is_empty() {
+    let payload: serde_json::Value = if input.payload_json.trim().is_empty() {
         serde_json::Value::Object(Default::default())
     } else {
-        serde_json::from_str(payload_json).map_err(|e| {
+        serde_json::from_str(input.payload_json).map_err(|e| {
             anyhow!("payload is not valid JSON: {e}")
         })?
     };
     let values = indexed_values(&engine.schema, &payload)?;
 
     let tx = engine.store.begin_write()?;
-    if engine.store.lookup_internal(id)?.is_some() {
-        return Err(anyhow!("duplicate id: {id}"));
+    if engine.store.lookup_internal(input.id)?.is_some() {
+        return Err(anyhow!("duplicate id: {}", input.id));
     }
     let internal = engine.store.alloc_id(&tx)?;
     let record = ChunkRecord {
-        external_id: id.to_owned(),
-        parent_id,
-        chunk_index,
-        text: text.to_owned(),
-        payload_json: payload_json.to_owned(),
+        external_id: input.id.to_owned(),
+        parent_id: input.parent_id,
+        chunk_index: input.chunk_index,
+        text: input.text.to_owned(),
+        payload_json: input.payload_json.to_owned(),
     };
-    engine.store.write_record(&tx, id, internal, &record, vector)?;
+    engine
+        .store
+        .write_record(&tx, input.id, internal, &record, input.vector)?;
     for (field, _ft, canonical, numeric) in &values {
         match numeric {
             Some(n) => {
@@ -166,9 +171,9 @@ fn insert_one(
     }
     tx.commit()?;
 
-    engine.vector.add(internal, vector)?;
-    engine.text.add(internal, text)?;
-    if commit_text {
+    engine.vector.add(internal, input.vector)?;
+    engine.text.add(internal, input.text)?;
+    if input.commit_text {
         engine.text.commit()?;
     }
     Ok(())
@@ -242,7 +247,18 @@ pub fn waffle_insert(
     chunk_index: u32,
 ) -> std::result::Result<(), String> {
     with_engine(handle, |engine| {
-        insert_one(engine, &id, &vector, &text, &payload_json, parent_id, chunk_index, true)
+        insert_one(
+            engine,
+            InsertInput {
+                id: &id,
+                vector: &vector,
+                text: &text,
+                payload_json: &payload_json,
+                parent_id,
+                chunk_index,
+                commit_text: true,
+            },
+        )
     })
 }
 
@@ -295,13 +311,15 @@ pub fn waffle_insert_batch(
             let parent = if parent.is_empty() { None } else { Some(parent) };
             insert_one(
                 engine,
-                &ids[i],
-                &vectors_flat[start..start + dim],
-                &texts[i],
-                &payload_jsons[i],
-                parent,
-                chunk_indices[i],
-                false,
+                InsertInput {
+                    id: &ids[i],
+                    vector: &vectors_flat[start..start + dim],
+                    text: &texts[i],
+                    payload_json: &payload_jsons[i],
+                    parent_id: parent,
+                    chunk_index: chunk_indices[i],
+                    commit_text: false,
+                },
             )?;
         }
         engine.text.commit()?;
@@ -457,7 +475,7 @@ pub fn waffle_get_vector(handle: u64, id: String) -> std::result::Result<Option<
 
 #[flutter_rust_bridge::frb(sync)]
 pub fn waffle_count(handle: u64) -> std::result::Result<u64, String> {
-    with_engine(handle, |engine| Ok(engine.store.count()?))
+    with_engine(handle, |engine| engine.store.count())
 }
 
 pub fn waffle_flush(handle: u64) -> std::result::Result<(), String> {
@@ -470,7 +488,7 @@ pub fn waffle_flush(handle: u64) -> std::result::Result<(), String> {
 
 #[flutter_rust_bridge::frb(sync)]
 pub fn waffle_get_all_ids(handle: u64) -> std::result::Result<Vec<String>, String> {
-    with_engine(handle, |engine| Ok(engine.store.all_external_ids()?))
+    with_engine(handle, |engine| engine.store.all_external_ids())
 }
 
 #[flutter_rust_bridge::frb(sync)]

@@ -3,6 +3,7 @@
 @Timeout(Duration(minutes: 15))
 library;
 
+import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
@@ -21,6 +22,11 @@ void main() {
     // We run the benchmark 10 times
     for (int iter = 0; iter < 10; iter++) {
       final sw = Stopwatch()..start();
+
+      final dbDir = Directory('/tmp/waffle_user_bench_$iter.waffle');
+      if (dbDir.existsSync()) {
+        dbDir.deleteSync(recursive: true);
+      }
 
       final config = WaffleConfig(
         dimension: 128,

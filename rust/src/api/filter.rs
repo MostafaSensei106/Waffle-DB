@@ -1,19 +1,26 @@
 use roaring::RoaringBitmap;
 
-use anyhow::{Result, anyhow};
 use crate::api::schema::{
-    WaffleFieldType, WaffleSchema, field_hash, field_value_key, numeric_index_key,
-    numeric_index_prefix,
+    field_hash, field_value_key, numeric_index_key, numeric_index_prefix, WaffleFieldType,
+    WaffleSchema,
 };
 use crate::api::store::Store;
+use anyhow::{anyhow, Result};
 
 #[derive(Debug, serde::Deserialize)]
+#[allow(dead_code)]
 #[serde(tag = "op")]
 pub(crate) enum FilterNode {
     #[serde(rename = "eq")]
-    Eq { field: String, value: serde_json::Value },
+    Eq {
+        field: String,
+        value: serde_json::Value,
+    },
     #[serde(rename = "in")]
-    In { field: String, values: Vec<serde_json::Value> },
+    In {
+        field: String,
+        values: Vec<serde_json::Value>,
+    },
     #[serde(rename = "and")]
     And { filters: Vec<FilterNode> },
     #[serde(rename = "or")]
@@ -22,7 +29,10 @@ pub(crate) enum FilterNode {
     Not { filter: Box<FilterNode> },
 }
 
-fn json_scalar_to_canonical(field_type: &WaffleFieldType, v: &serde_json::Value) -> Result<(String, Option<f64>)> {
+fn json_scalar_to_canonical(
+    field_type: &WaffleFieldType,
+    v: &serde_json::Value,
+) -> Result<(String, Option<f64>)> {
     match field_type {
         WaffleFieldType::String | WaffleFieldType::Text => match v {
             serde_json::Value::String(s) => Ok((s.clone(), None)),
@@ -72,9 +82,9 @@ pub(crate) fn evaluate_filter(
 ) -> Result<RoaringBitmap> {
     match node {
         FilterNode::Eq { field, value } => {
-            let def = schema.indexed_field(field).ok_or_else(|| {
-                anyhow!("field {field:?} is not indexed")
-            })?;
+            let def = schema
+                .indexed_field(field)
+                .ok_or_else(|| anyhow!("field {field:?} is not indexed"))?;
             let (canonical, numeric) = json_scalar_to_canonical(&def.field_type, value)?;
             match numeric {
                 Some(n) => numeric_eq_bitmap(store, field, n),
@@ -85,9 +95,9 @@ pub(crate) fn evaluate_filter(
             }
         }
         FilterNode::In { field, values } => {
-            let def = schema.indexed_field(field).ok_or_else(|| {
-                anyhow!("field {field:?} is not indexed")
-            })?;
+            let def = schema
+                .indexed_field(field)
+                .ok_or_else(|| anyhow!("field {field:?} is not indexed"))?;
             let mut acc = RoaringBitmap::new();
             for v in values {
                 let (canonical, numeric) = json_scalar_to_canonical(&def.field_type, v)?;
@@ -119,7 +129,7 @@ pub(crate) fn evaluate_filter(
             }
             Ok(acc)
         }
-        FilterNode::Not { filter: _ } => Err(anyhow!(
+        FilterNode::Not { .. } => Err(anyhow!(
             "NOT filters require a universe bitmap; use positive filters"
         )),
     }

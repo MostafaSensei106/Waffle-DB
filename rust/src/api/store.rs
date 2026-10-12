@@ -22,13 +22,13 @@ const META_SCHEMA: &str = "schema_json";
 const META_NEXT_ID: &str = "next_id";
 const META_DIM: &str = "dimension";
 
-pub struct Store {
+pub(crate) struct Store {
     db: Database,
     bitmap_cache: RwLock<std::collections::HashMap<String, RoaringBitmap>>,
 }
 
 impl Store {
-    pub fn open(path: &Path, schema: &WaffleSchema, dimension: u32) -> Result<Self> {
+    pub(crate) fn open(path: &Path, schema: &WaffleSchema, dimension: u32) -> Result<Self> {
         schema.validate()?;
         std::fs::create_dir_all(path)
             .map_err(|e| anyhow!("cannot create db dir: {e}"))?;
@@ -109,28 +109,19 @@ impl Store {
         Ok(())
     }
 
-    pub fn next_id_value(&self) -> Result<u64> {
-        let raw = self
-            .meta_get(META_NEXT_ID)?
-            .ok_or_else(|| anyhow!("missing next_id metadata"))?;
-        let mut arr = [0u8; 8];
-        arr.copy_from_slice(&raw[0..8]);
-        Ok(u64::from_le_bytes(arr))
-    }
-
     fn set_next_id(&self, tx: &redb::WriteTransaction, next: u64) -> Result<()> {
         let mut table = tx.open_table(T_META)?;
         table.insert(META_NEXT_ID, &next.to_le_bytes()[..])?;
         Ok(())
     }
 
-    pub fn lookup_internal(&self, external: &str) -> Result<Option<u32>> {
+    pub(crate) fn lookup_internal(&self, external: &str) -> Result<Option<u32>> {
         let tx = self.db.begin_read()?;
         let table = tx.open_table(T_EXT2INT)?;
         Ok(table.get(external)?.map(|g| g.value()))
     }
 
-    pub fn alloc_id(&self, tx: &redb::WriteTransaction) -> Result<u32> {
+    pub(crate) fn alloc_id(&self, tx: &redb::WriteTransaction) -> Result<u32> {
         let recycled = {
             let mut free_table = tx.open_table(T_FREELIST)?;
             let first: Option<u32> = {
@@ -172,11 +163,11 @@ impl Store {
         Ok(next as u32)
     }
 
-    pub fn child_key(parent: &str, chunk_index: u32) -> String {
+    pub(crate) fn child_key(parent: &str, chunk_index: u32) -> String {
         format!("{parent}\0{chunk_index:010}")
     }
 
-    pub fn write_record(
+    pub(crate) fn write_record(
         &self,
         tx: &redb::WriteTransaction,
         external: &str,
@@ -214,7 +205,7 @@ impl Store {
         Ok(())
     }
 
-    pub fn read_chunk(&self, internal: u32) -> Result<Option<ChunkRecord>> {
+    pub(crate) fn read_chunk(&self, internal: u32) -> Result<Option<ChunkRecord>> {
         let tx = self.db.begin_read()?;
         let table = tx.open_table(T_DATA)?;
         match table.get(internal)? {
@@ -223,7 +214,7 @@ impl Store {
         }
     }
 
-    pub fn read_vector(&self, internal: u32, dim: usize) -> Result<Option<Vec<f32>>> {
+    pub(crate) fn read_vector(&self, internal: u32, dim: usize) -> Result<Option<Vec<f32>>> {
         let tx = self.db.begin_read()?;
         let table = tx.open_table(T_VECTORS)?;
         match table.get(internal)? {
@@ -249,7 +240,7 @@ impl Store {
         }
     }
 
-    pub fn remove_record(
+    pub(crate) fn remove_record(
         &self,
         tx: &redb::WriteTransaction,
         external: &str,
@@ -286,24 +277,24 @@ impl Store {
         Ok(record)
     }
 
-    pub fn numeric_put(&self, tx: &redb::WriteTransaction, key: &[u8]) -> Result<()> {
+    pub(crate) fn numeric_put(&self, tx: &redb::WriteTransaction, key: &[u8]) -> Result<()> {
         let mut table = tx.open_table(T_NUMERIC_IDX)?;
         table.insert(key, 0u8)?;
         Ok(())
     }
 
-    pub fn numeric_remove(&self, tx: &redb::WriteTransaction, key: &[u8]) -> Result<()> {
+    pub(crate) fn numeric_remove(&self, tx: &redb::WriteTransaction, key: &[u8]) -> Result<()> {
         let mut table = tx.open_table(T_NUMERIC_IDX)?;
         table.remove(key)?;
         Ok(())
     }
 
-    pub fn numeric_scan_prefix(&self, prefix: &[u8]) -> Result<Vec<u32>> {
+    pub(crate) fn numeric_scan_prefix(&self, prefix: &[u8]) -> Result<Vec<u32>> {
         let tx = self.db.begin_read()?;
         let table = tx.open_table(T_NUMERIC_IDX)?;
         let mut ids = Vec::new();
-        let mut iter = table.range::<&[u8]>(prefix..)?;
-        while let Some(entry) = iter.next() {
+        let iter = table.range::<&[u8]>(prefix..)?;
+        for entry in iter {
             let (k, _) = entry?;
             let bytes = k.value();
             if bytes.len() < prefix.len() || &bytes[..prefix.len()] != prefix {
@@ -319,7 +310,7 @@ impl Store {
         Ok(ids)
     }
 
-    pub fn bitmap_get(&self, key: &str) -> Result<RoaringBitmap> {
+    pub(crate) fn bitmap_get(&self, key: &str) -> Result<RoaringBitmap> {
         {
             let cache = self
                 .bitmap_cache
@@ -343,7 +334,7 @@ impl Store {
         Ok(bitmap)
     }
 
-    pub fn bitmap_put(
+    pub(crate) fn bitmap_put(
         &self,
         tx: &redb::WriteTransaction,
         key: &str,
@@ -364,7 +355,7 @@ impl Store {
         Ok(())
     }
 
-    pub fn bitmap_add(
+    pub(crate) fn bitmap_add(
         &self,
         tx: &redb::WriteTransaction,
         field: &str,
@@ -377,7 +368,7 @@ impl Store {
         self.bitmap_put(tx, &key, &bitmap)
     }
 
-    pub fn bitmap_remove(
+    pub(crate) fn bitmap_remove(
         &self,
         tx: &redb::WriteTransaction,
         field: &str,
@@ -390,38 +381,38 @@ impl Store {
         self.bitmap_put(tx, &key, &bitmap)
     }
 
-    pub fn child_lookup(&self, parent: &str, chunk_index: u32) -> Result<Option<u32>> {
+    pub(crate) fn child_lookup(&self, parent: &str, chunk_index: u32) -> Result<Option<u32>> {
         let key = Self::child_key(parent, chunk_index);
         let tx = self.db.begin_read()?;
         let table = tx.open_table(T_CHILDREN)?;
         Ok(table.get(key.as_str())?.map(|g| g.value()))
     }
 
-    pub fn count(&self) -> Result<u64> {
+    pub(crate) fn count(&self) -> Result<u64> {
         let tx = self.db.begin_read()?;
         let table = tx.open_table(T_DATA)?;
         Ok(table.len()?)
     }
 
-    pub fn all_external_ids(&self) -> Result<Vec<String>> {
+    pub(crate) fn all_external_ids(&self) -> Result<Vec<String>> {
         let tx = self.db.begin_read()?;
         let table = tx.open_table(T_EXT2INT)?;
         let mut ids = Vec::new();
-        let mut iter = table.range::<&str>(..)?;
-        while let Some(entry) = iter.next() {
+        let iter = table.range::<&str>(..)?;
+        for entry in iter {
             let (k, _) = entry?;
             ids.push(k.value().to_owned());
         }
         Ok(ids)
     }
 
-    pub fn all_vectors(&self, dim: usize) -> Result<Vec<(String, u32, Vec<f32>)>> {
+    pub(crate) fn all_vectors(&self, dim: usize) -> Result<Vec<(String, u32, Vec<f32>)>> {
         let tx = self.db.begin_read()?;
         let ext = tx.open_table(T_EXT2INT)?;
         let vecs = tx.open_table(T_VECTORS)?;
         let mut out = Vec::new();
-        let mut iter = ext.range::<&str>(..)?;
-        while let Some(entry) = iter.next() {
+        let iter = ext.range::<&str>(..)?;
+        for entry in iter {
             let (k, v) = entry?;
             let external = k.value().to_owned();
             let internal = v.value();
@@ -444,7 +435,7 @@ impl Store {
         Ok(out)
     }
 
-    pub fn begin_write(&self) -> Result<redb::WriteTransaction> {
+    pub(crate) fn begin_write(&self) -> Result<redb::WriteTransaction> {
         Ok(self.db.begin_write()?)
     }
 }

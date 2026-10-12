@@ -7,9 +7,6 @@ import 'api/config.dart';
 import 'api/math.dart';
 import 'api/query.dart';
 import 'api/schema.dart';
-import 'api/store.dart';
-import 'api/text.dart';
-import 'api/vector.dart';
 import 'api/waffle_db.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -75,7 +72,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.13.0';
 
   @override
-  int get rustContentHash => 1903340354;
+  int get rustContentHash => -1695180646;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -87,138 +84,6 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
 }
 
 abstract class RustLibApi extends BaseApi {
-  Future<List<String>> crateApiStoreStoreAllExternalIds({required Store that});
-
-  Future<List<(String, int, Float32List)>> crateApiStoreStoreAllVectors(
-      {required Store that, required BigInt dim});
-
-  Future<int> crateApiStoreStoreAllocId(
-      {required Store that, required WriteTransaction tx});
-
-  Future<WriteTransaction> crateApiStoreStoreBeginWrite({required Store that});
-
-  Future<void> crateApiStoreStoreBitmapAdd(
-      {required Store that,
-      required WriteTransaction tx,
-      required String field,
-      required String value,
-      required int internal});
-
-  Future<RoaringBitmap> crateApiStoreStoreBitmapGet(
-      {required Store that, required String key});
-
-  Future<void> crateApiStoreStoreBitmapPut(
-      {required Store that,
-      required WriteTransaction tx,
-      required String key,
-      required RoaringBitmap bitmap});
-
-  Future<void> crateApiStoreStoreBitmapRemove(
-      {required Store that,
-      required WriteTransaction tx,
-      required String field,
-      required String value,
-      required int internal});
-
-  Future<String> crateApiStoreStoreChildKey(
-      {required String parent, required int chunkIndex});
-
-  Future<int?> crateApiStoreStoreChildLookup(
-      {required Store that, required String parent, required int chunkIndex});
-
-  Future<BigInt> crateApiStoreStoreCount({required Store that});
-
-  Future<int?> crateApiStoreStoreLookupInternal(
-      {required Store that, required String external_});
-
-  Future<BigInt> crateApiStoreStoreNextIdValue({required Store that});
-
-  Future<void> crateApiStoreStoreNumericPut(
-      {required Store that,
-      required WriteTransaction tx,
-      required List<int> key});
-
-  Future<void> crateApiStoreStoreNumericRemove(
-      {required Store that,
-      required WriteTransaction tx,
-      required List<int> key});
-
-  Future<Uint32List> crateApiStoreStoreNumericScanPrefix(
-      {required Store that, required List<int> prefix});
-
-  Future<Store> crateApiStoreStoreOpen(
-      {required Path path,
-      required WaffleSchema schema,
-      required int dimension});
-
-  Future<ChunkRecord?> crateApiStoreStoreReadChunk(
-      {required Store that, required int internal});
-
-  Future<Float32List?> crateApiStoreStoreReadVector(
-      {required Store that, required int internal, required BigInt dim});
-
-  Future<ChunkRecord?> crateApiStoreStoreRemoveRecord(
-      {required Store that,
-      required WriteTransaction tx,
-      required String external_,
-      required int internal});
-
-  Future<void> crateApiStoreStoreWriteRecord(
-      {required Store that,
-      required WriteTransaction tx,
-      required String external_,
-      required int internal,
-      required ChunkRecord record,
-      required List<double> vector});
-
-  Future<void> crateApiTextTextEngineAdd(
-      {required TextEngine that, required int internal, required String text});
-
-  Future<void> crateApiTextTextEngineCommit({required TextEngine that});
-
-  Future<void> crateApiTextTextEngineDelete(
-      {required TextEngine that, required int internal});
-
-  Future<TextEngine> crateApiTextTextEngineOpen(
-      {required Path dir, required WaffleLanguage language});
-
-  Future<List<(int, double)>> crateApiTextTextEngineSearch(
-      {required TextEngine that, required String text, required BigInt k});
-
-  Future<void> crateApiVectorVectorEngineAdd(
-      {required VectorEngine that,
-      required int internal,
-      required List<double> vector});
-
-  Future<bool> crateApiVectorVectorEngineContains(
-      {required VectorEngine that, required int internal});
-
-  Future<VectorEngine> crateApiVectorVectorEngineOpen(
-      {required Path dir,
-      required BigInt dimension,
-      required WaffleMetric metric,
-      required BigInt connectivity,
-      required BigInt expansionAdd,
-      required BigInt expansionSearch,
-      required BigInt capacity});
-
-  Future<void> crateApiVectorVectorEngineOverrideExpansionSearch(
-      {required VectorEngine that, required BigInt ef});
-
-  Future<bool> crateApiVectorVectorEngineRemove(
-      {required VectorEngine that, required int internal});
-
-  Future<void> crateApiVectorVectorEngineSave(
-      {required VectorEngine that, required Path dir});
-
-  Future<List<(int, double)>> crateApiVectorVectorEngineSearch(
-      {required VectorEngine that,
-      required List<double> query,
-      required BigInt k,
-      RoaringBitmap? allowed});
-
-  Future<BigInt> crateApiVectorVectorEngineSize({required VectorEngine that});
-
   Future<double> crateApiMathCosineSimilarity(
       {required List<double> a, required List<double> b});
 
@@ -285,52 +150,6 @@ abstract class RustLibApi extends BaseApi {
 
   List<WaffleHit> crateApiWaffleDbWaffleSearch(
       {required BigInt handle, required WaffleSearchRequest request});
-
-  RustArcIncrementStrongCountFnType get rust_arc_increment_strong_count_Path;
-
-  RustArcDecrementStrongCountFnType get rust_arc_decrement_strong_count_Path;
-
-  CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_PathPtr;
-
-  RustArcIncrementStrongCountFnType
-      get rust_arc_increment_strong_count_RoaringBitmap;
-
-  RustArcDecrementStrongCountFnType
-      get rust_arc_decrement_strong_count_RoaringBitmap;
-
-  CrossPlatformFinalizerArg
-      get rust_arc_decrement_strong_count_RoaringBitmapPtr;
-
-  RustArcIncrementStrongCountFnType get rust_arc_increment_strong_count_Store;
-
-  RustArcDecrementStrongCountFnType get rust_arc_decrement_strong_count_Store;
-
-  CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_StorePtr;
-
-  RustArcIncrementStrongCountFnType
-      get rust_arc_increment_strong_count_TextEngine;
-
-  RustArcDecrementStrongCountFnType
-      get rust_arc_decrement_strong_count_TextEngine;
-
-  CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_TextEnginePtr;
-
-  RustArcIncrementStrongCountFnType
-      get rust_arc_increment_strong_count_VectorEngine;
-
-  RustArcDecrementStrongCountFnType
-      get rust_arc_decrement_strong_count_VectorEngine;
-
-  CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_VectorEnginePtr;
-
-  RustArcIncrementStrongCountFnType
-      get rust_arc_increment_strong_count_WriteTransaction;
-
-  RustArcDecrementStrongCountFnType
-      get rust_arc_decrement_strong_count_WriteTransaction;
-
-  CrossPlatformFinalizerArg
-      get rust_arc_decrement_strong_count_WriteTransactionPtr;
 }
 
 class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
@@ -342,1038 +161,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   });
 
   @override
-  Future<List<String>> crateApiStoreStoreAllExternalIds({required Store that}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(
-            that, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 1, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_list_String,
-        decodeErrorData: sse_decode_AnyhowException,
-      ),
-      constMeta: kCrateApiStoreStoreAllExternalIdsConstMeta,
-      argValues: [that],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiStoreStoreAllExternalIdsConstMeta =>
-      const TaskConstMeta(
-        debugName: "Store_all_external_ids",
-        argNames: ["that"],
-      );
-
-  @override
-  Future<List<(String, int, Float32List)>> crateApiStoreStoreAllVectors(
-      {required Store that, required BigInt dim}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(
-            that, serializer);
-        sse_encode_usize(dim, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 2, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData:
-            sse_decode_list_record_string_u_32_list_prim_f_32_strict,
-        decodeErrorData: sse_decode_AnyhowException,
-      ),
-      constMeta: kCrateApiStoreStoreAllVectorsConstMeta,
-      argValues: [that, dim],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiStoreStoreAllVectorsConstMeta =>
-      const TaskConstMeta(
-        debugName: "Store_all_vectors",
-        argNames: ["that", "dim"],
-      );
-
-  @override
-  Future<int> crateApiStoreStoreAllocId(
-      {required Store that, required WriteTransaction tx}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(
-            that, serializer);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(
-            tx, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 3, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_u_32,
-        decodeErrorData: sse_decode_AnyhowException,
-      ),
-      constMeta: kCrateApiStoreStoreAllocIdConstMeta,
-      argValues: [that, tx],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiStoreStoreAllocIdConstMeta => const TaskConstMeta(
-        debugName: "Store_alloc_id",
-        argNames: ["that", "tx"],
-      );
-
-  @override
-  Future<WriteTransaction> crateApiStoreStoreBeginWrite({required Store that}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(
-            that, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 4, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData:
-            sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction,
-        decodeErrorData: sse_decode_AnyhowException,
-      ),
-      constMeta: kCrateApiStoreStoreBeginWriteConstMeta,
-      argValues: [that],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiStoreStoreBeginWriteConstMeta =>
-      const TaskConstMeta(
-        debugName: "Store_begin_write",
-        argNames: ["that"],
-      );
-
-  @override
-  Future<void> crateApiStoreStoreBitmapAdd(
-      {required Store that,
-      required WriteTransaction tx,
-      required String field,
-      required String value,
-      required int internal}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(
-            that, serializer);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(
-            tx, serializer);
-        sse_encode_String(field, serializer);
-        sse_encode_String(value, serializer);
-        sse_encode_u_32(internal, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 5, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_unit,
-        decodeErrorData: sse_decode_AnyhowException,
-      ),
-      constMeta: kCrateApiStoreStoreBitmapAddConstMeta,
-      argValues: [that, tx, field, value, internal],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiStoreStoreBitmapAddConstMeta =>
-      const TaskConstMeta(
-        debugName: "Store_bitmap_add",
-        argNames: ["that", "tx", "field", "value", "internal"],
-      );
-
-  @override
-  Future<RoaringBitmap> crateApiStoreStoreBitmapGet(
-      {required Store that, required String key}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(
-            that, serializer);
-        sse_encode_String(key, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 6, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData:
-            sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap,
-        decodeErrorData: sse_decode_AnyhowException,
-      ),
-      constMeta: kCrateApiStoreStoreBitmapGetConstMeta,
-      argValues: [that, key],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiStoreStoreBitmapGetConstMeta =>
-      const TaskConstMeta(
-        debugName: "Store_bitmap_get",
-        argNames: ["that", "key"],
-      );
-
-  @override
-  Future<void> crateApiStoreStoreBitmapPut(
-      {required Store that,
-      required WriteTransaction tx,
-      required String key,
-      required RoaringBitmap bitmap}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(
-            that, serializer);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(
-            tx, serializer);
-        sse_encode_String(key, serializer);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(
-            bitmap, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 7, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_unit,
-        decodeErrorData: sse_decode_AnyhowException,
-      ),
-      constMeta: kCrateApiStoreStoreBitmapPutConstMeta,
-      argValues: [that, tx, key, bitmap],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiStoreStoreBitmapPutConstMeta =>
-      const TaskConstMeta(
-        debugName: "Store_bitmap_put",
-        argNames: ["that", "tx", "key", "bitmap"],
-      );
-
-  @override
-  Future<void> crateApiStoreStoreBitmapRemove(
-      {required Store that,
-      required WriteTransaction tx,
-      required String field,
-      required String value,
-      required int internal}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(
-            that, serializer);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(
-            tx, serializer);
-        sse_encode_String(field, serializer);
-        sse_encode_String(value, serializer);
-        sse_encode_u_32(internal, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 8, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_unit,
-        decodeErrorData: sse_decode_AnyhowException,
-      ),
-      constMeta: kCrateApiStoreStoreBitmapRemoveConstMeta,
-      argValues: [that, tx, field, value, internal],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiStoreStoreBitmapRemoveConstMeta =>
-      const TaskConstMeta(
-        debugName: "Store_bitmap_remove",
-        argNames: ["that", "tx", "field", "value", "internal"],
-      );
-
-  @override
-  Future<String> crateApiStoreStoreChildKey(
-      {required String parent, required int chunkIndex}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_String(parent, serializer);
-        sse_encode_u_32(chunkIndex, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 9, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_String,
-        decodeErrorData: null,
-      ),
-      constMeta: kCrateApiStoreStoreChildKeyConstMeta,
-      argValues: [parent, chunkIndex],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiStoreStoreChildKeyConstMeta => const TaskConstMeta(
-        debugName: "Store_child_key",
-        argNames: ["parent", "chunkIndex"],
-      );
-
-  @override
-  Future<int?> crateApiStoreStoreChildLookup(
-      {required Store that, required String parent, required int chunkIndex}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(
-            that, serializer);
-        sse_encode_String(parent, serializer);
-        sse_encode_u_32(chunkIndex, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 10, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_opt_box_autoadd_u_32,
-        decodeErrorData: sse_decode_AnyhowException,
-      ),
-      constMeta: kCrateApiStoreStoreChildLookupConstMeta,
-      argValues: [that, parent, chunkIndex],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiStoreStoreChildLookupConstMeta =>
-      const TaskConstMeta(
-        debugName: "Store_child_lookup",
-        argNames: ["that", "parent", "chunkIndex"],
-      );
-
-  @override
-  Future<BigInt> crateApiStoreStoreCount({required Store that}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(
-            that, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 11, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_u_64,
-        decodeErrorData: sse_decode_AnyhowException,
-      ),
-      constMeta: kCrateApiStoreStoreCountConstMeta,
-      argValues: [that],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiStoreStoreCountConstMeta => const TaskConstMeta(
-        debugName: "Store_count",
-        argNames: ["that"],
-      );
-
-  @override
-  Future<int?> crateApiStoreStoreLookupInternal(
-      {required Store that, required String external_}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(
-            that, serializer);
-        sse_encode_String(external_, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 12, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_opt_box_autoadd_u_32,
-        decodeErrorData: sse_decode_AnyhowException,
-      ),
-      constMeta: kCrateApiStoreStoreLookupInternalConstMeta,
-      argValues: [that, external_],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiStoreStoreLookupInternalConstMeta =>
-      const TaskConstMeta(
-        debugName: "Store_lookup_internal",
-        argNames: ["that", "external_"],
-      );
-
-  @override
-  Future<BigInt> crateApiStoreStoreNextIdValue({required Store that}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(
-            that, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 13, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_u_64,
-        decodeErrorData: sse_decode_AnyhowException,
-      ),
-      constMeta: kCrateApiStoreStoreNextIdValueConstMeta,
-      argValues: [that],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiStoreStoreNextIdValueConstMeta =>
-      const TaskConstMeta(
-        debugName: "Store_next_id_value",
-        argNames: ["that"],
-      );
-
-  @override
-  Future<void> crateApiStoreStoreNumericPut(
-      {required Store that,
-      required WriteTransaction tx,
-      required List<int> key}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(
-            that, serializer);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(
-            tx, serializer);
-        sse_encode_list_prim_u_8_loose(key, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 14, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_unit,
-        decodeErrorData: sse_decode_AnyhowException,
-      ),
-      constMeta: kCrateApiStoreStoreNumericPutConstMeta,
-      argValues: [that, tx, key],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiStoreStoreNumericPutConstMeta =>
-      const TaskConstMeta(
-        debugName: "Store_numeric_put",
-        argNames: ["that", "tx", "key"],
-      );
-
-  @override
-  Future<void> crateApiStoreStoreNumericRemove(
-      {required Store that,
-      required WriteTransaction tx,
-      required List<int> key}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(
-            that, serializer);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(
-            tx, serializer);
-        sse_encode_list_prim_u_8_loose(key, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 15, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_unit,
-        decodeErrorData: sse_decode_AnyhowException,
-      ),
-      constMeta: kCrateApiStoreStoreNumericRemoveConstMeta,
-      argValues: [that, tx, key],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiStoreStoreNumericRemoveConstMeta =>
-      const TaskConstMeta(
-        debugName: "Store_numeric_remove",
-        argNames: ["that", "tx", "key"],
-      );
-
-  @override
-  Future<Uint32List> crateApiStoreStoreNumericScanPrefix(
-      {required Store that, required List<int> prefix}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(
-            that, serializer);
-        sse_encode_list_prim_u_8_loose(prefix, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 16, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_list_prim_u_32_strict,
-        decodeErrorData: sse_decode_AnyhowException,
-      ),
-      constMeta: kCrateApiStoreStoreNumericScanPrefixConstMeta,
-      argValues: [that, prefix],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiStoreStoreNumericScanPrefixConstMeta =>
-      const TaskConstMeta(
-        debugName: "Store_numeric_scan_prefix",
-        argNames: ["that", "prefix"],
-      );
-
-  @override
-  Future<Store> crateApiStoreStoreOpen(
-      {required Path path,
-      required WaffleSchema schema,
-      required int dimension}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPath(
-            path, serializer);
-        sse_encode_box_autoadd_waffle_schema(schema, serializer);
-        sse_encode_u_32(dimension, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 17, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData:
-            sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore,
-        decodeErrorData: sse_decode_AnyhowException,
-      ),
-      constMeta: kCrateApiStoreStoreOpenConstMeta,
-      argValues: [path, schema, dimension],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiStoreStoreOpenConstMeta => const TaskConstMeta(
-        debugName: "Store_open",
-        argNames: ["path", "schema", "dimension"],
-      );
-
-  @override
-  Future<ChunkRecord?> crateApiStoreStoreReadChunk(
-      {required Store that, required int internal}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(
-            that, serializer);
-        sse_encode_u_32(internal, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 18, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_opt_box_autoadd_chunk_record,
-        decodeErrorData: sse_decode_AnyhowException,
-      ),
-      constMeta: kCrateApiStoreStoreReadChunkConstMeta,
-      argValues: [that, internal],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiStoreStoreReadChunkConstMeta =>
-      const TaskConstMeta(
-        debugName: "Store_read_chunk",
-        argNames: ["that", "internal"],
-      );
-
-  @override
-  Future<Float32List?> crateApiStoreStoreReadVector(
-      {required Store that, required int internal, required BigInt dim}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(
-            that, serializer);
-        sse_encode_u_32(internal, serializer);
-        sse_encode_usize(dim, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 19, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_opt_list_prim_f_32_strict,
-        decodeErrorData: sse_decode_AnyhowException,
-      ),
-      constMeta: kCrateApiStoreStoreReadVectorConstMeta,
-      argValues: [that, internal, dim],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiStoreStoreReadVectorConstMeta =>
-      const TaskConstMeta(
-        debugName: "Store_read_vector",
-        argNames: ["that", "internal", "dim"],
-      );
-
-  @override
-  Future<ChunkRecord?> crateApiStoreStoreRemoveRecord(
-      {required Store that,
-      required WriteTransaction tx,
-      required String external_,
-      required int internal}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(
-            that, serializer);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(
-            tx, serializer);
-        sse_encode_String(external_, serializer);
-        sse_encode_u_32(internal, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 20, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_opt_box_autoadd_chunk_record,
-        decodeErrorData: sse_decode_AnyhowException,
-      ),
-      constMeta: kCrateApiStoreStoreRemoveRecordConstMeta,
-      argValues: [that, tx, external_, internal],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiStoreStoreRemoveRecordConstMeta =>
-      const TaskConstMeta(
-        debugName: "Store_remove_record",
-        argNames: ["that", "tx", "external_", "internal"],
-      );
-
-  @override
-  Future<void> crateApiStoreStoreWriteRecord(
-      {required Store that,
-      required WriteTransaction tx,
-      required String external_,
-      required int internal,
-      required ChunkRecord record,
-      required List<double> vector}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(
-            that, serializer);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(
-            tx, serializer);
-        sse_encode_String(external_, serializer);
-        sse_encode_u_32(internal, serializer);
-        sse_encode_box_autoadd_chunk_record(record, serializer);
-        sse_encode_list_prim_f_32_loose(vector, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 21, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_unit,
-        decodeErrorData: sse_decode_AnyhowException,
-      ),
-      constMeta: kCrateApiStoreStoreWriteRecordConstMeta,
-      argValues: [that, tx, external_, internal, record, vector],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiStoreStoreWriteRecordConstMeta =>
-      const TaskConstMeta(
-        debugName: "Store_write_record",
-        argNames: ["that", "tx", "external_", "internal", "record", "vector"],
-      );
-
-  @override
-  Future<void> crateApiTextTextEngineAdd(
-      {required TextEngine that, required int internal, required String text}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(
-            that, serializer);
-        sse_encode_u_32(internal, serializer);
-        sse_encode_String(text, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 22, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_unit,
-        decodeErrorData: sse_decode_AnyhowException,
-      ),
-      constMeta: kCrateApiTextTextEngineAddConstMeta,
-      argValues: [that, internal, text],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiTextTextEngineAddConstMeta => const TaskConstMeta(
-        debugName: "TextEngine_add",
-        argNames: ["that", "internal", "text"],
-      );
-
-  @override
-  Future<void> crateApiTextTextEngineCommit({required TextEngine that}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(
-            that, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 23, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_unit,
-        decodeErrorData: sse_decode_AnyhowException,
-      ),
-      constMeta: kCrateApiTextTextEngineCommitConstMeta,
-      argValues: [that],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiTextTextEngineCommitConstMeta =>
-      const TaskConstMeta(
-        debugName: "TextEngine_commit",
-        argNames: ["that"],
-      );
-
-  @override
-  Future<void> crateApiTextTextEngineDelete(
-      {required TextEngine that, required int internal}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(
-            that, serializer);
-        sse_encode_u_32(internal, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 24, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_unit,
-        decodeErrorData: sse_decode_AnyhowException,
-      ),
-      constMeta: kCrateApiTextTextEngineDeleteConstMeta,
-      argValues: [that, internal],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiTextTextEngineDeleteConstMeta =>
-      const TaskConstMeta(
-        debugName: "TextEngine_delete",
-        argNames: ["that", "internal"],
-      );
-
-  @override
-  Future<TextEngine> crateApiTextTextEngineOpen(
-      {required Path dir, required WaffleLanguage language}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPath(
-            dir, serializer);
-        sse_encode_waffle_language(language, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 25, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData:
-            sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine,
-        decodeErrorData: sse_decode_AnyhowException,
-      ),
-      constMeta: kCrateApiTextTextEngineOpenConstMeta,
-      argValues: [dir, language],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiTextTextEngineOpenConstMeta => const TaskConstMeta(
-        debugName: "TextEngine_open",
-        argNames: ["dir", "language"],
-      );
-
-  @override
-  Future<List<(int, double)>> crateApiTextTextEngineSearch(
-      {required TextEngine that, required String text, required BigInt k}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(
-            that, serializer);
-        sse_encode_String(text, serializer);
-        sse_encode_usize(k, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 26, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_list_record_u_32_f_32,
-        decodeErrorData: sse_decode_AnyhowException,
-      ),
-      constMeta: kCrateApiTextTextEngineSearchConstMeta,
-      argValues: [that, text, k],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiTextTextEngineSearchConstMeta =>
-      const TaskConstMeta(
-        debugName: "TextEngine_search",
-        argNames: ["that", "text", "k"],
-      );
-
-  @override
-  Future<void> crateApiVectorVectorEngineAdd(
-      {required VectorEngine that,
-      required int internal,
-      required List<double> vector}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(
-            that, serializer);
-        sse_encode_u_32(internal, serializer);
-        sse_encode_list_prim_f_32_loose(vector, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 27, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_unit,
-        decodeErrorData: sse_decode_AnyhowException,
-      ),
-      constMeta: kCrateApiVectorVectorEngineAddConstMeta,
-      argValues: [that, internal, vector],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiVectorVectorEngineAddConstMeta =>
-      const TaskConstMeta(
-        debugName: "VectorEngine_add",
-        argNames: ["that", "internal", "vector"],
-      );
-
-  @override
-  Future<bool> crateApiVectorVectorEngineContains(
-      {required VectorEngine that, required int internal}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(
-            that, serializer);
-        sse_encode_u_32(internal, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 28, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_bool,
-        decodeErrorData: null,
-      ),
-      constMeta: kCrateApiVectorVectorEngineContainsConstMeta,
-      argValues: [that, internal],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiVectorVectorEngineContainsConstMeta =>
-      const TaskConstMeta(
-        debugName: "VectorEngine_contains",
-        argNames: ["that", "internal"],
-      );
-
-  @override
-  Future<VectorEngine> crateApiVectorVectorEngineOpen(
-      {required Path dir,
-      required BigInt dimension,
-      required WaffleMetric metric,
-      required BigInt connectivity,
-      required BigInt expansionAdd,
-      required BigInt expansionSearch,
-      required BigInt capacity}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPath(
-            dir, serializer);
-        sse_encode_usize(dimension, serializer);
-        sse_encode_waffle_metric(metric, serializer);
-        sse_encode_usize(connectivity, serializer);
-        sse_encode_usize(expansionAdd, serializer);
-        sse_encode_usize(expansionSearch, serializer);
-        sse_encode_usize(capacity, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 29, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData:
-            sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine,
-        decodeErrorData: sse_decode_AnyhowException,
-      ),
-      constMeta: kCrateApiVectorVectorEngineOpenConstMeta,
-      argValues: [
-        dir,
-        dimension,
-        metric,
-        connectivity,
-        expansionAdd,
-        expansionSearch,
-        capacity
-      ],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiVectorVectorEngineOpenConstMeta =>
-      const TaskConstMeta(
-        debugName: "VectorEngine_open",
-        argNames: [
-          "dir",
-          "dimension",
-          "metric",
-          "connectivity",
-          "expansionAdd",
-          "expansionSearch",
-          "capacity"
-        ],
-      );
-
-  @override
-  Future<void> crateApiVectorVectorEngineOverrideExpansionSearch(
-      {required VectorEngine that, required BigInt ef}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(
-            that, serializer);
-        sse_encode_usize(ef, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 30, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_unit,
-        decodeErrorData: null,
-      ),
-      constMeta: kCrateApiVectorVectorEngineOverrideExpansionSearchConstMeta,
-      argValues: [that, ef],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta
-      get kCrateApiVectorVectorEngineOverrideExpansionSearchConstMeta =>
-          const TaskConstMeta(
-            debugName: "VectorEngine_override_expansion_search",
-            argNames: ["that", "ef"],
-          );
-
-  @override
-  Future<bool> crateApiVectorVectorEngineRemove(
-      {required VectorEngine that, required int internal}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(
-            that, serializer);
-        sse_encode_u_32(internal, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 31, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_bool,
-        decodeErrorData: sse_decode_AnyhowException,
-      ),
-      constMeta: kCrateApiVectorVectorEngineRemoveConstMeta,
-      argValues: [that, internal],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiVectorVectorEngineRemoveConstMeta =>
-      const TaskConstMeta(
-        debugName: "VectorEngine_remove",
-        argNames: ["that", "internal"],
-      );
-
-  @override
-  Future<void> crateApiVectorVectorEngineSave(
-      {required VectorEngine that, required Path dir}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(
-            that, serializer);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPath(
-            dir, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 32, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_unit,
-        decodeErrorData: sse_decode_AnyhowException,
-      ),
-      constMeta: kCrateApiVectorVectorEngineSaveConstMeta,
-      argValues: [that, dir],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiVectorVectorEngineSaveConstMeta =>
-      const TaskConstMeta(
-        debugName: "VectorEngine_save",
-        argNames: ["that", "dir"],
-      );
-
-  @override
-  Future<List<(int, double)>> crateApiVectorVectorEngineSearch(
-      {required VectorEngine that,
-      required List<double> query,
-      required BigInt k,
-      RoaringBitmap? allowed}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(
-            that, serializer);
-        sse_encode_list_prim_f_32_loose(query, serializer);
-        sse_encode_usize(k, serializer);
-        sse_encode_opt_box_autoadd_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(
-            allowed, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 33, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_list_record_u_32_f_32,
-        decodeErrorData: sse_decode_AnyhowException,
-      ),
-      constMeta: kCrateApiVectorVectorEngineSearchConstMeta,
-      argValues: [that, query, k, allowed],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiVectorVectorEngineSearchConstMeta =>
-      const TaskConstMeta(
-        debugName: "VectorEngine_search",
-        argNames: ["that", "query", "k", "allowed"],
-      );
-
-  @override
-  Future<BigInt> crateApiVectorVectorEngineSize({required VectorEngine that}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(
-            that, serializer);
-        pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 34, port: port_);
-      },
-      codec: SseCodec(
-        decodeSuccessData: sse_decode_usize,
-        decodeErrorData: null,
-      ),
-      constMeta: kCrateApiVectorVectorEngineSizeConstMeta,
-      argValues: [that],
-      apiImpl: this,
-    ));
-  }
-
-  TaskConstMeta get kCrateApiVectorVectorEngineSizeConstMeta =>
-      const TaskConstMeta(
-        debugName: "VectorEngine_size",
-        argNames: ["that"],
-      );
-
-  @override
   Future<double> crateApiMathCosineSimilarity(
       {required List<double> a, required List<double> b}) {
     return handler.executeNormal(NormalTask(
@@ -1382,7 +169,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_list_prim_f_32_loose(a, serializer);
         sse_encode_list_prim_f_32_loose(b, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 35, port: port_);
+            funcId: 1, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_f_32,
@@ -1407,7 +194,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_u_64(handle, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 36, port: port_);
+            funcId: 2, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_unit,
@@ -1431,7 +218,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       callFfi: (port_) {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 37, port: port_);
+            funcId: 3, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_waffle_config,
@@ -1458,7 +245,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_String(path, serializer);
         sse_encode_u_32(dimension, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 38, port: port_);
+            funcId: 4, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_waffle_config,
@@ -1485,7 +272,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_String(path, serializer);
         sse_encode_u_32(dimension, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 39, port: port_);
+            funcId: 5, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_waffle_config,
@@ -1512,7 +299,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_String(path, serializer);
         sse_encode_u_32(dimension, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 40, port: port_);
+            funcId: 6, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_waffle_config,
@@ -1539,7 +326,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_String(path, serializer);
         sse_encode_u_32(dimension, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 41, port: port_);
+            funcId: 7, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_waffle_config,
@@ -1566,7 +353,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_String(path, serializer);
         sse_encode_u_32(dimension, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 42, port: port_);
+            funcId: 8, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_waffle_config,
@@ -1590,7 +377,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       callFfi: () {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_u_64(handle, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 43)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 9)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_u_64,
@@ -1617,7 +404,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_u_64(handle, serializer);
         sse_encode_String(id, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 44, port: port_);
+            funcId: 10, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_bool,
@@ -1642,7 +429,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_u_64(handle, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 45, port: port_);
+            funcId: 11, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_unit,
@@ -1666,7 +453,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       callFfi: () {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_u_64(handle, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 46)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 12)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_list_String,
@@ -1692,7 +479,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_u_64(handle, serializer);
         sse_encode_String(id, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 47)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 13)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_opt_list_prim_u_8_strict,
@@ -1719,7 +506,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_u_64(handle, serializer);
         sse_encode_String(id, serializer);
         sse_encode_u_32(window, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 48)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 14)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_list_waffle_hit,
@@ -1745,7 +532,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_u_64(handle, serializer);
         sse_encode_String(id, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 49)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 15)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_opt_box_autoadd_waffle_hit,
@@ -1771,7 +558,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_u_64(handle, serializer);
         sse_encode_String(id, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 50)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 16)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_opt_list_prim_f_32_strict,
@@ -1809,7 +596,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_opt_String(parentId, serializer);
         sse_encode_u_32(chunkIndex, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 51, port: port_);
+            funcId: 17, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_unit,
@@ -1855,7 +642,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_list_String(parentIds, serializer);
         sse_encode_list_prim_u_32_loose(chunkIndices, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 52, port: port_);
+            funcId: 18, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_unit,
@@ -1898,7 +685,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_box_autoadd_waffle_config(config, serializer);
         sse_encode_box_autoadd_waffle_schema(schema, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 53, port: port_);
+            funcId: 19, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_u_64,
@@ -1923,7 +710,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_u_64(handle, serializer);
         sse_encode_box_autoadd_waffle_search_request(request, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 54)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 20)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_list_waffle_hit,
@@ -1941,192 +728,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         argNames: ["handle", "request"],
       );
 
-  RustArcIncrementStrongCountFnType get rust_arc_increment_strong_count_Path =>
-      wire.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPath;
-
-  RustArcDecrementStrongCountFnType get rust_arc_decrement_strong_count_Path =>
-      wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPath;
-
-  RustArcIncrementStrongCountFnType
-      get rust_arc_increment_strong_count_RoaringBitmap => wire
-          .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap;
-
-  RustArcDecrementStrongCountFnType
-      get rust_arc_decrement_strong_count_RoaringBitmap => wire
-          .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap;
-
-  RustArcIncrementStrongCountFnType get rust_arc_increment_strong_count_Store =>
-      wire.rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore;
-
-  RustArcDecrementStrongCountFnType get rust_arc_decrement_strong_count_Store =>
-      wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore;
-
-  RustArcIncrementStrongCountFnType
-      get rust_arc_increment_strong_count_TextEngine => wire
-          .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine;
-
-  RustArcDecrementStrongCountFnType
-      get rust_arc_decrement_strong_count_TextEngine => wire
-          .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine;
-
-  RustArcIncrementStrongCountFnType
-      get rust_arc_increment_strong_count_VectorEngine => wire
-          .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine;
-
-  RustArcDecrementStrongCountFnType
-      get rust_arc_decrement_strong_count_VectorEngine => wire
-          .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine;
-
-  RustArcIncrementStrongCountFnType
-      get rust_arc_increment_strong_count_WriteTransaction => wire
-          .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction;
-
-  RustArcDecrementStrongCountFnType
-      get rust_arc_decrement_strong_count_WriteTransaction => wire
-          .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction;
-
-  @protected
-  AnyhowException dco_decode_AnyhowException(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return AnyhowException(raw as String);
-  }
-
-  @protected
-  RoaringBitmap
-      dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(
-          dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return RoaringBitmapImpl.frbInternalDcoDecode(raw as List<dynamic>);
-  }
-
-  @protected
-  Store
-      dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(
-          dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return StoreImpl.frbInternalDcoDecode(raw as List<dynamic>);
-  }
-
-  @protected
-  TextEngine
-      dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(
-          dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return TextEngineImpl.frbInternalDcoDecode(raw as List<dynamic>);
-  }
-
-  @protected
-  VectorEngine
-      dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(
-          dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return VectorEngineImpl.frbInternalDcoDecode(raw as List<dynamic>);
-  }
-
-  @protected
-  WriteTransaction
-      dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(
-          dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return WriteTransactionImpl.frbInternalDcoDecode(raw as List<dynamic>);
-  }
-
-  @protected
-  Path
-      dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPath(
-          dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return PathImpl.frbInternalDcoDecode(raw as List<dynamic>);
-  }
-
-  @protected
-  RoaringBitmap
-      dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(
-          dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return RoaringBitmapImpl.frbInternalDcoDecode(raw as List<dynamic>);
-  }
-
-  @protected
-  Store
-      dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(
-          dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return StoreImpl.frbInternalDcoDecode(raw as List<dynamic>);
-  }
-
-  @protected
-  TextEngine
-      dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(
-          dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return TextEngineImpl.frbInternalDcoDecode(raw as List<dynamic>);
-  }
-
-  @protected
-  VectorEngine
-      dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(
-          dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return VectorEngineImpl.frbInternalDcoDecode(raw as List<dynamic>);
-  }
-
-  @protected
-  WriteTransaction
-      dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(
-          dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return WriteTransactionImpl.frbInternalDcoDecode(raw as List<dynamic>);
-  }
-
-  @protected
-  Path
-      dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPath(
-          dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return PathImpl.frbInternalDcoDecode(raw as List<dynamic>);
-  }
-
-  @protected
-  RoaringBitmap
-      dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(
-          dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return RoaringBitmapImpl.frbInternalDcoDecode(raw as List<dynamic>);
-  }
-
-  @protected
-  Store
-      dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(
-          dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return StoreImpl.frbInternalDcoDecode(raw as List<dynamic>);
-  }
-
-  @protected
-  TextEngine
-      dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(
-          dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return TextEngineImpl.frbInternalDcoDecode(raw as List<dynamic>);
-  }
-
-  @protected
-  VectorEngine
-      dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(
-          dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return VectorEngineImpl.frbInternalDcoDecode(raw as List<dynamic>);
-  }
-
-  @protected
-  WriteTransaction
-      dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(
-          dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return WriteTransactionImpl.frbInternalDcoDecode(raw as List<dynamic>);
-  }
-
   @protected
   String dco_decode_String(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
@@ -2137,21 +738,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   bool dco_decode_bool(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as bool;
-  }
-
-  @protected
-  RoaringBitmap
-      dco_decode_box_autoadd_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(
-          dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return dco_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(
-        raw);
-  }
-
-  @protected
-  ChunkRecord dco_decode_box_autoadd_chunk_record(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return dco_decode_chunk_record(raw);
   }
 
   @protected
@@ -2189,21 +775,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_waffle_search_request(raw);
-  }
-
-  @protected
-  ChunkRecord dco_decode_chunk_record(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    final arr = raw as List<dynamic>;
-    if (arr.length != 5)
-      throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
-    return ChunkRecord(
-      externalId: dco_decode_String(arr[0]),
-      parentId: dco_decode_opt_String(arr[1]),
-      chunkIndex: dco_decode_u_32(arr[2]),
-      text: dco_decode_String(arr[3]),
-      payloadJson: dco_decode_String(arr[4]),
-    );
   }
 
   @protected
@@ -2249,30 +820,9 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  List<int> dco_decode_list_prim_u_8_loose(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return raw as List<int>;
-  }
-
-  @protected
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as Uint8List;
-  }
-
-  @protected
-  List<(String, int, Float32List)>
-      dco_decode_list_record_string_u_32_list_prim_f_32_strict(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return (raw as List<dynamic>)
-        .map(dco_decode_record_string_u_32_list_prim_f_32_strict)
-        .toList();
-  }
-
-  @protected
-  List<(int, double)> dco_decode_list_record_u_32_f_32(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return (raw as List<dynamic>).map(dco_decode_record_u_32_f_32).toList();
   }
 
   @protected
@@ -2291,23 +841,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   String? dco_decode_opt_String(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw == null ? null : dco_decode_String(raw);
-  }
-
-  @protected
-  RoaringBitmap?
-      dco_decode_opt_box_autoadd_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(
-          dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return raw == null
-        ? null
-        : dco_decode_box_autoadd_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(
-            raw);
-  }
-
-  @protected
-  ChunkRecord? dco_decode_opt_box_autoadd_chunk_record(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return raw == null ? null : dco_decode_box_autoadd_chunk_record(raw);
   }
 
   @protected
@@ -2341,34 +874,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  (String, int, Float32List)
-      dco_decode_record_string_u_32_list_prim_f_32_strict(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    final arr = raw as List<dynamic>;
-    if (arr.length != 3) {
-      throw Exception('Expected 3 elements, got ${arr.length}');
-    }
-    return (
-      dco_decode_String(arr[0]),
-      dco_decode_u_32(arr[1]),
-      dco_decode_list_prim_f_32_strict(arr[2]),
-    );
-  }
-
-  @protected
-  (int, double) dco_decode_record_u_32_f_32(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    final arr = raw as List<dynamic>;
-    if (arr.length != 2) {
-      throw Exception('Expected 2 elements, got ${arr.length}');
-    }
-    return (
-      dco_decode_u_32(arr[0]),
-      dco_decode_f_32(arr[1]),
-    );
-  }
-
-  @protected
   int dco_decode_u_32(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as int;
@@ -2390,12 +895,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   void dco_decode_unit(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return;
-  }
-
-  @protected
-  BigInt dco_decode_usize(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return dcoDecodeU64(raw);
   }
 
   @protected
@@ -2505,166 +1004,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  AnyhowException sse_decode_AnyhowException(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    var inner = sse_decode_String(deserializer);
-    return AnyhowException(inner);
-  }
-
-  @protected
-  RoaringBitmap
-      sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(
-          SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return RoaringBitmapImpl.frbInternalSseDecode(
-        sse_decode_usize(deserializer), sse_decode_i_32(deserializer));
-  }
-
-  @protected
-  Store
-      sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(
-          SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return StoreImpl.frbInternalSseDecode(
-        sse_decode_usize(deserializer), sse_decode_i_32(deserializer));
-  }
-
-  @protected
-  TextEngine
-      sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(
-          SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return TextEngineImpl.frbInternalSseDecode(
-        sse_decode_usize(deserializer), sse_decode_i_32(deserializer));
-  }
-
-  @protected
-  VectorEngine
-      sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(
-          SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return VectorEngineImpl.frbInternalSseDecode(
-        sse_decode_usize(deserializer), sse_decode_i_32(deserializer));
-  }
-
-  @protected
-  WriteTransaction
-      sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(
-          SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return WriteTransactionImpl.frbInternalSseDecode(
-        sse_decode_usize(deserializer), sse_decode_i_32(deserializer));
-  }
-
-  @protected
-  Path
-      sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPath(
-          SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return PathImpl.frbInternalSseDecode(
-        sse_decode_usize(deserializer), sse_decode_i_32(deserializer));
-  }
-
-  @protected
-  RoaringBitmap
-      sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(
-          SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return RoaringBitmapImpl.frbInternalSseDecode(
-        sse_decode_usize(deserializer), sse_decode_i_32(deserializer));
-  }
-
-  @protected
-  Store
-      sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(
-          SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return StoreImpl.frbInternalSseDecode(
-        sse_decode_usize(deserializer), sse_decode_i_32(deserializer));
-  }
-
-  @protected
-  TextEngine
-      sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(
-          SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return TextEngineImpl.frbInternalSseDecode(
-        sse_decode_usize(deserializer), sse_decode_i_32(deserializer));
-  }
-
-  @protected
-  VectorEngine
-      sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(
-          SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return VectorEngineImpl.frbInternalSseDecode(
-        sse_decode_usize(deserializer), sse_decode_i_32(deserializer));
-  }
-
-  @protected
-  WriteTransaction
-      sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(
-          SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return WriteTransactionImpl.frbInternalSseDecode(
-        sse_decode_usize(deserializer), sse_decode_i_32(deserializer));
-  }
-
-  @protected
-  Path
-      sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPath(
-          SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return PathImpl.frbInternalSseDecode(
-        sse_decode_usize(deserializer), sse_decode_i_32(deserializer));
-  }
-
-  @protected
-  RoaringBitmap
-      sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(
-          SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return RoaringBitmapImpl.frbInternalSseDecode(
-        sse_decode_usize(deserializer), sse_decode_i_32(deserializer));
-  }
-
-  @protected
-  Store
-      sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(
-          SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return StoreImpl.frbInternalSseDecode(
-        sse_decode_usize(deserializer), sse_decode_i_32(deserializer));
-  }
-
-  @protected
-  TextEngine
-      sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(
-          SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return TextEngineImpl.frbInternalSseDecode(
-        sse_decode_usize(deserializer), sse_decode_i_32(deserializer));
-  }
-
-  @protected
-  VectorEngine
-      sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(
-          SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return VectorEngineImpl.frbInternalSseDecode(
-        sse_decode_usize(deserializer), sse_decode_i_32(deserializer));
-  }
-
-  @protected
-  WriteTransaction
-      sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(
-          SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return WriteTransactionImpl.frbInternalSseDecode(
-        sse_decode_usize(deserializer), sse_decode_i_32(deserializer));
-  }
-
-  @protected
   String sse_decode_String(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var inner = sse_decode_list_prim_u_8_strict(deserializer);
@@ -2675,22 +1014,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   bool sse_decode_bool(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return deserializer.buffer.getUint8() != 0;
-  }
-
-  @protected
-  RoaringBitmap
-      sse_decode_box_autoadd_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(
-          SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return (sse_decode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(
-        deserializer));
-  }
-
-  @protected
-  ChunkRecord sse_decode_box_autoadd_chunk_record(
-      SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return (sse_decode_chunk_record(deserializer));
   }
 
   @protected
@@ -2730,22 +1053,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_waffle_search_request(deserializer));
-  }
-
-  @protected
-  ChunkRecord sse_decode_chunk_record(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    var var_externalId = sse_decode_String(deserializer);
-    var var_parentId = sse_decode_opt_String(deserializer);
-    var var_chunkIndex = sse_decode_u_32(deserializer);
-    var var_text = sse_decode_String(deserializer);
-    var var_payloadJson = sse_decode_String(deserializer);
-    return ChunkRecord(
-        externalId: var_externalId,
-        parentId: var_parentId,
-        chunkIndex: var_chunkIndex,
-        text: var_text,
-        payloadJson: var_payloadJson);
   }
 
   @protected
@@ -2801,45 +1108,10 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  List<int> sse_decode_list_prim_u_8_loose(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    var len_ = sse_decode_i_32(deserializer);
-    return deserializer.buffer.getUint8List(len_);
-  }
-
-  @protected
   Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var len_ = sse_decode_i_32(deserializer);
     return deserializer.buffer.getUint8List(len_);
-  }
-
-  @protected
-  List<(String, int, Float32List)>
-      sse_decode_list_record_string_u_32_list_prim_f_32_strict(
-          SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-
-    var len_ = sse_decode_i_32(deserializer);
-    var ans_ = <(String, int, Float32List)>[];
-    for (var idx_ = 0; idx_ < len_; ++idx_) {
-      ans_.add(
-          sse_decode_record_string_u_32_list_prim_f_32_strict(deserializer));
-    }
-    return ans_;
-  }
-
-  @protected
-  List<(int, double)> sse_decode_list_record_u_32_f_32(
-      SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-
-    var len_ = sse_decode_i_32(deserializer);
-    var ans_ = <(int, double)>[];
-    for (var idx_ = 0; idx_ < len_; ++idx_) {
-      ans_.add(sse_decode_record_u_32_f_32(deserializer));
-    }
-    return ans_;
   }
 
   @protected
@@ -2872,32 +1144,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
     if (sse_decode_bool(deserializer)) {
       return (sse_decode_String(deserializer));
-    } else {
-      return null;
-    }
-  }
-
-  @protected
-  RoaringBitmap?
-      sse_decode_opt_box_autoadd_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(
-          SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-
-    if (sse_decode_bool(deserializer)) {
-      return (sse_decode_box_autoadd_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(
-          deserializer));
-    } else {
-      return null;
-    }
-  }
-
-  @protected
-  ChunkRecord? sse_decode_opt_box_autoadd_chunk_record(
-      SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-
-    if (sse_decode_bool(deserializer)) {
-      return (sse_decode_box_autoadd_chunk_record(deserializer));
     } else {
       return null;
     }
@@ -2961,25 +1207,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  (String, int, Float32List)
-      sse_decode_record_string_u_32_list_prim_f_32_strict(
-          SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    var var_field0 = sse_decode_String(deserializer);
-    var var_field1 = sse_decode_u_32(deserializer);
-    var var_field2 = sse_decode_list_prim_f_32_strict(deserializer);
-    return (var_field0, var_field1, var_field2);
-  }
-
-  @protected
-  (int, double) sse_decode_record_u_32_f_32(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    var var_field0 = sse_decode_u_32(deserializer);
-    var var_field1 = sse_decode_f_32(deserializer);
-    return (var_field0, var_field1);
-  }
-
-  @protected
   int sse_decode_u_32(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return deserializer.buffer.getUint32();
@@ -3000,12 +1227,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   @protected
   void sse_decode_unit(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-  }
-
-  @protected
-  BigInt sse_decode_usize(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return deserializer.buffer.getBigUint64();
   }
 
   @protected
@@ -3120,175 +1341,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  void sse_encode_AnyhowException(
-      AnyhowException self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_String(self.message, serializer);
-  }
-
-  @protected
-  void
-      sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(
-          RoaringBitmap self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_usize(
-        (self as RoaringBitmapImpl).frbInternalSseEncode(move: true),
-        serializer);
-  }
-
-  @protected
-  void
-      sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(
-          Store self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_usize(
-        (self as StoreImpl).frbInternalSseEncode(move: true), serializer);
-  }
-
-  @protected
-  void
-      sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(
-          TextEngine self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_usize(
-        (self as TextEngineImpl).frbInternalSseEncode(move: true), serializer);
-  }
-
-  @protected
-  void
-      sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(
-          VectorEngine self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_usize(
-        (self as VectorEngineImpl).frbInternalSseEncode(move: true),
-        serializer);
-  }
-
-  @protected
-  void
-      sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(
-          WriteTransaction self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_usize(
-        (self as WriteTransactionImpl).frbInternalSseEncode(move: true),
-        serializer);
-  }
-
-  @protected
-  void
-      sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPath(
-          Path self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_usize(
-        (self as PathImpl).frbInternalSseEncode(move: false), serializer);
-  }
-
-  @protected
-  void
-      sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(
-          RoaringBitmap self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_usize(
-        (self as RoaringBitmapImpl).frbInternalSseEncode(move: false),
-        serializer);
-  }
-
-  @protected
-  void
-      sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(
-          Store self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_usize(
-        (self as StoreImpl).frbInternalSseEncode(move: false), serializer);
-  }
-
-  @protected
-  void
-      sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(
-          TextEngine self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_usize(
-        (self as TextEngineImpl).frbInternalSseEncode(move: false), serializer);
-  }
-
-  @protected
-  void
-      sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(
-          VectorEngine self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_usize(
-        (self as VectorEngineImpl).frbInternalSseEncode(move: false),
-        serializer);
-  }
-
-  @protected
-  void
-      sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(
-          WriteTransaction self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_usize(
-        (self as WriteTransactionImpl).frbInternalSseEncode(move: false),
-        serializer);
-  }
-
-  @protected
-  void
-      sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerPath(
-          Path self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_usize(
-        (self as PathImpl).frbInternalSseEncode(move: null), serializer);
-  }
-
-  @protected
-  void
-      sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(
-          RoaringBitmap self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_usize(
-        (self as RoaringBitmapImpl).frbInternalSseEncode(move: null),
-        serializer);
-  }
-
-  @protected
-  void
-      sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerStore(
-          Store self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_usize(
-        (self as StoreImpl).frbInternalSseEncode(move: null), serializer);
-  }
-
-  @protected
-  void
-      sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerTextEngine(
-          TextEngine self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_usize(
-        (self as TextEngineImpl).frbInternalSseEncode(move: null), serializer);
-  }
-
-  @protected
-  void
-      sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerVectorEngine(
-          VectorEngine self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_usize(
-        (self as VectorEngineImpl).frbInternalSseEncode(move: null),
-        serializer);
-  }
-
-  @protected
-  void
-      sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransaction(
-          WriteTransaction self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_usize(
-        (self as WriteTransactionImpl).frbInternalSseEncode(move: null),
-        serializer);
-  }
-
-  @protected
   void sse_encode_String(String self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_list_prim_u_8_strict(utf8.encoder.convert(self), serializer);
@@ -3298,22 +1350,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   void sse_encode_bool(bool self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     serializer.buffer.putUint8(self ? 1 : 0);
-  }
-
-  @protected
-  void
-      sse_encode_box_autoadd_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(
-          RoaringBitmap self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(
-        self, serializer);
-  }
-
-  @protected
-  void sse_encode_box_autoadd_chunk_record(
-      ChunkRecord self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_chunk_record(self, serializer);
   }
 
   @protected
@@ -3354,16 +1390,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       WaffleSearchRequest self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_waffle_search_request(self, serializer);
-  }
-
-  @protected
-  void sse_encode_chunk_record(ChunkRecord self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_String(self.externalId, serializer);
-    sse_encode_opt_String(self.parentId, serializer);
-    sse_encode_u_32(self.chunkIndex, serializer);
-    sse_encode_String(self.text, serializer);
-    sse_encode_String(self.payloadJson, serializer);
   }
 
   @protected
@@ -3422,40 +1448,11 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  void sse_encode_list_prim_u_8_loose(
-      List<int> self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_i_32(self.length, serializer);
-    serializer.buffer
-        .putUint8List(self is Uint8List ? self : Uint8List.fromList(self));
-  }
-
-  @protected
   void sse_encode_list_prim_u_8_strict(
       Uint8List self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_i_32(self.length, serializer);
     serializer.buffer.putUint8List(self);
-  }
-
-  @protected
-  void sse_encode_list_record_string_u_32_list_prim_f_32_strict(
-      List<(String, int, Float32List)> self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_i_32(self.length, serializer);
-    for (final item in self) {
-      sse_encode_record_string_u_32_list_prim_f_32_strict(item, serializer);
-    }
-  }
-
-  @protected
-  void sse_encode_list_record_u_32_f_32(
-      List<(int, double)> self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_i_32(self.length, serializer);
-    for (final item in self) {
-      sse_encode_record_u_32_f_32(item, serializer);
-    }
   }
 
   @protected
@@ -3485,30 +1482,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_bool(self != null, serializer);
     if (self != null) {
       sse_encode_String(self, serializer);
-    }
-  }
-
-  @protected
-  void
-      sse_encode_opt_box_autoadd_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(
-          RoaringBitmap? self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-
-    sse_encode_bool(self != null, serializer);
-    if (self != null) {
-      sse_encode_box_autoadd_Auto_Ref_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerRoaringBitmap(
-          self, serializer);
-    }
-  }
-
-  @protected
-  void sse_encode_opt_box_autoadd_chunk_record(
-      ChunkRecord? self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-
-    sse_encode_bool(self != null, serializer);
-    if (self != null) {
-      sse_encode_box_autoadd_chunk_record(self, serializer);
     }
   }
 
@@ -3566,23 +1539,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  void sse_encode_record_string_u_32_list_prim_f_32_strict(
-      (String, int, Float32List) self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_String(self.$1, serializer);
-    sse_encode_u_32(self.$2, serializer);
-    sse_encode_list_prim_f_32_strict(self.$3, serializer);
-  }
-
-  @protected
-  void sse_encode_record_u_32_f_32(
-      (int, double) self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_u_32(self.$1, serializer);
-    sse_encode_f_32(self.$2, serializer);
-  }
-
-  @protected
   void sse_encode_u_32(int self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     serializer.buffer.putUint32(self);
@@ -3603,12 +1559,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   @protected
   void sse_encode_unit(void self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-  }
-
-  @protected
-  void sse_encode_usize(BigInt self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    serializer.buffer.putBigUint64(self);
   }
 
   @protected
@@ -3690,272 +1640,4 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_opt_box_autoadd_u_32(self.rrfK, serializer);
     sse_encode_u_32(self.efSearch, serializer);
   }
-}
-
-@sealed
-class PathImpl extends RustOpaque implements Path {
-  // Not to be used by end users
-  PathImpl.frbInternalDcoDecode(List<dynamic> wire)
-      : super.frbInternalDcoDecode(wire, _kStaticData);
-
-  // Not to be used by end users
-  PathImpl.frbInternalSseDecode(BigInt ptr, int externalSizeOnNative)
-      : super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
-
-  static final _kStaticData = RustArcStaticData(
-    rustArcIncrementStrongCount:
-        RustLib.instance.api.rust_arc_increment_strong_count_Path,
-    rustArcDecrementStrongCount:
-        RustLib.instance.api.rust_arc_decrement_strong_count_Path,
-    rustArcDecrementStrongCountPtr:
-        RustLib.instance.api.rust_arc_decrement_strong_count_PathPtr,
-  );
-}
-
-@sealed
-class RoaringBitmapImpl extends RustOpaque implements RoaringBitmap {
-  // Not to be used by end users
-  RoaringBitmapImpl.frbInternalDcoDecode(List<dynamic> wire)
-      : super.frbInternalDcoDecode(wire, _kStaticData);
-
-  // Not to be used by end users
-  RoaringBitmapImpl.frbInternalSseDecode(BigInt ptr, int externalSizeOnNative)
-      : super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
-
-  static final _kStaticData = RustArcStaticData(
-    rustArcIncrementStrongCount:
-        RustLib.instance.api.rust_arc_increment_strong_count_RoaringBitmap,
-    rustArcDecrementStrongCount:
-        RustLib.instance.api.rust_arc_decrement_strong_count_RoaringBitmap,
-    rustArcDecrementStrongCountPtr:
-        RustLib.instance.api.rust_arc_decrement_strong_count_RoaringBitmapPtr,
-  );
-}
-
-@sealed
-class StoreImpl extends RustOpaque implements Store {
-  // Not to be used by end users
-  StoreImpl.frbInternalDcoDecode(List<dynamic> wire)
-      : super.frbInternalDcoDecode(wire, _kStaticData);
-
-  // Not to be used by end users
-  StoreImpl.frbInternalSseDecode(BigInt ptr, int externalSizeOnNative)
-      : super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
-
-  static final _kStaticData = RustArcStaticData(
-    rustArcIncrementStrongCount:
-        RustLib.instance.api.rust_arc_increment_strong_count_Store,
-    rustArcDecrementStrongCount:
-        RustLib.instance.api.rust_arc_decrement_strong_count_Store,
-    rustArcDecrementStrongCountPtr:
-        RustLib.instance.api.rust_arc_decrement_strong_count_StorePtr,
-  );
-
-  Future<List<String>> allExternalIds() =>
-      RustLib.instance.api.crateApiStoreStoreAllExternalIds(
-        that: this,
-      );
-
-  Future<List<(String, int, Float32List)>> allVectors({required BigInt dim}) =>
-      RustLib.instance.api.crateApiStoreStoreAllVectors(that: this, dim: dim);
-
-  Future<int> allocId({required WriteTransaction tx}) =>
-      RustLib.instance.api.crateApiStoreStoreAllocId(that: this, tx: tx);
-
-  Future<WriteTransaction> beginWrite() =>
-      RustLib.instance.api.crateApiStoreStoreBeginWrite(
-        that: this,
-      );
-
-  Future<void> bitmapAdd(
-          {required WriteTransaction tx,
-          required String field,
-          required String value,
-          required int internal}) =>
-      RustLib.instance.api.crateApiStoreStoreBitmapAdd(
-          that: this, tx: tx, field: field, value: value, internal: internal);
-
-  Future<RoaringBitmap> bitmapGet({required String key}) =>
-      RustLib.instance.api.crateApiStoreStoreBitmapGet(that: this, key: key);
-
-  Future<void> bitmapPut(
-          {required WriteTransaction tx,
-          required String key,
-          required RoaringBitmap bitmap}) =>
-      RustLib.instance.api.crateApiStoreStoreBitmapPut(
-          that: this, tx: tx, key: key, bitmap: bitmap);
-
-  Future<void> bitmapRemove(
-          {required WriteTransaction tx,
-          required String field,
-          required String value,
-          required int internal}) =>
-      RustLib.instance.api.crateApiStoreStoreBitmapRemove(
-          that: this, tx: tx, field: field, value: value, internal: internal);
-
-  Future<int?> childLookup({required String parent, required int chunkIndex}) =>
-      RustLib.instance.api.crateApiStoreStoreChildLookup(
-          that: this, parent: parent, chunkIndex: chunkIndex);
-
-  Future<BigInt> count() => RustLib.instance.api.crateApiStoreStoreCount(
-        that: this,
-      );
-
-  Future<int?> lookupInternal({required String external_}) =>
-      RustLib.instance.api
-          .crateApiStoreStoreLookupInternal(that: this, external_: external_);
-
-  Future<BigInt> nextIdValue() =>
-      RustLib.instance.api.crateApiStoreStoreNextIdValue(
-        that: this,
-      );
-
-  Future<void> numericPut(
-          {required WriteTransaction tx, required List<int> key}) =>
-      RustLib.instance.api
-          .crateApiStoreStoreNumericPut(that: this, tx: tx, key: key);
-
-  Future<void> numericRemove(
-          {required WriteTransaction tx, required List<int> key}) =>
-      RustLib.instance.api
-          .crateApiStoreStoreNumericRemove(that: this, tx: tx, key: key);
-
-  Future<Uint32List> numericScanPrefix({required List<int> prefix}) =>
-      RustLib.instance.api
-          .crateApiStoreStoreNumericScanPrefix(that: this, prefix: prefix);
-
-  Future<ChunkRecord?> readChunk({required int internal}) =>
-      RustLib.instance.api
-          .crateApiStoreStoreReadChunk(that: this, internal: internal);
-
-  Future<Float32List?> readVector(
-          {required int internal, required BigInt dim}) =>
-      RustLib.instance.api.crateApiStoreStoreReadVector(
-          that: this, internal: internal, dim: dim);
-
-  Future<ChunkRecord?> removeRecord(
-          {required WriteTransaction tx,
-          required String external_,
-          required int internal}) =>
-      RustLib.instance.api.crateApiStoreStoreRemoveRecord(
-          that: this, tx: tx, external_: external_, internal: internal);
-
-  Future<void> writeRecord(
-          {required WriteTransaction tx,
-          required String external_,
-          required int internal,
-          required ChunkRecord record,
-          required List<double> vector}) =>
-      RustLib.instance.api.crateApiStoreStoreWriteRecord(
-          that: this,
-          tx: tx,
-          external_: external_,
-          internal: internal,
-          record: record,
-          vector: vector);
-}
-
-@sealed
-class TextEngineImpl extends RustOpaque implements TextEngine {
-  // Not to be used by end users
-  TextEngineImpl.frbInternalDcoDecode(List<dynamic> wire)
-      : super.frbInternalDcoDecode(wire, _kStaticData);
-
-  // Not to be used by end users
-  TextEngineImpl.frbInternalSseDecode(BigInt ptr, int externalSizeOnNative)
-      : super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
-
-  static final _kStaticData = RustArcStaticData(
-    rustArcIncrementStrongCount:
-        RustLib.instance.api.rust_arc_increment_strong_count_TextEngine,
-    rustArcDecrementStrongCount:
-        RustLib.instance.api.rust_arc_decrement_strong_count_TextEngine,
-    rustArcDecrementStrongCountPtr:
-        RustLib.instance.api.rust_arc_decrement_strong_count_TextEnginePtr,
-  );
-
-  Future<void> add({required int internal, required String text}) => RustLib
-      .instance.api
-      .crateApiTextTextEngineAdd(that: this, internal: internal, text: text);
-
-  Future<void> commit() => RustLib.instance.api.crateApiTextTextEngineCommit(
-        that: this,
-      );
-
-  Future<void> delete({required int internal}) => RustLib.instance.api
-      .crateApiTextTextEngineDelete(that: this, internal: internal);
-
-  Future<List<(int, double)>> search(
-          {required String text, required BigInt k}) =>
-      RustLib.instance.api
-          .crateApiTextTextEngineSearch(that: this, text: text, k: k);
-}
-
-@sealed
-class VectorEngineImpl extends RustOpaque implements VectorEngine {
-  // Not to be used by end users
-  VectorEngineImpl.frbInternalDcoDecode(List<dynamic> wire)
-      : super.frbInternalDcoDecode(wire, _kStaticData);
-
-  // Not to be used by end users
-  VectorEngineImpl.frbInternalSseDecode(BigInt ptr, int externalSizeOnNative)
-      : super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
-
-  static final _kStaticData = RustArcStaticData(
-    rustArcIncrementStrongCount:
-        RustLib.instance.api.rust_arc_increment_strong_count_VectorEngine,
-    rustArcDecrementStrongCount:
-        RustLib.instance.api.rust_arc_decrement_strong_count_VectorEngine,
-    rustArcDecrementStrongCountPtr:
-        RustLib.instance.api.rust_arc_decrement_strong_count_VectorEnginePtr,
-  );
-
-  Future<void> add({required int internal, required List<double> vector}) =>
-      RustLib.instance.api.crateApiVectorVectorEngineAdd(
-          that: this, internal: internal, vector: vector);
-
-  Future<bool> contains({required int internal}) => RustLib.instance.api
-      .crateApiVectorVectorEngineContains(that: this, internal: internal);
-
-  Future<void> overrideExpansionSearch({required BigInt ef}) => RustLib
-      .instance.api
-      .crateApiVectorVectorEngineOverrideExpansionSearch(that: this, ef: ef);
-
-  Future<bool> remove({required int internal}) => RustLib.instance.api
-      .crateApiVectorVectorEngineRemove(that: this, internal: internal);
-
-  Future<void> save({required Path dir}) =>
-      RustLib.instance.api.crateApiVectorVectorEngineSave(that: this, dir: dir);
-
-  Future<List<(int, double)>> search(
-          {required List<double> query,
-          required BigInt k,
-          RoaringBitmap? allowed}) =>
-      RustLib.instance.api.crateApiVectorVectorEngineSearch(
-          that: this, query: query, k: k, allowed: allowed);
-
-  Future<BigInt> size() => RustLib.instance.api.crateApiVectorVectorEngineSize(
-        that: this,
-      );
-}
-
-@sealed
-class WriteTransactionImpl extends RustOpaque implements WriteTransaction {
-  // Not to be used by end users
-  WriteTransactionImpl.frbInternalDcoDecode(List<dynamic> wire)
-      : super.frbInternalDcoDecode(wire, _kStaticData);
-
-  // Not to be used by end users
-  WriteTransactionImpl.frbInternalSseDecode(
-      BigInt ptr, int externalSizeOnNative)
-      : super.frbInternalSseDecode(ptr, externalSizeOnNative, _kStaticData);
-
-  static final _kStaticData = RustArcStaticData(
-    rustArcIncrementStrongCount:
-        RustLib.instance.api.rust_arc_increment_strong_count_WriteTransaction,
-    rustArcDecrementStrongCount:
-        RustLib.instance.api.rust_arc_decrement_strong_count_WriteTransaction,
-    rustArcDecrementStrongCountPtr: RustLib
-        .instance.api.rust_arc_decrement_strong_count_WriteTransactionPtr,
-  );
 }

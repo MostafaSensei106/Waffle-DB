@@ -7,43 +7,8 @@ import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // These functions are ignored because they are not marked as `pub`: `archive_chunk`, `as_str`, `as_str`, `canonical_json`, `f64_to_ordered_u64`, `field_hash`, `field_value_key`, `indexed_field`, `numeric_index_key`, `numeric_index_prefix`, `unarchive_chunk`, `validate`
-// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `ArchivedChunkRecord`, `ChunkRecordResolver`
+// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `ArchivedChunkRecord`, `ChunkRecordResolver`, `ChunkRecord`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `check_bytes`, `clone`, `clone`, `clone`, `clone`, `clone`, `deserialize`, `eq`, `eq`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `resolve`, `serialize`
-
-class ChunkRecord {
-  final String externalId;
-  final String? parentId;
-  final int chunkIndex;
-  final String text;
-  final String payloadJson;
-
-  const ChunkRecord({
-    required this.externalId,
-    this.parentId,
-    required this.chunkIndex,
-    required this.text,
-    required this.payloadJson,
-  });
-
-  @override
-  int get hashCode =>
-      externalId.hashCode ^
-      parentId.hashCode ^
-      chunkIndex.hashCode ^
-      text.hashCode ^
-      payloadJson.hashCode;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is ChunkRecord &&
-          runtimeType == other.runtimeType &&
-          externalId == other.externalId &&
-          parentId == other.parentId &&
-          chunkIndex == other.chunkIndex &&
-          text == other.text &&
-          payloadJson == other.payloadJson;
-}
 
 class WaffleField {
   final String name;
