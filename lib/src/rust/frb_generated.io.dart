@@ -4,8 +4,6 @@
 // ignore_for_file: unused_import, unused_element, unnecessary_import, duplicate_ignore, invalid_use_of_internal_member, annotate_overrides, non_constant_identifier_names, curly_braces_in_flow_control_structures, prefer_const_literals_to_create_immutables, unused_field
 
 import 'api/config.dart';
-import 'api/error.dart';
-import 'api/filter.dart';
 import 'api/math.dart';
 import 'api/query.dart';
 import 'api/schema.dart';
@@ -47,6 +45,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   CrossPlatformFinalizerArg
       get rust_arc_decrement_strong_count_WriteTransactionPtr => wire
           ._rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerWriteTransactionPtr;
+
+  @protected
+  AnyhowException dco_decode_AnyhowException(dynamic raw);
 
   @protected
   RoaringBitmap
@@ -134,9 +135,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
           dynamic raw);
 
   @protected
-  Object? dco_decode_SerdeJsonValue(dynamic raw);
-
-  @protected
   String dco_decode_String(dynamic raw);
 
   @protected
@@ -169,31 +167,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   WaffleSearchRequest dco_decode_box_autoadd_waffle_search_request(dynamic raw);
 
   @protected
-  FilterNode dco_decode_box_filter_node(dynamic raw);
-
-  @protected
   ChunkRecord dco_decode_chunk_record(dynamic raw);
 
   @protected
   double dco_decode_f_32(dynamic raw);
 
   @protected
-  double dco_decode_f_64(dynamic raw);
-
-  @protected
-  FilterNode dco_decode_filter_node(dynamic raw);
-
-  @protected
   int dco_decode_i_32(dynamic raw);
 
   @protected
-  List<Object?> dco_decode_list_SerdeJsonValue(dynamic raw);
-
-  @protected
   List<String> dco_decode_list_String(dynamic raw);
-
-  @protected
-  List<FilterNode> dco_decode_list_filter_node(dynamic raw);
 
   @protected
   List<double> dco_decode_list_prim_f_32_loose(dynamic raw);
@@ -219,10 +202,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<(int, double)> dco_decode_list_record_u_32_f_32(dynamic raw);
-
-  @protected
-  List<(int, double, double?)>
-      dco_decode_list_record_u_32_f_32_opt_box_autoadd_f_32(dynamic raw);
 
   @protected
   List<WaffleField> dco_decode_list_waffle_field(dynamic raw);
@@ -264,10 +243,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   (int, double) dco_decode_record_u_32_f_32(dynamic raw);
 
   @protected
-  (int, double, double?) dco_decode_record_u_32_f_32_opt_box_autoadd_f_32(
-      dynamic raw);
-
-  @protected
   int dco_decode_u_32(dynamic raw);
 
   @protected
@@ -277,12 +252,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   int dco_decode_u_8(dynamic raw);
 
   @protected
-  U8Array20 dco_decode_u_8_array_20(dynamic raw);
-
-  @protected
-  U8Array8 dco_decode_u_8_array_8(dynamic raw);
-
-  @protected
   void dco_decode_unit(dynamic raw);
 
   @protected
@@ -290,9 +259,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   WaffleConfig dco_decode_waffle_config(dynamic raw);
-
-  @protected
-  WaffleError dco_decode_waffle_error(dynamic raw);
 
   @protected
   WaffleField dco_decode_waffle_field(dynamic raw);
@@ -317,6 +283,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   WaffleSearchRequest dco_decode_waffle_search_request(dynamic raw);
+
+  @protected
+  AnyhowException sse_decode_AnyhowException(SseDeserializer deserializer);
 
   @protected
   RoaringBitmap
@@ -404,9 +373,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
           SseDeserializer deserializer);
 
   @protected
-  Object? sse_decode_SerdeJsonValue(SseDeserializer deserializer);
-
-  @protected
   String sse_decode_String(SseDeserializer deserializer);
 
   @protected
@@ -442,31 +408,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
       SseDeserializer deserializer);
 
   @protected
-  FilterNode sse_decode_box_filter_node(SseDeserializer deserializer);
-
-  @protected
   ChunkRecord sse_decode_chunk_record(SseDeserializer deserializer);
 
   @protected
   double sse_decode_f_32(SseDeserializer deserializer);
 
   @protected
-  double sse_decode_f_64(SseDeserializer deserializer);
-
-  @protected
-  FilterNode sse_decode_filter_node(SseDeserializer deserializer);
-
-  @protected
   int sse_decode_i_32(SseDeserializer deserializer);
 
   @protected
-  List<Object?> sse_decode_list_SerdeJsonValue(SseDeserializer deserializer);
-
-  @protected
   List<String> sse_decode_list_String(SseDeserializer deserializer);
-
-  @protected
-  List<FilterNode> sse_decode_list_filter_node(SseDeserializer deserializer);
 
   @protected
   List<double> sse_decode_list_prim_f_32_loose(SseDeserializer deserializer);
@@ -494,11 +445,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   List<(int, double)> sse_decode_list_record_u_32_f_32(
       SseDeserializer deserializer);
-
-  @protected
-  List<(int, double, double?)>
-      sse_decode_list_record_u_32_f_32_opt_box_autoadd_f_32(
-          SseDeserializer deserializer);
 
   @protected
   List<WaffleField> sse_decode_list_waffle_field(SseDeserializer deserializer);
@@ -544,10 +490,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   (int, double) sse_decode_record_u_32_f_32(SseDeserializer deserializer);
 
   @protected
-  (int, double, double?) sse_decode_record_u_32_f_32_opt_box_autoadd_f_32(
-      SseDeserializer deserializer);
-
-  @protected
   int sse_decode_u_32(SseDeserializer deserializer);
 
   @protected
@@ -557,12 +499,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   int sse_decode_u_8(SseDeserializer deserializer);
 
   @protected
-  U8Array20 sse_decode_u_8_array_20(SseDeserializer deserializer);
-
-  @protected
-  U8Array8 sse_decode_u_8_array_8(SseDeserializer deserializer);
-
-  @protected
   void sse_decode_unit(SseDeserializer deserializer);
 
   @protected
@@ -570,9 +506,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   WaffleConfig sse_decode_waffle_config(SseDeserializer deserializer);
-
-  @protected
-  WaffleError sse_decode_waffle_error(SseDeserializer deserializer);
 
   @protected
   WaffleField sse_decode_waffle_field(SseDeserializer deserializer);
@@ -599,6 +532,10 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   WaffleSearchRequest sse_decode_waffle_search_request(
       SseDeserializer deserializer);
+
+  @protected
+  void sse_encode_AnyhowException(
+      AnyhowException self, SseSerializer serializer);
 
   @protected
   void
@@ -686,9 +623,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
           WriteTransaction self, SseSerializer serializer);
 
   @protected
-  void sse_encode_SerdeJsonValue(Object? self, SseSerializer serializer);
-
-  @protected
   void sse_encode_String(String self, SseSerializer serializer);
 
   @protected
@@ -726,33 +660,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
       WaffleSearchRequest self, SseSerializer serializer);
 
   @protected
-  void sse_encode_box_filter_node(FilterNode self, SseSerializer serializer);
-
-  @protected
   void sse_encode_chunk_record(ChunkRecord self, SseSerializer serializer);
 
   @protected
   void sse_encode_f_32(double self, SseSerializer serializer);
 
   @protected
-  void sse_encode_f_64(double self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_filter_node(FilterNode self, SseSerializer serializer);
-
-  @protected
   void sse_encode_i_32(int self, SseSerializer serializer);
 
   @protected
-  void sse_encode_list_SerdeJsonValue(
-      List<Object?> self, SseSerializer serializer);
-
-  @protected
   void sse_encode_list_String(List<String> self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_list_filter_node(
-      List<FilterNode> self, SseSerializer serializer);
 
   @protected
   void sse_encode_list_prim_f_32_loose(
@@ -784,10 +701,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_list_record_u_32_f_32(
       List<(int, double)> self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_list_record_u_32_f_32_opt_box_autoadd_f_32(
-      List<(int, double, double?)> self, SseSerializer serializer);
 
   @protected
   void sse_encode_list_waffle_field(
@@ -836,10 +749,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
       (int, double) self, SseSerializer serializer);
 
   @protected
-  void sse_encode_record_u_32_f_32_opt_box_autoadd_f_32(
-      (int, double, double?) self, SseSerializer serializer);
-
-  @protected
   void sse_encode_u_32(int self, SseSerializer serializer);
 
   @protected
@@ -849,12 +758,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_u_8(int self, SseSerializer serializer);
 
   @protected
-  void sse_encode_u_8_array_20(U8Array20 self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_u_8_array_8(U8Array8 self, SseSerializer serializer);
-
-  @protected
   void sse_encode_unit(void self, SseSerializer serializer);
 
   @protected
@@ -862,9 +765,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_waffle_config(WaffleConfig self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_waffle_error(WaffleError self, SseSerializer serializer);
 
   @protected
   void sse_encode_waffle_field(WaffleField self, SseSerializer serializer);

@@ -1,7 +1,14 @@
 # 0.1.0
-- ** dependency overhaul (Rust)**: added `usearch 2` (SIMD vector engine with predicate pre-filtering), `tantivy 0.26` (BM25 text engine, EN+AR stemming), `redb 2` (ACID/MVCC storage), `roaring 0.11` with `serde`+`simd` (filter bitmaps), `crossbeam-channel 0.5` (background ingestion queue), `thiserror 2` (typed errors alongside `anyhow`).
-- **Removed (Rust)**: direct `rand` (unused in code; remains only as `hnsw_rs` transitive dep), `criterion` + `rand` dev-dependencies (no Rust benches exist; Dart benchmarks use `benchmark_harness`), `getrandom`/`getrandom_0_2` WASM shims (Flutter Web dropped for v1 and no plugin web platform is declared).
-- **Transitional**: `sled` + `hnsw_rs` stay until the Month-1 `redb` + `usearch` rewrite; marked as such in `rust/Cargo.toml`. Old databases will require a reindex (no auto-migration).
+- ** dependency overhaul (Rust)**: added `usearch 2` (SIMD vector engine with predicate pre-filtering), `tantivy 0.26` (BM25 text engine, EN+AR stemming), `redb 2` (ACID/MVCC storage), `roaring 0.11` with `serde` (filter bitmaps), `crossbeam-channel 0.5` (background ingestion queue), `thiserror 2` + `cxx 1.0` (typed errors alongside `anyhow`).
+- **Removed (Rust)**: `sled`, `hnsw_rs` (replaced by the  core), direct `rand` (was unused), `criterion` + `rand` dev-dependencies (no Rust benches exist; Dart benchmarks use `benchmark_harness`), `getrandom`/`getrandom_0_2` WASM shims (Flutter Web dropped for v1 and no plugin web platform is declared).
+- **Engine rewrite (breaking)**: `redb` (8 tables) + `usearch` (`filtered_search` predicates) + `tantivy` (BM25, EN/AR stemming) + `roaring` bitmaps. Removed `storage.rs`/`models.rs`; `math.rs` keeps only `cosineSimilarity`.
+- **Strict schema**: `WaffleSchema` with typed indexed fields is mandatory at open; payloads are validated; schema/dimension mismatches on reopen are hard errors.
+- **Dual ID mapping**: external `String` IDs map to dense internal `u32` keys (optimal for bitmaps, zero-cost for `usearch`); deleted keys recycle through a FreeList.
+- **Unified search**: `WaffleSearchRequest` (dense and/or sparse + filter AST + alpha + RRF-k) executes in parallel via `rayon::join` and fuses with RRF; numeric EQ/IN resolve through the ordered numeric index.
+- **True delete**: physical removal from `usearch`, `tantivy` tombstone + commit, `redb` cleanup, bitmap pruning and FreeList recycling.
+- **Chunk relations**: `parentId`/`chunkIndex` with a children index power `getNeighbors` (window context) and `getParent`.
+- **Crash recovery**: vectors persisted in `redb`; on open the engine rebuilds `usearch` when it diverges from storage.
+- **Dart API**: `insert`/`insertBatch` take text + payload + parent linkage; `search` + `WaffleQueryBuilder` (vector/text/hybrid, eq/inList, alpha); `WaffleFields`/`WaffleFilter` DSL; `newWaffleId()` (UUIDv7); `WaffleHit` replaces `WaffleQueryResult`.
 - **Dart**: added `uuid ^4.6.0` (external String/UUIDv7 IDs for the dual-mapping design) and `collection ^1.19.1` (RRF/result utilities); removed unused `ffi`/`ffigen` dev-dependencies; SDK floor raised to `>=3.4.0` (required by `collection`).
 # 0.0.3
 - **Performance**: Optimized insertion and queries for datasets with 1,000,000+ vectors.

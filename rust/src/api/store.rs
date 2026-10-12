@@ -4,9 +4,9 @@ use std::sync::RwLock;
 use redb::{Database, ReadableTable, ReadableTableMetadata, TableDefinition};
 use roaring::RoaringBitmap;
 
-use crate::api::error::{Result, WaffleError};
+use anyhow::{Result, anyhow};
 use crate::api::schema::{
-    ChunkRecord, WaffleSchema, archive_chunk, field_value_key, unarchive_chunk,
+    archive_chunk, field_value_key, unarchive_chunk, ChunkRecord, WaffleSchema,
 };
 
 const T_EXT2INT: TableDefinition<&str, u32> = TableDefinition::new("ext2int");
@@ -31,7 +31,7 @@ impl Store {
     pub fn open(path: &Path, schema: &WaffleSchema, dimension: u32) -> Result<Self> {
         schema.validate()?;
         std::fs::create_dir_all(path)
-            .map_err(|e| WaffleError::Storage(format!("cannot create db dir: {e}")))?;
+            .map_err(|e| anyhow!("cannot create db dir: {e}"))?;
         let db_path = path.join("store.redb");
         let db = Database::create(&db_path)?;
         let store = Self {
@@ -44,7 +44,7 @@ impl Store {
         match store.meta_get(META_SCHEMA)? {
             Some(existing) => {
                 if existing != canonical.as_bytes() {
-                    return Err(WaffleError::Schema(
+                    return Err(anyhow!(
                         "stored schema differs from the provided schema; reindex into a fresh path"
                             .to_owned(),
                     ));
@@ -55,13 +55,13 @@ impl Store {
                         arr.copy_from_slice(&dim_bytes[0..4]);
                         let stored = u32::from_le_bytes(arr);
                         if stored != dimension {
-                            return Err(WaffleError::Schema(format!(
+                            return Err(anyhow!(
                                 "stored dimension {stored} != requested {dimension}"
-                            )));
+                            ));
                         }
                     }
                     None => {
-                        return Err(WaffleError::Schema(
+                        return Err(anyhow!(
                             "database is missing dimension metadata; reindex into a fresh path"
                                 .to_owned(),
                         ));
@@ -110,9 +110,9 @@ impl Store {
     }
 
     pub fn next_id_value(&self) -> Result<u64> {
-        let raw = self.meta_get(META_NEXT_ID)?.ok_or_else(|| {
-            WaffleError::Storage("missing next_id metadata".to_owned())
-        })?;
+        let raw = self
+            .meta_get(META_NEXT_ID)?
+            .ok_or_else(|| anyhow!("missing next_id metadata"))?;
         let mut arr = [0u8; 8];
         arr.copy_from_slice(&raw[0..8]);
         Ok(u64::from_le_bytes(arr))
@@ -155,21 +155,18 @@ impl Store {
             let guard = meta.get(META_NEXT_ID)?;
             let raw = match guard.as_ref() {
                 Some(g) => g.value().to_vec(),
-                None => {
-                    return Err(WaffleError::Storage(
-                        "missing next_id metadata".to_owned(),
-                    ))
-                }
+                None => return Err(anyhow!("missing next_id metadata")),
             };
             drop(guard);
             drop(meta);
-            let arr: [u8; 8] = raw[0..8].try_into().map_err(|_| {
-                WaffleError::Storage("corrupt next_id metadata".to_owned())
-            })?;
+            let arr: [u8; 8] = raw[0..8]
+                .try_into()
+                .map_err(|_| anyhow!("corrupt next_id metadata"))?;
             u64::from_le_bytes(arr)
         };
         if next > u32::MAX as u64 {
-            return Err(WaffleError::Storage("internal id space exhausted".to_owned()));
+            return Err(anyhow!("internal id space exhausted",
+            ));
         }
         self.set_next_id(tx, next + 1)?;
         Ok(next as u32)
@@ -233,10 +230,10 @@ impl Store {
             Some(g) => {
                 let bytes = g.value();
                 if bytes.len() != dim * 4 {
-                    return Err(WaffleError::Storage(format!(
+                    return Err(anyhow!(
                         "stored vector size {} != dimension {dim}",
                         bytes.len()
-                    )));
+                    ));
                 }
                 let mut out = vec![0.0f32; dim];
                 unsafe {
@@ -252,7 +249,12 @@ impl Store {
         }
     }
 
-    pub fn remove_record(&self, tx: &redb::WriteTransaction, external: &str, internal: u32) -> Result<Option<ChunkRecord>> {
+    pub fn remove_record(
+        &self,
+        tx: &redb::WriteTransaction,
+        external: &str,
+        internal: u32,
+    ) -> Result<Option<ChunkRecord>> {
         let mut data = tx.open_table(T_DATA)?;
         let record = match data.get(internal)? {
             Some(g) => Some(unarchive_chunk(g.value())?),
@@ -322,7 +324,7 @@ impl Store {
             let cache = self
                 .bitmap_cache
                 .read()
-                .map_err(|e| WaffleError::Storage(format!("lock poisoned: {e}")))?;
+                .map_err(|e| anyhow!("lock poisoned: {e}"))?;
             if let Some(bm) = cache.get(key) {
                 return Ok(bm.clone());
             }
@@ -331,40 +333,57 @@ impl Store {
         let table = tx.open_table(T_BITMAP_STR)?;
         let bitmap = match table.get(key)? {
             Some(g) => RoaringBitmap::deserialize_from(&mut &g.value()[..])
-                .map_err(|e| WaffleError::Storage(format!("bitmap decode: {e}")))?,
+                .map_err(|e| anyhow!("bitmap decode: {e}"))?,
             None => RoaringBitmap::new(),
         };
         self.bitmap_cache
             .write()
-            .map_err(|e| WaffleError::Storage(format!("lock poisoned: {e}")))?
+            .map_err(|e| anyhow!("lock poisoned: {e}"))?
             .insert(key.to_owned(), bitmap.clone());
         Ok(bitmap)
     }
 
-    pub fn bitmap_put(&self, tx: &redb::WriteTransaction, key: &str, bitmap: &RoaringBitmap) -> Result<()> {
+    pub fn bitmap_put(
+        &self,
+        tx: &redb::WriteTransaction,
+        key: &str,
+        bitmap: &RoaringBitmap,
+    ) -> Result<()> {
         let mut buf = Vec::new();
         bitmap
             .serialize_into(&mut buf)
-            .map_err(|e| WaffleError::Storage(format!("bitmap encode: {e}")))?;
+            .map_err(|e| anyhow!("bitmap encode: {e}"))?;
         {
             let mut table = tx.open_table(T_BITMAP_STR)?;
             table.insert(key, &buf[..])?;
         }
         self.bitmap_cache
             .write()
-            .map_err(|e| WaffleError::Storage(format!("lock poisoned: {e}")))?
+            .map_err(|e| anyhow!("lock poisoned: {e}"))?
             .insert(key.to_owned(), bitmap.clone());
         Ok(())
     }
 
-    pub fn bitmap_add(&self, tx: &redb::WriteTransaction, field: &str, value: &str, internal: u32) -> Result<()> {
+    pub fn bitmap_add(
+        &self,
+        tx: &redb::WriteTransaction,
+        field: &str,
+        value: &str,
+        internal: u32,
+    ) -> Result<()> {
         let key = field_value_key(field, value);
         let mut bitmap = self.bitmap_get(&key)?;
         bitmap.insert(internal);
         self.bitmap_put(tx, &key, &bitmap)
     }
 
-    pub fn bitmap_remove(&self, tx: &redb::WriteTransaction, field: &str, value: &str, internal: u32) -> Result<()> {
+    pub fn bitmap_remove(
+        &self,
+        tx: &redb::WriteTransaction,
+        field: &str,
+        value: &str,
+        internal: u32,
+    ) -> Result<()> {
         let key = field_value_key(field, value);
         let mut bitmap = self.bitmap_get(&key)?;
         bitmap.remove(internal);

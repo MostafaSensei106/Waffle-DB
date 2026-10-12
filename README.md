@@ -35,7 +35,7 @@ Most local databases in Flutter are designed for standard JSON or SQL data. They
 | **Hybrid Search** | ❌ | ❌ | **✅ Dense + Sparse with RRF Fusion** |
 | **Filtered Search** | SQL WHERE | Post-filter | **✅ True Pre-filtering (`roaring` bitmaps)** |
 | **Storage Guarantees** | ACID | ❌ | **✅ ACID + MVCC (`redb`)** |
-| **Memory Efficiency** | 🔴 High | 🔴 High | **🔋  FFI Buffers** |
+| **Memory Efficiency** | 🔴 High | 🔴 High | **🔋FFI Buffers** |
 | **UI Responsiveness** | ✅ | ⚠️ | **⚡ Zero UI-Thread Blocking** |
 | **Detailed Metadata** | ❌ | ✅ | **🩺 Full Metadata Access** |
 | **OpenAI Ready**| ❌ | ❌ | **📈 Native 1536d / 4096d Support** |
@@ -53,7 +53,7 @@ Most local databases in Flutter are designed for standard JSON or SQL data. They
 * **Dart Side**: `uuid` (external String IDs) + `collection` (RRF/result utilities)
 
 > [!NOTE]
-> The previous `sled` + `hnsw_rs` core is transitional and will be fully replaced by `redb` + `usearch` during the Month-1 engine rewrite. No new code should depend on them. Databases created with `sled` require a reindex (no auto-migration).
+> Databases created by pre-0.1.0 releases (`sled` engine) are incompatible and require a reindex. There is no auto-migration by design.
 
 ---
 
@@ -87,7 +87,7 @@ During rigorous stress testing (5000+ operations in a tight loop), Waffle-DB gua
 
 > [!NOTE]
 > Benchmarks are run inside a Dart test environment calling the Rust engine via native FFI bindings. You can reproduce these measurements by running `flutter test test/vector_db_real_world_benchmark_test.dart` and `flutter test test/stress_test.dart`.
-> These figures reflect the pre- core (`sled` + `hnsw_rs`) and will be re-run after the Month-1 `redb` + `usearch` migration.
+> These figures reflect the pre-0.1.0 core and will be re-run against the `redb` + `usearch` engine.
 
 ---
 
@@ -200,27 +200,48 @@ Future<void> runVectorStore() async {
   );
   */
   
-  final db = await WaffleDatabase.open(config);
+  final db = await WaffleDatabase.open(config, schema: schema);
 }
+```
+
+The schema is mandatory and versioned. Indexed fields get `roaring` bitmaps for true pre-filtering; everything else rides along as free payload:
+
+```dart
+final schema = WaffleSchema(
+  fields: [
+    WaffleFields.string('category'),
+    WaffleFields.integer('price'),
+    WaffleFields.string('notes', indexed: false),
+  ],
+  textLanguage: WaffleLanguage.english, // or .arabic for Arabic stemming
+);
 ```
 
 ### 3. Inserting Data (Single & Batch)
 
-You can insert vectors individually or in batches. Batch insertion is highly recommended for inserting multiple vectors as it uses Rayon-powered parallel processing.
+Vectors, text and structured payload go in together. Indexed payload fields are validated against the schema and maintained in the filter indexes.
 
 **Single Insert:**
 ```dart
 await db.insert(
   'unique_id_1',
   Float32List.fromList([0.1, 0.2, ...]),
-  metadata: utf8.encode('{"name": "Item 1"}'), // Optional arbitrary bytes
+  text: 'Noise-cancelling wireless headphones',
+  payload: {'category': 'electronics', 'price': 299},
 );
 ```
 
 **Batch Insert:**
 ```dart
 final records = [
-  WaffleRecord.fromList(id: 'id_1', vector: [0.1, 0.2, ...]),
+  WaffleRecord.fromList(
+    id: 'id_1',
+    vector: [0.1, 0.2, ...],
+    text: 'Chunk 0 of the manual',
+    payload: {'category': 'docs', 'price': 0},
+    parentId: 'manual-1',
+    chunkIndex: 0,
+  ),
   WaffleRecord.fromList(id: 'id_2', vector: [0.3, 0.4, ...]),
 ];
 await db.insertBatch(records);
@@ -228,26 +249,28 @@ await db.insertBatch(records);
 
 ### 4. Querying & Query Builder
 
-WaffleDB offers two ways to query data: the basic `query` method and the fluent `WaffleQueryBuilder`.
+WaffleDB offers dense search, keyword search and fused hybrid search through one API. Filters are pushed into the engine as bitmap predicates — never applied after the fact.
 
-**Basic Query:**
-Returns the `k` nearest neighbors.
+**Dense + pre-filter:**
 ```dart
-final results = db.query(queryVector, k: 5);
-for (var result in results) {
-  print('Found ${result.id} with distance ${result.distance}');
+final results = db.search(
+  vector: queryVector,
+  topK: 5,
+  filter: WaffleEqFilter('category', 'electronics'),
+);
+for (var hit in results) {
+  print('Found ${hit.id} with score ${hit.score}');
 }
 ```
 
-**Query Builder (Advanced filtering):**
-The query builder allows more flexible filtering and tuning per-query.
+**Hybrid (meaning + keywords, fused with RRF):**
 ```dart
 final results = await WaffleQueryBuilder(db)
-    .withVector(queryVector)
-    .limit(10)          // k nearest neighbors
-    .efSearch(64)       // override efSearch for higher recall
-    .threshold(0.5)     // only return results with distance <= 0.5
-    .includeMetadata(true) // Set to false to avoid disk I/O and speed up queries
+    .withHybrid(vector: queryVector, text: 'wireless headphones')
+    .eq('category', 'electronics')
+    .alpha(0.7)
+    .limit(10)
+    .efSearch(64)
     .execute();
 ```
 
@@ -255,13 +278,16 @@ final results = await WaffleQueryBuilder(db)
 
 | Method | Description |
 | :--- | :--- |
-| `withVector(Float32List vector)` | Sets the query vector as a `Float32List`. Required before calling `execute()`. |
-| `withVectorList(List<double> vector)` | Convenience method to set the query vector from a standard Dart `List<double>`. |
-| `limit(int n)` | Sets the maximum number of nearest neighbors to return (default is `10`). |
-| `threshold(double t)` | Sets a maximum distance threshold. Results with a distance greater than `t` are excluded. Default is `0.0` (no threshold). |
-| `efSearch(int ef)` | Overrides the `efSearch` config for this query. Higher values increase accuracy (recall) but reduce speed. Pass `0` to use the default config. |
-| `includeMetadata(bool include)` | Defines whether to fetch metadata (default: `true`). Disabling this speeds up queries by avoiding disk I/O when only IDs and distances are needed. |
-| `execute()` | Executes the configured query asynchronously and returns a `Future<List<WaffleQueryResult>>`. |
+| `withVector(Float32List vector)` | Sets the dense query vector. |
+| `withVectorList(List<double> vector)` | Sets the dense query vector from plain doubles. |
+| `withText(String text)` | Sets the BM25 keyword query. |
+| `withHybrid({vector, text})` | Sets both sides of a hybrid query. |
+| `limit(int n)` | Caps returned hits (default `10`). |
+| `efSearch(int ef)` | Overrides index expansion for this query (`0` = config default). |
+| `alpha(double a)` | Blends dense vs sparse ranks in hybrid mode (default `0.5`). |
+| `rrfK(int k)` | RRF smoothing constant (default `60`). |
+| `eq(field, value)` / `inList(field, values)` | Pre-filters evaluated as bitmap predicates. |
+| `execute()` | Runs the query and returns fused `WaffleHit` results. |
 
 ---
 
@@ -293,11 +319,15 @@ final count = db.count();
 // Retrieve all IDs
 final allIds = db.getAllIds();
 
-// Get the original vector or metadata
+// Get the original vector or payload
 final vector = db.getVector('unique_id_1');
-final metadata = db.getMetadata('unique_id_1');
+final payload = db.getPayload('unique_id_1');
 
-// Delete a vector
+// Expand a chunk hit into window context for the LLM
+final neighbors = db.getNeighbors('chunk-3', window: 1);
+final parent = db.getParent('chunk-3');
+
+// Delete physically removes the record from every engine
 await db.delete('unique_id_1');
 
 // Force flush all pending writes to disk
@@ -319,26 +349,26 @@ final service = VectorStoreService(db: myWaffleDBInstance);
 final controller = SearchController(vectorStore: service);
 ```
 
-### High-Dimensional Filtering & Metadata
+### Pre-filtering & Payloads
 
-If you want to filter search results beyond simple distance metrics, you can store structured data alongside your vectors.
+Filters are evaluated to compressed bitmaps before any distance is computed, so constrained queries never come back empty when matches exist deeper in the ranking.
 
 ```dart
-// Insert with metadata
 await db.insert(
   'product-42',
   vector,
-  metadata: utf8.encode(jsonEncode({'category': 'electronics', 'price': 299})),
+  text: 'Noise-cancelling wireless headphones',
+  payload: {'category': 'electronics', 'price': 299},
 );
 
-// Query and decode
-final results = await db.query(vector, k: 5);
-for (var res in results) {
-  final meta = jsonDecode(utf8.decode(res.metadata));
-  if (meta['category'] == 'electronics') {
-    print('Found electronic item: ${res.id}');
-  }
-}
+final results = db.search(
+  vector: queryVector,
+  topK: 5,
+  filters: [
+    WaffleEqFilter('category', 'electronics'),
+    WaffleInFilter('price', [199, 299]),
+  ],
+);
 ```
 ---
 
@@ -365,7 +395,7 @@ Key design decisions (locked):
 
 ### 🗺️ 3-Month Roadmap
 
-1. **Month 1 — Core replacement**: `storage.rs` → `redb`, `math.rs` → `usearch`, dual-mapping tables, strict schema, reindex tool (breaking: old `sled` databases are incompatible).
+1. **Month 1 — Core replacement**: `storage.rs` → `redb`, `math.rs` → `usearch`, dual-mapping tables, strict schema, reindex tool (breaking: old `sled` databases are incompatible). **(Done in 0.1.0.)**
 2. **Month 2 — Filtering + text**: `BITMAP_STR` + write-only `NUMERIC_IDX` (EQ/IN first, GT/LT later via range scan), `tantivy` EN/AR tokenizers, parent/neighbor chunk APIs.
 3. **Month 3 — Hybrid + hardening**: RRF fusion, embedder adapter, async true delete + FreeList, LangChain bridge, recall/latency benchmarks (incl. Arabic eval).
 

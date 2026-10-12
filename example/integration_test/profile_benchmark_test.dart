@@ -9,6 +9,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:waffle_db/waffle_db.dart';
 
+final _benchSchema = WaffleSchema(
+  fields: [WaffleFields.string('tag', indexed: false)],
+  textLanguage: WaffleLanguage.english,
+);
+
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -55,7 +60,7 @@ void main() {
     if (await dir.exists()) await dir.delete(recursive: true);
 
     final config = await configBuilder(dbPath);
-    final db = await WaffleDatabase.open(config);
+    final db = await WaffleDatabase.open(config, schema: _benchSchema);
 
     // Bench Insert
     int counter = 0;
@@ -83,7 +88,7 @@ void main() {
     );
     final queryAvgUs = await benchmarkAverageUs(() async {
       final idx = qc++;
-      db.query(queryVectors[idx], k: 10);
+      db.search(vector: queryVectors[idx], topK: 10);
     });
 
     await db.close();

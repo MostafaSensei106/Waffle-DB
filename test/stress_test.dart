@@ -1,8 +1,16 @@
+@Timeout(Duration(minutes: 15))
+library;
+
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:waffle_db/waffle_db.dart';
+
+final _benchSchema = WaffleSchema(
+  fields: [WaffleFields.string('tag', indexed: false)],
+  textLanguage: WaffleLanguage.english,
+);
 
 class LatencyTracker {
   final List<int> _latenciesUs = [];
@@ -59,7 +67,7 @@ void main() {
         path: path,
         dimension: dimension,
       );
-      db = await WaffleDatabase.open(config);
+      db = await WaffleDatabase.open(config, schema: _benchSchema);
     });
 
     tearDownAll(() async {
@@ -120,7 +128,7 @@ void main() {
         );
 
         stopwatch.start();
-        final results = db.query(vec, k: 10, efSearch: 32);
+        final results = db.search(vector: vec, topK: 10, efSearch: 32);
         stopwatch.stop();
 
         // Ensure we actually got results to prevent the compiler from optimizing out the call

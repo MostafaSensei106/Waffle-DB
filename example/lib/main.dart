@@ -5,6 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:waffle_db/waffle_db.dart';
 import 'package:path_provider/path_provider.dart';
 
+final _benchSchema = WaffleSchema(
+  fields: [WaffleFields.string('tag', indexed: false)],
+  textLanguage: WaffleLanguage.english,
+);
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await WaffleDB.init();
@@ -58,7 +63,7 @@ class _MyHomePageState extends State<MyHomePage> {
   int _k = 150;
 
   // Results state
-  List<WaffleQueryResult> _searchResults = [];
+  List<WaffleHit> _searchResults = [];
   double? _searchTimeMs;
 
   @override
@@ -91,7 +96,7 @@ class _MyHomePageState extends State<MyHomePage> {
         workerThreads: 4,
       );
 
-      _db = await WaffleDatabase.open(config);
+      _db = await WaffleDatabase.open(config, schema: _benchSchema);
       _totalColors = _db!.count();
     } catch (e) {
       _showErrorSnackBar('Error opening database: $e');
@@ -137,7 +142,7 @@ class _MyHomePageState extends State<MyHomePage> {
         cacheSizeBytes: BigInt.from(64 * 1024 * 1024),
         workerThreads: 4,
       );
-      _db = await WaffleDatabase.open(config);
+      _db = await WaffleDatabase.open(config, schema: _benchSchema);
 
       // 4. Generate colors in chunks of 25,000 to keep UI responsive
       final random = Random();
@@ -209,11 +214,10 @@ class _MyHomePageState extends State<MyHomePage> {
     ]);
 
     final sw = Stopwatch()..start();
-    final results = _db!.query(
-      queryVector,
-      k: _k,
-      efSearch: 48, // slightly higher search resolution
-      includeMetadata: false,
+    final results = _db!.search(
+      vector: queryVector,
+      topK: _k,
+      efSearch: 48,
     );
     sw.stop();
 
@@ -683,7 +687,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
         return Tooltip(
           message:
-              '${result.id}\nDistance: ${result.distance.toStringAsFixed(6)}',
+              '${result.id}\nDistance: ${result.distance!.toStringAsFixed(6)}',
           child: Card(
             clipBehavior: Clip.antiAlias,
             color: color,
@@ -725,7 +729,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Dist: ${result.distance.toStringAsFixed(4)}',
+                        'Dist: ${result.distance!.toStringAsFixed(4)}',
                         style: TextStyle(
                           fontSize: 9,
                           color: isDark ? Colors.white70 : Colors.black87,

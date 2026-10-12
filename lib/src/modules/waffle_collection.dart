@@ -2,38 +2,24 @@ import 'dart:typed_data';
 
 import '../core/query/waffle_query_builder.dart';
 import '../core/waffle_database.dart';
-import '../rust/api/models.dart';
+import '../rust/api/query.dart';
 import 'waffle_record.dart';
 
-/// A named collection abstraction over WaffleDB.
-///
-/// Collections provide a logical grouping of vectors. IDs are automatically
-/// namespaced with the collection name to prevent collisions.
-///
-/// Usage:
-/// ```dart
-/// final db = await WaffleDatabase.open(config);
-/// final collection = WaffleCollection(db, 'documents');
-///
-/// await collection.add('doc1', embedding, metadata: {'title': 'Hello'});
-/// final results = await collection.search(queryVector, topK: 5);
-/// ```
+/// Logical namespace over one database. IDs are prefixed internally
+/// with the collection name to prevent collisions.
 class WaffleCollection {
   final WaffleDatabase _db;
 
-  /// The name of this collection.
+  /// Collection name used as the ID prefix.
   final String name;
 
-  /// Cache the namespacing prefix.
   final String _prefix;
 
-  /// Creates a new logical collection over the given [WaffleDatabase].
+  /// Scopes [db] to the logical [name] namespace.
   WaffleCollection(this._db, this.name) : _prefix = '$name::';
 
-  /// Prefix an ID with the collection name to avoid collisions.
   String _prefixId(String id) => '$_prefix$id';
 
-  /// Strip the collection prefix from an ID.
   String _stripPrefix(String id) {
     if (id.startsWith(_prefix)) {
       return id.substring(_prefix.length);
@@ -41,68 +27,88 @@ class WaffleCollection {
     return id;
   }
 
-  /// Add a vector to this collection.
-  ///
-  /// [id] is the user-facing ID (will be namespaced internally).
-  /// [vector] must match the configured dimension.
-  /// [metadata] is optional arbitrary bytes.
-  Future<void> add(String id, Float32List vector, {Uint8List? metadata}) async {
-    await _db.insert(_prefixId(id), vector, metadata: metadata);
+  WaffleHit _unprefix(WaffleHit hit) => WaffleHit(
+        id: _stripPrefix(hit.id),
+        score: hit.score,
+        distance: hit.distance,
+        text: hit.text,
+        payloadJson: hit.payloadJson,
+      );
+
+  /// Adds one vector to this collection.
+  Future<void> add(
+    String id,
+    Float32List vector, {
+    String text = '',
+    Map<String, dynamic> payload = const {},
+    String? parentId,
+    int chunkIndex = 0,
+  }) async {
+    await _db.insert(
+      _prefixId(id),
+      vector,
+      text: text,
+      payload: payload,
+      parentId: parentId == null ? null : _prefixId(parentId),
+      chunkIndex: chunkIndex,
+    );
   }
 
-  /// Batch add multiple records to this collection.
+  /// Adds many records to this collection in one batch.
   Future<void> addBatch(List<WaffleRecord> records) async {
     final prefixed = records
         .map(
           (r) => WaffleRecord(
             id: _prefixId(r.id),
             vector: r.vector,
-            metadata: r.metadata,
+            text: r.text,
+            payload: r.payload,
+            parentId: r.parentId == null ? null : _prefixId(r.parentId!),
+            chunkIndex: r.chunkIndex,
           ),
         )
         .toList();
     await _db.insertBatch(prefixed);
   }
 
-  /// Search this collection for the k nearest neighbors.
-  ///
-  /// Note: Since HNSW search is global, results may include vectors from
-  /// other collections if the same database instance is shared. Use the
-  /// returned IDs to filter if needed.
-  Future<List<WaffleQueryResult>> search(
+  /// Dense search restricted to this collection's IDs.
+  Future<List<WaffleHit>> search(
     Float32List queryVector, {
     int topK = 10,
     int efSearch = 0,
   }) async {
-    final results = _db.query(queryVector, k: topK, efSearch: efSearch);
-    // Filter to only this collection's results and strip prefix
+    final results = _db.search(
+      vector: queryVector,
+      topK: topK,
+      efSearch: efSearch,
+    );
     return results
         .where((r) => r.id.startsWith(_prefix))
-        .map(
-          (r) => WaffleQueryResult(
-            id: _stripPrefix(r.id),
-            distance: r.distance,
-            metadata: r.metadata,
-          ),
-        )
+        .map(_unprefix)
         .toList();
   }
 
-  /// Delete a vector from this collection by ID.
+  /// Deletes one member by ID.
   Future<bool> delete(String id) async {
     return _db.delete(_prefixId(id));
   }
 
-  /// Get metadata for a vector in this collection.
+  /// Returns raw payload bytes for a member, or null when missing.
   Future<Uint8List?> getMetadata(String id) async {
     return _db.getMetadata(_prefixId(id));
   }
 
-  /// Get a stored vector by ID in this collection.
+  /// Returns the stored vector for a member, or null when missing.
   Future<Float32List?> getVector(String id) async {
     return _db.getVector(_prefixId(id));
   }
 
-  /// Create a query builder scoped to this collection.
+  /// Returns neighboring chunks of a member inside its parent.
+  Future<List<WaffleHit>> getNeighbors(String id, {int window = 1}) async {
+    final hits = _db.getNeighbors(_prefixId(id), window: window);
+    return hits.map(_unprefix).toList();
+  }
+
+  /// Opens a query builder scoped to the underlying database.
   WaffleQueryBuilder query() => WaffleQueryBuilder(_db);
 }

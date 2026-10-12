@@ -4,37 +4,11 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import '../frb_generated.dart';
-import 'error.dart';
-import 'package:collection/collection.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `as_str`, `as_str`, `canonical_json`, `indexed_field`, `validate`
+// These functions are ignored because they are not marked as `pub`: `archive_chunk`, `as_str`, `as_str`, `canonical_json`, `f64_to_ordered_u64`, `field_hash`, `field_value_key`, `indexed_field`, `numeric_index_key`, `numeric_index_prefix`, `unarchive_chunk`, `validate`
 // These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `ArchivedChunkRecord`, `ChunkRecordResolver`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `check_bytes`, `clone`, `clone`, `clone`, `clone`, `clone`, `deserialize`, `eq`, `eq`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `resolve`, `serialize`
-// These functions are ignored (category: IgnoreBecauseType): `archive_chunk`
-
-Future<ChunkRecord> unarchiveChunk({required List<int> bytes}) =>
-    RustLib.instance.api.crateApiSchemaUnarchiveChunk(bytes: bytes);
-
-Future<String> fieldValueKey({required String field, required String value}) =>
-    RustLib.instance.api
-        .crateApiSchemaFieldValueKey(field: field, value: value);
-
-Future<BigInt> f64ToOrderedU64({required double v}) =>
-    RustLib.instance.api.crateApiSchemaF64ToOrderedU64(v: v);
-
-Future<U8Array20> numericIndexKey(
-        {required BigInt fieldHash,
-        required double value,
-        required int internalId}) =>
-    RustLib.instance.api.crateApiSchemaNumericIndexKey(
-        fieldHash: fieldHash, value: value, internalId: internalId);
-
-Future<U8Array8> numericIndexPrefix({required BigInt fieldHash}) =>
-    RustLib.instance.api.crateApiSchemaNumericIndexPrefix(fieldHash: fieldHash);
-
-Future<BigInt> fieldHash({required String field}) =>
-    RustLib.instance.api.crateApiSchemaFieldHash(field: field);
 
 class ChunkRecord {
   final String externalId;
@@ -69,34 +43,6 @@ class ChunkRecord {
           chunkIndex == other.chunkIndex &&
           text == other.text &&
           payloadJson == other.payloadJson;
-}
-
-class U8Array20 extends NonGrowableListView<int> {
-  static const arraySize = 20;
-
-  @internal
-  Uint8List get inner => _inner;
-  final Uint8List _inner;
-
-  U8Array20(this._inner)
-      : assert(_inner.length == arraySize),
-        super(_inner);
-
-  U8Array20.init() : this(Uint8List(arraySize));
-}
-
-class U8Array8 extends NonGrowableListView<int> {
-  static const arraySize = 8;
-
-  @internal
-  Uint8List get inner => _inner;
-  final Uint8List _inner;
-
-  U8Array8(this._inner)
-      : assert(_inner.length == arraySize),
-        super(_inner);
-
-  U8Array8.init() : this(Uint8List(arraySize));
 }
 
 class WaffleField {

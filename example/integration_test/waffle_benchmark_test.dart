@@ -8,6 +8,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:waffle_db/waffle_db.dart';
 
+final _benchSchema = WaffleSchema(
+  fields: [WaffleFields.string('tag', indexed: false)],
+  textLanguage: WaffleLanguage.english,
+);
+
 // ═══════════════════════════════════════════════════════════════════
 //  Benchmark Statistics
 // ═══════════════════════════════════════════════════════════════════
@@ -140,7 +145,7 @@ void main() {
       cacheSizeBytes: BigInt.from(64 * 1024 * 1024),
       workerThreads: 4,
     );
-    db = await WaffleDatabase.open(config);
+    db = await WaffleDatabase.open(config, schema: _benchSchema);
   });
 
   tearDown(() async {
@@ -208,7 +213,7 @@ void main() {
       int qc = 0;
       final stats = await benchmark('Query k=10 (N=1000, dim=$dim)', () async {
         final idx = qc++;
-        db.query(queries[idx], k: 10);
+        db.search(vector: queries[idx], topK: 10);
       });
       expect(stats.p99, lessThan(100000)); // < 100ms
     });
@@ -228,7 +233,7 @@ void main() {
       int qc = 0;
       final stats = await benchmark('Query k=50 (N=1000, dim=$dim)', () async {
         final idx = qc++;
-        db.query(queries[idx], k: 50);
+        db.search(vector: queries[idx], topK: 50);
       });
       expect(stats.p99, lessThan(200000)); // < 200ms
     });
@@ -244,7 +249,7 @@ void main() {
       final stats = await benchmark(
         'Query k=10 ef=256 (N=1000, dim=$dim)',
         () async {
-          db.query(randomVector(qc++), k: 10, efSearch: 256);
+          db.search(vector: randomVector(qc++), topK: 10, efSearch: 256);
         },
       );
       expect(stats.p99, lessThan(500000)); // < 500ms
@@ -280,7 +285,7 @@ void main() {
         await db.insert(
           'gm-$i',
           randomVector(i),
-          metadata: Uint8List.fromList(List.generate(64, (j) => j)),
+          payload: {'tag': 'gm-$i'},
         );
       }
 
@@ -381,7 +386,7 @@ void main() {
             cacheSizeBytes: BigInt.from(64 * 1024 * 1024),
             workerThreads: 4,
           );
-          final reopened = await WaffleDatabase.open(config);
+          final reopened = await WaffleDatabase.open(config, schema: _benchSchema);
           await reopened.close();
         },
         warmupRuns: 1,
@@ -404,7 +409,7 @@ void main() {
         cacheSizeBytes: BigInt.from(64 * 1024 * 1024),
         workerThreads: 4,
       );
-      db = await WaffleDatabase.open(config);
+      db = await WaffleDatabase.open(config, schema: _benchSchema);
     });
   });
 }

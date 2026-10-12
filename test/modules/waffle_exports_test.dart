@@ -2,8 +2,6 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:waffle_db/waffle_db.dart';
 
-/// Tests that all public types and functions are properly exported
-/// from the waffle_db barrel file.
 void main() {
   group('Public API exports', () {
     test('WaffleRecord is accessible', () {
@@ -12,14 +10,6 @@ void main() {
         vector: Float32List.fromList([0.1, 0.2, 0.3]),
       );
       expect(record.id, 'export-test');
-    });
-
-    test('WaffleRecord.fromList is accessible', () {
-      final record = WaffleRecord.fromList(
-        id: 'export-test-2',
-        vector: [1.0, 2.0, 3.0],
-      );
-      expect(record.vector, isA<Float32List>());
     });
 
     test('WaffleConfig is accessible', () {
@@ -46,37 +36,30 @@ void main() {
       expect(WaffleMetric.dotProduct, isNotNull);
     });
 
-    test('WaffleGraphConfig is accessible', () {
-      const gc = WaffleGraphConfig(
-        m: 16,
-        metric: WaffleMetric.cosine,
-        efConstruction: 64,
-        efSearch: 32,
-      );
-      expect(gc.m, 16);
-      expect(gc.efConstruction, 64);
-      expect(gc.efSearch, 32);
+    test('WaffleHit is accessible', () {
+      const hit = WaffleHit(id: 'test', score: 0.9);
+      expect(hit.id, 'test');
+      expect(hit.score, 0.9);
     });
 
-    test('WaffleQueryResult is accessible', () {
-      const result = WaffleQueryResult(
-        id: 'test',
-        distance: 0.5,
-        metadata: null,
+    test('WaffleSchema DSL is accessible', () {
+      final schema = WaffleSchema(
+        fields: [
+          WaffleFields.string('category'),
+          WaffleFields.integer('price'),
+        ],
+        textLanguage: WaffleLanguage.english,
       );
-      expect(result.id, 'test');
-      expect(result.distance, 0.5);
+      expect(schema.fields.length, 2);
+      expect(schema.textLanguage, WaffleLanguage.english);
     });
 
-    test('VectorMetadata is accessible', () {
-      final meta = VectorMetadata(
-        title: 'Test',
-        description: 'A test vector',
-        category: 'unit-test',
-        payload: Uint8List.fromList([1, 2, 3]),
-      );
-      expect(meta.title, 'Test');
-      expect(meta.category, 'unit-test');
+    test('WaffleFilter builders are accessible', () {
+      final filter = WaffleEqFilter('category', 'auto');
+      expect(filter.encode(), contains('"op":"eq"'));
+      final combined =
+          WaffleAndFilter([filter, WaffleInFilter('price', [1, 2])]);
+      expect(combined.encode(), contains('"op":"and"'));
     });
   });
 }

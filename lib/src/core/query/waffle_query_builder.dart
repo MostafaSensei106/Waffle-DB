@@ -2,104 +2,103 @@ import 'dart:typed_data';
 
 import 'package:waffle_db/waffle_db.dart';
 
-/// Fluent query builder for WaffleDB vector searches.
-///
-/// Usage:
-/// ```dart
-/// final results = await db
-///     .queryBuilder()
-///     .withVector(queryVector)
-///     .limit(20)
-///     .efSearch(64)
-///     .threshold(0.5)
-///     .execute();
-/// ```
+/// Fluent builder for dense, sparse and hybrid searches with filters.
 class WaffleQueryBuilder {
   final WaffleDatabase _db;
 
-  int _limit = 10;
-  double _threshold = 0.0;
-  int _efSearch = 0;
   Float32List? _vector;
-  bool _includeMetadata = true;
+  String? _text;
+  int _limit = 10;
+  int _efSearch = 0;
+  double? _alpha;
+  int? _rrfK;
+  final List<WaffleFilter> _filters = [];
 
-  /// Creates a new query builder bound to the given database instance.
+  /// Binds this builder to [db].
   WaffleQueryBuilder(this._db);
 
-  /// Set the query vector (required before [execute]).
+  /// Sets the dense query vector.
   WaffleQueryBuilder withVector(Float32List vector) {
     _vector = vector;
     return this;
   }
 
-  /// Convenience: set query vector from a `List<double>`.
+  /// Sets the dense query vector from plain doubles.
   WaffleQueryBuilder withVectorList(List<double> vector) {
     _vector = Float32List.fromList(vector);
     return this;
   }
 
-  /// Set the maximum number of results to return (default: 10).
+  /// Sets the BM25 keyword query text.
+  WaffleQueryBuilder withText(String text) {
+    _text = text;
+    return this;
+  }
+
+  /// Sets both sides of a hybrid query at once.
+  WaffleQueryBuilder withHybrid({Float32List? vector, String? text}) {
+    if (vector != null) _vector = vector;
+    if (text != null) _text = text;
+    return this;
+  }
+
+  /// Caps returned hits at [n].
   WaffleQueryBuilder limit(int n) {
     _limit = n;
     return this;
   }
 
-  /// Set a distance threshold — results with distance > threshold are excluded.
-  /// Default 0.0 means no threshold (return all k results).
-  WaffleQueryBuilder threshold(double t) {
-    _threshold = t;
-    return this;
-  }
-
-  /// Override ef_search for this query. Higher = more accurate but slower.
-  /// Pass 0 to use the config default.
+  /// Overrides index expansion for this query when greater than zero.
   WaffleQueryBuilder efSearch(int ef) {
     _efSearch = ef;
     return this;
   }
 
-  /// Whether to include metadata in results (default: true).
-  /// Set to false for faster queries when you only need IDs and distances.
-  WaffleQueryBuilder includeMetadata(bool include) {
-    _includeMetadata = include;
+  /// Blends dense vs sparse ranks in hybrid mode (0.0 to 1.0).
+  WaffleQueryBuilder alpha(double a) {
+    _alpha = a.clamp(0.0, 1.0);
     return this;
   }
 
-  /// Execute the query and return results.
-  ///
-  /// Throws [StateError] if no query vector has been set.
-  Future<List<WaffleQueryResult>> execute() async {
-    if (_vector == null) {
+  /// Sets the RRF smoothing constant (default 60).
+  WaffleQueryBuilder rrfK(int k) {
+    _rrfK = k;
+    return this;
+  }
+
+  /// Requires `field == value` (pre-filtered inside the engine).
+  WaffleQueryBuilder eq(String field, Object value) {
+    _filters.add(WaffleEqFilter(field, value));
+    return this;
+  }
+
+  /// Requires `field IN values` (pre-filtered inside the engine).
+  WaffleQueryBuilder inList(String field, List<Object> values) {
+    _filters.add(WaffleInFilter(field, values));
+    return this;
+  }
+
+  /// Requires at least one of [filters] to match.
+  WaffleQueryBuilder or(List<WaffleFilter> filters) {
+    _filters.add(WaffleOrFilter(filters));
+    return this;
+  }
+
+  /// Runs the query and returns fused hits.
+  Future<List<WaffleHit>> execute() async {
+    if (_vector == null && _text == null) {
       throw StateError(
-        'No query vector set. Call withVector() before execute().',
+        'No query set. Call withVector() and/or withText() before execute().',
       );
     }
-
-    var results = _db.query(
-      _vector!,
-      k: _limit,
+    return _db.search(
+      vector: _vector,
+      text: _text,
+      topK: _limit,
+      filters: _filters.isEmpty ? null : _filters,
+      alpha: _alpha,
+      rrfK: _rrfK,
       efSearch: _efSearch,
-      includeMetadata: _includeMetadata,
     );
-
-    // Apply distance threshold filter
-    if (_threshold > 0.0) {
-      results = results.where((r) => r.distance <= _threshold).toList();
-    }
-
-    // Strip metadata if not requested
-    if (!_includeMetadata) {
-      results = results
-          .map(
-            (r) => WaffleQueryResult(
-              id: r.id,
-              distance: r.distance,
-              metadata: null,
-            ),
-          )
-          .toList();
-    }
-
-    return results;
   }
 }

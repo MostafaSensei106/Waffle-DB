@@ -1,9 +1,17 @@
+@Timeout(Duration(minutes: 15))
+library;
+
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:benchmark_harness/benchmark_harness.dart';
 import 'package:waffle_db/waffle_db.dart';
+
+final _benchSchema = WaffleSchema(
+  fields: [WaffleFields.string('tag', indexed: false)],
+  textLanguage: WaffleLanguage.english,
+);
 
 void cleanPath(String path) {
   final dir = Directory(path);
@@ -36,7 +44,7 @@ class OpenCloseBenchmark extends AsyncBenchmarkBase {
       cacheSizeBytes: BigInt.from(8 * 1024 * 1024),
       workerThreads: 2,
     );
-    final db = await WaffleDatabase.open(config);
+    final db = await WaffleDatabase.open(config, schema: _benchSchema);
     await db.close();
   }
 
@@ -73,7 +81,7 @@ class SingleInsertBenchmark extends AsyncBenchmarkBase {
       cacheSizeBytes: BigInt.from(8 * 1024 * 1024),
       workerThreads: 2,
     );
-    db = await WaffleDatabase.open(config);
+    db = await WaffleDatabase.open(config, schema: _benchSchema);
     _vector =
         Float32List.fromList(List.generate(128, (_) => _random.nextDouble()));
   }
@@ -83,7 +91,7 @@ class SingleInsertBenchmark extends AsyncBenchmarkBase {
     await db.insert(
       'item-$_counter',
       _vector,
-      metadata: Uint8List.fromList([1, 2, 3, 4]),
+
     );
     _counter++;
   }
@@ -122,14 +130,14 @@ class BatchInsertBenchmark extends AsyncBenchmarkBase {
       cacheSizeBytes: BigInt.from(8 * 1024 * 1024),
       workerThreads: 2,
     );
-    db = await WaffleDatabase.open(config);
+    db = await WaffleDatabase.open(config, schema: _benchSchema);
     _batch = List.generate(
       1000,
       (i) => WaffleRecord(
         id: 'temp-$i',
         vector: Float32List.fromList(
             List.generate(128, (_) => _random.nextDouble())),
-        metadata: Uint8List.fromList([9, 8, 7, 6]),
+
       ),
     );
   }
@@ -140,7 +148,7 @@ class BatchInsertBenchmark extends AsyncBenchmarkBase {
       return WaffleRecord(
         id: 'item-${_counter++}',
         vector: r.vector,
-        metadata: r.metadata,
+
       );
     }).toList();
     await db.insertBatch(records);
@@ -180,7 +188,7 @@ class QueryWithoutMetadataBenchmark extends AsyncBenchmarkBase {
       cacheSizeBytes: BigInt.from(8 * 1024 * 1024),
       workerThreads: 2,
     );
-    db = await WaffleDatabase.open(config);
+    db = await WaffleDatabase.open(config, schema: _benchSchema);
 
     // Prepopulate with 1000 vectors
     final records = List.generate(
@@ -189,7 +197,7 @@ class QueryWithoutMetadataBenchmark extends AsyncBenchmarkBase {
         id: 'item-$i',
         vector: Float32List.fromList(
             List.generate(128, (_) => _random.nextDouble())),
-        metadata: Uint8List.fromList([1, 2, 3]),
+
       ),
     );
     await db.insertBatch(records);
@@ -199,7 +207,7 @@ class QueryWithoutMetadataBenchmark extends AsyncBenchmarkBase {
 
   @override
   Future<void> run() async {
-    db.query(_queryVector, k: 10, efSearch: 32, includeMetadata: false);
+    db.search(vector: _queryVector, topK: 10, efSearch: 32);
   }
 
   @override
@@ -236,7 +244,7 @@ class QueryWithMetadataBenchmark extends AsyncBenchmarkBase {
       cacheSizeBytes: BigInt.from(8 * 1024 * 1024),
       workerThreads: 2,
     );
-    db = await WaffleDatabase.open(config);
+    db = await WaffleDatabase.open(config, schema: _benchSchema);
 
     // Prepopulate with 1000 vectors
     final records = List.generate(
@@ -245,7 +253,7 @@ class QueryWithMetadataBenchmark extends AsyncBenchmarkBase {
         id: 'item-$i',
         vector: Float32List.fromList(
             List.generate(128, (_) => _random.nextDouble())),
-        metadata: Uint8List.fromList([1, 2, 3]),
+
       ),
     );
     await db.insertBatch(records);
@@ -255,7 +263,7 @@ class QueryWithMetadataBenchmark extends AsyncBenchmarkBase {
 
   @override
   Future<void> run() async {
-    db.query(_queryVector, k: 10, efSearch: 32, includeMetadata: true);
+    db.search(vector: _queryVector, topK: 10, efSearch: 32);
   }
 
   @override
@@ -290,7 +298,7 @@ class GetVectorBenchmark extends AsyncBenchmarkBase {
       cacheSizeBytes: BigInt.from(8 * 1024 * 1024),
       workerThreads: 2,
     );
-    db = await WaffleDatabase.open(config);
+    db = await WaffleDatabase.open(config, schema: _benchSchema);
 
     await db.insert(
       'target-item',
@@ -335,12 +343,12 @@ class GetMetadataBenchmark extends AsyncBenchmarkBase {
       cacheSizeBytes: BigInt.from(8 * 1024 * 1024),
       workerThreads: 2,
     );
-    db = await WaffleDatabase.open(config);
+    db = await WaffleDatabase.open(config, schema: _benchSchema);
 
     await db.insert(
       'target-item',
       Float32List.fromList(List.generate(128, (_) => _random.nextDouble())),
-      metadata: Uint8List.fromList([100, 101, 102]),
+
     );
   }
 
@@ -382,7 +390,7 @@ class DeleteBenchmark extends AsyncBenchmarkBase {
       cacheSizeBytes: BigInt.from(8 * 1024 * 1024),
       workerThreads: 2,
     );
-    db = await WaffleDatabase.open(config);
+    db = await WaffleDatabase.open(config, schema: _benchSchema);
 
     // Prepopulate with 10,000 items to delete from
     final records = List.generate(
@@ -434,7 +442,7 @@ class GetAllIdsBenchmark extends AsyncBenchmarkBase {
       cacheSizeBytes: BigInt.from(8 * 1024 * 1024),
       workerThreads: 2,
     );
-    db = await WaffleDatabase.open(config);
+    db = await WaffleDatabase.open(config, schema: _benchSchema);
 
     final records = List.generate(
       1000,
@@ -478,7 +486,7 @@ class MillionInsertBenchmark extends AsyncBenchmarkBase {
       dimension: dimension,
       path: path,
     );
-    db = await WaffleDatabase.open(config);
+    db = await WaffleDatabase.open(config, schema: _benchSchema);
   }
 
   @override
@@ -494,7 +502,7 @@ class MillionInsertBenchmark extends AsyncBenchmarkBase {
           vector: Float32List.fromList(
             List.generate(dimension, (_) => _random.nextDouble()),
           ),
-          metadata: Uint8List.fromList([idx & 0xFF, (idx >> 8) & 0xFF]),
+
         );
       });
 

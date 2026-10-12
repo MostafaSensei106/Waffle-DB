@@ -1,6 +1,6 @@
 use roaring::RoaringBitmap;
 
-use crate::api::error::{Result, WaffleError};
+use anyhow::{Result, anyhow};
 use crate::api::schema::{
     WaffleFieldType, WaffleSchema, field_hash, field_value_key, numeric_index_key,
     numeric_index_prefix,
@@ -8,7 +8,6 @@ use crate::api::schema::{
 use crate::api::store::Store;
 
 #[derive(Debug, serde::Deserialize)]
-#[flutter_rust_bridge::frb(ignore)]
 #[serde(tag = "op")]
 pub(crate) enum FilterNode {
     #[serde(rename = "eq")]
@@ -27,31 +26,31 @@ fn json_scalar_to_canonical(field_type: &WaffleFieldType, v: &serde_json::Value)
     match field_type {
         WaffleFieldType::String | WaffleFieldType::Text => match v {
             serde_json::Value::String(s) => Ok((s.clone(), None)),
-            _ => Err(WaffleError::Filter("string field requires a string value".to_owned())),
+            _ => Err(anyhow!("string field requires a string value")),
         },
         WaffleFieldType::Boolean => match v {
             serde_json::Value::Bool(b) => Ok((b.to_string(), None)),
-            _ => Err(WaffleError::Filter("boolean field requires true/false".to_owned())),
+            _ => Err(anyhow!("boolean field requires true/false")),
         },
         WaffleFieldType::Integer => match v {
             serde_json::Value::Number(n) => {
                 if let Some(i) = n.as_i64() {
                     Ok((i.to_string(), Some(i as f64)))
                 } else {
-                    Err(WaffleError::Filter("integer field requires an integer value".to_owned()))
+                    Err(anyhow!("integer field requires an integer value"))
                 }
             }
-            _ => Err(WaffleError::Filter("integer field requires a number".to_owned())),
+            _ => Err(anyhow!("integer field requires a number")),
         },
         WaffleFieldType::Double => match v {
             serde_json::Value::Number(n) => {
                 if let Some(f) = n.as_f64() {
                     Ok((f.to_string(), Some(f)))
                 } else {
-                    Err(WaffleError::Filter("double field requires a number".to_owned()))
+                    Err(anyhow!("double field requires a number"))
                 }
             }
-            _ => Err(WaffleError::Filter("double field requires a number".to_owned())),
+            _ => Err(anyhow!("double field requires a number")),
         },
     }
 }
@@ -74,7 +73,7 @@ pub(crate) fn evaluate_filter(
     match node {
         FilterNode::Eq { field, value } => {
             let def = schema.indexed_field(field).ok_or_else(|| {
-                WaffleError::Filter(format!("field {field:?} is not indexed"))
+                anyhow!("field {field:?} is not indexed")
             })?;
             let (canonical, numeric) = json_scalar_to_canonical(&def.field_type, value)?;
             match numeric {
@@ -87,7 +86,7 @@ pub(crate) fn evaluate_filter(
         }
         FilterNode::In { field, values } => {
             let def = schema.indexed_field(field).ok_or_else(|| {
-                WaffleError::Filter(format!("field {field:?} is not indexed"))
+                anyhow!("field {field:?} is not indexed")
             })?;
             let mut acc = RoaringBitmap::new();
             for v in values {
@@ -120,12 +119,12 @@ pub(crate) fn evaluate_filter(
             }
             Ok(acc)
         }
-        FilterNode::Not { filter: _ } => Err(WaffleError::NotSupported(
-            "NOT filters require a universe bitmap; use positive filters".to_owned(),
+        FilterNode::Not { filter: _ } => Err(anyhow!(
+            "NOT filters require a universe bitmap; use positive filters"
         )),
     }
 }
 
 pub(crate) fn parse_filter(json: &str) -> Result<FilterNode> {
-    serde_json::from_str(json).map_err(|e| WaffleError::Filter(format!("invalid filter: {e}")))
+    serde_json::from_str(json).map_err(|e| anyhow!("invalid filter: {e}"))
 }

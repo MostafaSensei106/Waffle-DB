@@ -9,7 +9,7 @@ use tantivy::schema::{
 use tantivy::tokenizer::{Language, LowerCaser, RemoveLongFilter, SimpleTokenizer, Stemmer, TextAnalyzer};
 use tantivy::{doc, DocAddress, Index, IndexReader, IndexWriter, ReloadPolicy, TantivyDocument, Term};
 
-use crate::api::error::{Result, WaffleError};
+use anyhow::{Result, anyhow};
 use crate::api::schema::WaffleLanguage;
 
 const TOKENIZER_NAME: &str = "waffle_txt";
@@ -39,7 +39,7 @@ pub struct TextEngine {
 impl TextEngine {
     pub fn open(dir: &Path, language: &WaffleLanguage) -> Result<Self> {
         std::fs::create_dir_all(dir)
-            .map_err(|e| WaffleError::Text(format!("cannot create tantivy dir: {e}")))?;
+            .map_err(|e| anyhow!("cannot create tantivy dir: {e}"))?;
         let mut schema_builder = Schema::builder();
         let text_options = TextOptions::default()
             .set_indexing_options(
@@ -85,7 +85,7 @@ impl TextEngine {
         let writer = self
             .writer
             .lock()
-            .map_err(|e| WaffleError::Text(format!("writer lock poisoned: {e}")))?;
+            .map_err(|e| anyhow!("writer lock poisoned: {e}"))?;
         writer.add_document(doc!(
             self.f_text => text,
             self.f_wid => internal as u64
@@ -97,7 +97,7 @@ impl TextEngine {
         let writer = self
             .writer
             .lock()
-            .map_err(|e| WaffleError::Text(format!("writer lock poisoned: {e}")))?;
+            .map_err(|e| anyhow!("writer lock poisoned: {e}"))?;
         writer.delete_term(Term::from_field_u64(self.f_wid, internal as u64));
         Ok(())
     }
@@ -106,7 +106,7 @@ impl TextEngine {
         let mut writer = self
             .writer
             .lock()
-            .map_err(|e| WaffleError::Text(format!("writer lock poisoned: {e}")))?;
+            .map_err(|e| anyhow!("writer lock poisoned: {e}"))?;
         writer.commit()?;
         drop(writer);
         self.reader.reload()?;
@@ -120,7 +120,7 @@ impl TextEngine {
         let fields = self
             .parser_fields
             .read()
-            .map_err(|e| WaffleError::Text(format!("lock poisoned: {e}")))?
+            .map_err(|e| anyhow!("lock poisoned: {e}"))?
             .clone();
         let parser = QueryParser::for_index(&self.index, fields);
         let query = parser.parse_query(text)?;

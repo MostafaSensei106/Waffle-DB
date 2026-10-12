@@ -4,12 +4,10 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import '../frb_generated.dart';
-import 'error.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'schema.dart';
 
 // These functions are ignored because they are not marked as `pub`: `init_tables`, `meta_get`, `meta_put`, `set_next_id`
-// These functions are ignored (category: IgnoreBecauseType): `write_record`
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<Path>>
 abstract class Path implements RustOpaqueInterface {}
@@ -82,6 +80,13 @@ abstract class Store implements RustOpaqueInterface {
       {required WriteTransaction tx,
       required String external_,
       required int internal});
+
+  Future<void> writeRecord(
+      {required WriteTransaction tx,
+      required String external_,
+      required int internal,
+      required ChunkRecord record,
+      required List<double> vector});
 }
 
 // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<WriteTransaction>>

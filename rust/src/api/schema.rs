@@ -1,6 +1,6 @@
 use rkyv::{Archive, Deserialize, Serialize};
 
-use crate::api::error::{Result, WaffleError};
+use anyhow::{Result, anyhow};
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum WaffleFieldType {
@@ -54,26 +54,24 @@ pub struct WaffleSchema {
 impl WaffleSchema {
     pub(crate) fn validate(&self) -> Result<()> {
         if self.fields.is_empty() {
-            return Err(WaffleError::Schema(
-                "schema must declare at least one field".to_owned(),
-            ));
+            return Err(anyhow!("schema must declare at least one field"));
         }
         let mut seen = std::collections::HashSet::new();
         for f in &self.fields {
             if f.name.trim().is_empty() {
-                return Err(WaffleError::Schema("field name must not be empty".to_owned()));
+                return Err(anyhow!("field name must not be empty"));
             }
             if f.name.contains('\0') || f.name.contains('#') {
-                return Err(WaffleError::Schema(format!(
+                return Err(anyhow!(
                     "field name {:?} contains a reserved character",
                     f.name
-                )));
+                ));
             }
             if !seen.insert(f.name.clone()) {
-                return Err(WaffleError::Schema(format!(
+                return Err(anyhow!(
                     "duplicate field name {:?}",
                     f.name
-                )));
+                ));
             }
         }
         Ok(())
@@ -95,7 +93,7 @@ impl WaffleSchema {
             "fields": fields,
             "text_language": self.text_language.as_str(),
         });
-        serde_json::to_string(&v).map_err(WaffleError::from)
+        serde_json::to_string(&v).map_err(|e| anyhow!(e))
     }
 
     pub(crate) fn indexed_field(&self, name: &str) -> Option<&WaffleField> {
@@ -104,7 +102,6 @@ impl WaffleSchema {
 }
 
 #[derive(Archive, Serialize, Deserialize, Debug, Clone)]
-#[flutter_rust_bridge::frb(ignore)]
 pub(crate) struct ChunkRecord {
     pub external_id: String,
     pub parent_id: Option<String>,
@@ -116,12 +113,12 @@ pub(crate) struct ChunkRecord {
 pub(crate) fn archive_chunk(record: &ChunkRecord) -> Result<Vec<u8>> {
     rkyv::to_bytes::<rkyv::rancor::Error>(record)
         .map(|b| b.to_vec())
-        .map_err(|e| WaffleError::Serialization(e.to_string()))
+        .map_err(|e| anyhow!(e.to_string()))
 }
 
 pub(crate) fn unarchive_chunk(bytes: &[u8]) -> Result<ChunkRecord> {
     rkyv::from_bytes::<ChunkRecord, rkyv::rancor::Error>(bytes)
-        .map_err(|e| WaffleError::Serialization(e.to_string()))
+        .map_err(|e| anyhow!(e.to_string()))
 }
 
 pub(crate) fn field_value_key(field: &str, value: &str) -> String {

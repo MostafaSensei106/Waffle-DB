@@ -1,9 +1,17 @@
 // ignore_for_file: avoid_print
 
+@Timeout(Duration(minutes: 15))
+library;
+
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:waffle_db/waffle_db.dart';
+
+final _benchSchema = WaffleSchema(
+  fields: [WaffleFields.string('tag', indexed: false)],
+  textLanguage: WaffleLanguage.english,
+);
 
 void main() {
   test('User Benchmark - Run 10 times', () async {
@@ -29,7 +37,7 @@ void main() {
         workerThreads: 4,
       );
 
-      final db = await WaffleDatabase.open(config);
+      final db = await WaffleDatabase.open(config, schema: _benchSchema);
 
       // Batch insert 1000 items
       final records = List.generate(
@@ -45,11 +53,11 @@ void main() {
 
       // Query 10 times
       for (int i = 0; i < 10; i++) {
-        db.query(
-          Float32List.fromList(
+        db.search(
+          vector: Float32List.fromList(
             List.generate(128, (j) => Random().nextDouble()),
           ),
-          k: 10,
+          topK: 10,
         );
       }
 

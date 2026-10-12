@@ -5,7 +5,6 @@
 
 import '../frb_generated.dart';
 import 'config.dart';
-import 'error.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'store.dart';
 

@@ -6,7 +6,7 @@ use std::sync::{Mutex, OnceLock, RwLock};
 use roaring::RoaringBitmap;
 
 use crate::api::config::WaffleConfig;
-use crate::api::error::{Result, WaffleError};
+use anyhow::{Result, anyhow};
 use crate::api::filter::{evaluate_filter, parse_filter};
 use crate::api::query::{WaffleHit, WaffleSearchRequest, rrf_fuse};
 use crate::api::schema::{
@@ -64,48 +64,48 @@ fn indexed_values(
     payload: &serde_json::Value,
 ) -> Result<Vec<(String, WaffleFieldType, String, Option<f64>)>> {
     let obj = payload.as_object().ok_or_else(|| {
-        WaffleError::Schema("payload must be a JSON object".to_owned())
+        anyhow!("payload must be a JSON object")
     })?;
     let mut out = Vec::new();
     for field in schema.fields.iter().filter(|f| f.indexed) {
         let v = obj.get(&field.name).ok_or_else(|| {
-            WaffleError::Schema(format!("payload is missing indexed field {:?}", field.name))
+            anyhow!("payload is missing indexed field {:?}", field.name)
         })?;
         let (canonical, numeric) = match &field.field_type {
             WaffleFieldType::String | WaffleFieldType::Text => match v {
                 serde_json::Value::String(s) => (s.clone(), None),
                 _ => {
-                    return Err(WaffleError::Schema(format!(
+                    return Err(anyhow!(
                         "field {:?} expects a string",
                         field.name
-                    )))
+                    ));
                 }
             },
             WaffleFieldType::Boolean => match v {
                 serde_json::Value::Bool(b) => (b.to_string(), None),
                 _ => {
-                    return Err(WaffleError::Schema(format!(
+                    return Err(anyhow!(
                         "field {:?} expects true/false",
                         field.name
-                    )))
+                    ));
                 }
             },
             WaffleFieldType::Integer => match v.as_i64() {
                 Some(i) => (i.to_string(), Some(i as f64)),
                 None => {
-                    return Err(WaffleError::Schema(format!(
+                    return Err(anyhow!(
                         "field {:?} expects an integer",
                         field.name
-                    )))
+                    ));
                 }
             },
             WaffleFieldType::Double => match v.as_f64() {
                 Some(f) => (f.to_string(), Some(f)),
                 None => {
-                    return Err(WaffleError::Schema(format!(
+                    return Err(anyhow!(
                         "field {:?} expects a number",
                         field.name
-                    )))
+                    ));
                 }
             },
         };
@@ -126,23 +126,23 @@ fn insert_one(
 ) -> Result<()> {
     let dim = engine.config.dimension as usize;
     if vector.len() != dim {
-        return Err(WaffleError::Dimension {
-            expected: dim,
-            actual: vector.len(),
-        });
+        return Err(anyhow!(
+            "dimension mismatch: expected {dim}, got {}",
+            vector.len()
+        ));
     }
     let payload: serde_json::Value = if payload_json.trim().is_empty() {
         serde_json::Value::Object(Default::default())
     } else {
         serde_json::from_str(payload_json).map_err(|e| {
-            WaffleError::Schema(format!("payload is not valid JSON: {e}"))
+            anyhow!("payload is not valid JSON: {e}")
         })?
     };
     let values = indexed_values(&engine.schema, &payload)?;
 
     let tx = engine.store.begin_write()?;
     if engine.store.lookup_internal(id)?.is_some() {
-        return Err(WaffleError::DuplicateId(id.to_owned()));
+        return Err(anyhow!("duplicate id: {id}"));
     }
     let internal = engine.store.alloc_id(&tx)?;
     let record = ChunkRecord {
@@ -178,7 +178,7 @@ pub fn waffle_open(config: WaffleConfig, schema: WaffleSchema) -> std::result::R
     (|| -> Result<u64> {
         let dir = PathBuf::from(&config.path);
         std::fs::create_dir_all(&dir)
-            .map_err(|e| WaffleError::Storage(format!("cannot create db dir: {e}")))?;
+            .map_err(|e| anyhow!("cannot create db dir: {e}"))?;
         let dim = config.dimension as usize;
         let store = Store::open(&dir, &schema, config.dimension)?;
         let vector = VectorEngine::open(
@@ -211,7 +211,7 @@ pub fn waffle_open(config: WaffleConfig, schema: WaffleSchema) -> std::result::R
         let handle = HANDLE_COUNTER.fetch_add(1, Ordering::Relaxed);
         registry()
             .write()
-            .map_err(|e| WaffleError::Storage(format!("lock poisoned: {e}")))?
+            .map_err(|e| anyhow!("lock poisoned: {e}"))?
             .insert(handle, engine);
         Ok(handle)
     })()
@@ -259,34 +259,34 @@ pub fn waffle_insert_batch(
         let dim = engine.config.dimension as usize;
         let n = ids.len();
         if vectors_flat.len() != n * dim {
-            return Err(WaffleError::Dimension {
-                expected: n * dim,
-                actual: vectors_flat.len(),
-            });
+            return Err(anyhow!(
+                "flat vector length {} does not match {n} ids",
+                vectors_flat.len()
+            ));
         }
         if texts.len() != n {
-            return Err(WaffleError::Storage(format!(
+            return Err(anyhow!(
                 "texts length {} != {n} ids",
                 texts.len()
-            )));
+            ));
         }
         if payload_jsons.len() != n {
-            return Err(WaffleError::Storage(format!(
+            return Err(anyhow!(
                 "payload_jsons length {} != {n} ids",
                 payload_jsons.len()
-            )));
+            ));
         }
         if chunk_indices.len() != n {
-            return Err(WaffleError::Storage(format!(
+            return Err(anyhow!(
                 "chunk_indices length {} != {n} ids",
                 chunk_indices.len()
-            )));
+            ));
         }
         if parent_ids.len() != n {
-            return Err(WaffleError::Storage(format!(
+            return Err(anyhow!(
                 "parent_ids length {} != {n} ids",
                 parent_ids.len()
-            )));
+            ));
         }
         let mut parent_iter = parent_ids.into_iter();
         for i in 0..n {
@@ -318,16 +318,14 @@ pub fn waffle_search(
         let dim = engine.config.dimension as usize;
         if let Some(v) = &request.vector {
             if v.len() != dim {
-                return Err(WaffleError::Dimension {
-                    expected: dim,
-                    actual: v.len(),
-                });
+                return Err(anyhow!(
+                    "dimension mismatch: expected {dim}, got {}",
+                    v.len()
+                ));
             }
         }
         if request.vector.is_none() && request.text.is_none() {
-            return Err(WaffleError::Filter(
-                "search request needs a vector, a text, or both".to_owned(),
-            ));
+            return Err(anyhow!("search request needs a vector, a text, or both"));
         }
         let top_k = (request.top_k as usize).clamp(1, 10_000);
         let allowed: Option<RoaringBitmap> = match &request.filter_json {
@@ -341,7 +339,7 @@ pub fn waffle_search(
                     Some(v) => {
                         let res = if request.ef_search > 0 {
                             let _guard = engine.ef_guard.lock().map_err(|e| {
-                                WaffleError::Storage(format!("lock poisoned: {e}"))
+                                anyhow!("lock poisoned: {e}")
                             })?;
                             engine.vector.override_expansion_search(request.ef_search as usize);
                             let r = engine.vector.search(v, top_k, allowed.as_ref());
@@ -483,13 +481,13 @@ pub fn waffle_get_neighbors(
 ) -> std::result::Result<Vec<WaffleHit>, String> {
     with_engine(handle, |engine| {
         let internal = engine.store.lookup_internal(&id)?.ok_or_else(|| {
-            WaffleError::Storage(format!("unknown id {id:?}"))
+            anyhow!("unknown id {id:?}")
         })?;
         let rec = engine.store.read_chunk(internal)?.ok_or_else(|| {
-            WaffleError::Storage(format!("missing record for {id:?}"))
+            anyhow!("missing record for {id:?}")
         })?;
         let parent = rec.parent_id.clone().ok_or_else(|| {
-            WaffleError::NotSupported("record has no parent document".to_owned())
+            anyhow!("record has no parent document")
         })?;
         let mut hits = Vec::new();
         let lo = rec.chunk_index.saturating_sub(window);

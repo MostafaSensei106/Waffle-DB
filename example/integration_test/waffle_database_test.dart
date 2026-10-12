@@ -5,6 +5,19 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:waffle_db/waffle_db.dart';
 
+final _benchSchema = WaffleSchema(
+  fields: [WaffleFields.string('tag', indexed: false)],
+  textLanguage: WaffleLanguage.english,
+);
+
+final _filterSchema = WaffleSchema(
+  fields: [
+    WaffleFields.string('category'),
+    WaffleFields.integer('price'),
+  ],
+  textLanguage: WaffleLanguage.english,
+);
+
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -41,7 +54,7 @@ void main() {
       cacheSizeBytes: BigInt.from(8 * 1024 * 1024),
       workerThreads: 2,
     );
-    db = await WaffleDatabase.open(config);
+    db = await WaffleDatabase.open(config, schema: _benchSchema);
   });
 
   tearDown(() async {
@@ -74,7 +87,7 @@ void main() {
       await db.close();
       expect(() => db.count(), throwsStateError);
       expect(() => db.insert('x', Float32List(dim)), throwsStateError);
-      expect(() => db.query(Float32List(dim)), throwsStateError);
+      expect(() => db.search(vector: Float32List(dim)), throwsStateError);
     });
   });
 
@@ -96,9 +109,8 @@ void main() {
       expect(db.count(), 10);
     });
 
-    testWidgets('insert with metadata', (tester) async {
-      final meta = Uint8List.fromList([10, 20, 30, 40]);
-      await db.insert('vm1', randomVector(42), metadata: meta);
+    testWidgets('insert with payload', (tester) async {
+      await db.insert('vm1', randomVector(42), payload: const {'tag': 'vm1'});
       final retrieved = db.getMetadata('vm1');
       expect(retrieved, isNotNull);
     });
@@ -123,13 +135,13 @@ void main() {
       expect(db.count(), 50);
     });
 
-    testWidgets('batch insert with metadata', (tester) async {
+    testWidgets('batch insert with payload', (tester) async {
       final records = List.generate(
         10,
         (i) => WaffleRecord(
           id: 'bm-$i',
           vector: randomVector(i),
-          metadata: Uint8List.fromList([i, i + 1]),
+          payload: {'tag': 'bm-$i'},
         ),
       );
       await db.insertBatch(records);
@@ -154,10 +166,10 @@ void main() {
         await db.insert('other-$i', randomVector(i + 100));
       }
 
-      final results = db.query(v, k: 1);
+      final results = db.search(vector: v, topK: 1);
       expect(results, isNotEmpty);
       expect(results.first.id, 'target');
-      expect(results.first.distance, closeTo(0.0, 0.01));
+      expect(results.first.distance!, closeTo(0.0, 0.01));
     });
 
     testWidgets('query k limits results', (tester) async {
@@ -165,8 +177,8 @@ void main() {
         await db.insert('qk-$i', randomVector(i));
       }
 
-      final results5 = db.query(randomVector(0), k: 5);
-      final results10 = db.query(randomVector(0), k: 10);
+      final results5 = db.search(vector: randomVector(0), topK: 5);
+      final results10 = db.search(vector: randomVector(0), topK: 10);
 
       expect(results5.length, 5);
       expect(results10.length, 10);
@@ -177,11 +189,11 @@ void main() {
         await db.insert('sorted-$i', randomVector(i));
       }
 
-      final results = db.query(randomVector(0), k: 10);
+      final results = db.search(vector: randomVector(0), topK: 10);
       for (int i = 1; i < results.length; i++) {
         expect(
-          results[i].distance,
-          greaterThanOrEqualTo(results[i - 1].distance),
+          results[i].distance!,
+          greaterThanOrEqualTo(results[i - 1].distance!),
         );
       }
     });
@@ -191,15 +203,15 @@ void main() {
         await db.insert('ef-$i', randomVector(i));
       }
 
-      final resultsLow = db.query(randomVector(0), k: 5, efSearch: 8);
-      final resultsHigh = db.query(randomVector(0), k: 5, efSearch: 128);
+      final resultsLow = db.search(vector: randomVector(0), topK: 5, efSearch: 8);
+      final resultsHigh = db.search(vector: randomVector(0), topK: 5, efSearch: 128);
 
       expect(resultsLow.length, 5);
       expect(resultsHigh.length, 5);
     });
 
     testWidgets('query empty database returns empty', (tester) async {
-      final results = db.query(randomVector(0), k: 5);
+      final results = db.search(vector: randomVector(0), topK: 5);
       expect(results, isEmpty);
     });
   });
@@ -232,9 +244,8 @@ void main() {
   // ---------------------------------------------------------------
 
   group('Get Metadata', () {
-    testWidgets('getMetadata retrieves stored metadata', (tester) async {
-      final meta = Uint8List.fromList([100, 200, 42]);
-      await db.insert('gm-1', randomVector(1), metadata: meta);
+    testWidgets('getMetadata retrieves stored payload', (tester) async {
+      await db.insert('gm-1', randomVector(1), payload: const {'tag': 'gm-1'});
       final retrieved = db.getMetadata('gm-1');
       expect(retrieved, isNotNull);
     });
@@ -340,20 +351,38 @@ void main() {
       expect(results.length, 5);
     });
 
-    testWidgets('threshold filters distant results', (tester) async {
-      final target = randomVector(0);
-      await db.insert('close', target);
-      for (int i = 1; i < 20; i++) {
-        await db.insert('far-$i', randomVector(i + 500));
-      }
+    testWidgets('eq pre-filtering narrows results', (tester) async {
+      await db.close();
+      db = await WaffleDatabase.open(
+        WaffleConfig(
+          dimension: dim,
+          path: dbPath,
+          graphConfig: const WaffleGraphConfig(
+            m: 16,
+            metric: WaffleMetric.cosine,
+            efConstruction: 64,
+            efSearch: 32,
+          ),
+          maxElements: 10000,
+          useQuantization: false,
+          cacheSizeBytes: BigInt.from(8 * 1024 * 1024),
+          workerThreads: 2,
+        ),
+        schema: _filterSchema,
+      );
+      await db.insert('auto-1', randomVector(0),
+          payload: const {'category': 'auto', 'price': 100});
+      await db.insert('marine-1', randomVector(1),
+          payload: const {'category': 'marine', 'price': 200});
 
-      final results = await WaffleQueryBuilder(
-        db,
-      ).withVector(target).limit(20).threshold(0.01).execute();
+      final results = await WaffleQueryBuilder(db)
+          .withVector(randomVector(0))
+          .limit(5)
+          .eq('category', 'marine')
+          .execute();
 
-      for (final r in results) {
-        expect(r.distance, lessThanOrEqualTo(0.01));
-      }
+      expect(results.length, 1);
+      expect(results.first.id, 'marine-1');
     });
 
     testWidgets('efSearch override works', (tester) async {
@@ -368,19 +397,21 @@ void main() {
       expect(results.length, 5);
     });
 
-    testWidgets('includeMetadata false strips metadata', (tester) async {
+    testWidgets('hits carry text and payload', (tester) async {
       await db.insert(
-        'meta-strip',
+        'hp-1',
         randomVector(1),
-        metadata: Uint8List.fromList([1, 2, 3]),
+        text: 'hello world',
+        payload: const {'tag': 'hp-1'},
       );
 
       final results = await WaffleQueryBuilder(
         db,
-      ).withVector(randomVector(1)).limit(1).includeMetadata(false).execute();
+      ).withVector(randomVector(1)).limit(1).execute();
 
       expect(results, isNotEmpty);
-      expect(results.first.metadata, isNull);
+      expect(results.first.text, 'hello world');
+      expect(results.first.payloadJson, contains('hp-1'));
     });
 
     testWidgets('withVectorList works', (tester) async {
@@ -441,7 +472,7 @@ void main() {
 
     testWidgets('getMetadata in collection', (tester) async {
       final col = WaffleCollection(db, 'meta');
-      await col.add('m1', randomVector(1), metadata: Uint8List.fromList([42]));
+      await col.add('m1', randomVector(1), payload: const {'tag': 'm1'});
       final meta = await col.getMetadata('m1');
       expect(meta, isNotNull);
     });
@@ -482,7 +513,7 @@ void main() {
   group('Persistence', () {
     testWidgets('data survives close and reopen', (tester) async {
       final v = randomVector(42);
-      await db.insert('persist-1', v, metadata: Uint8List.fromList([1, 2, 3]));
+      await db.insert('persist-1', v, payload: const {'tag': 'p1'});
       await db.insert('persist-2', randomVector(43));
       await db.close();
 
@@ -501,7 +532,7 @@ void main() {
         cacheSizeBytes: BigInt.from(8 * 1024 * 1024),
         workerThreads: 2,
       );
-      db = await WaffleDatabase.open(config);
+      db = await WaffleDatabase.open(config, schema: _benchSchema);
 
       expect(db.count(), 2);
 
@@ -515,7 +546,7 @@ void main() {
       }
 
       // Query should still work (HNSW rebuilt from disk)
-      final results = db.query(v, k: 1);
+      final results = db.search(vector: v, topK: 1);
       expect(results, isNotEmpty);
       expect(results.first.id, 'persist-1');
     });

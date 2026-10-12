@@ -31,3 +31,6 @@ migrate_working_dir/
 .flutter-plugins-dependencies
 /build/
 /coverage/
+# Locally built Rust shared library used by `flutter test`
+# (point FRB_DART_LOAD_EXTERNAL_LIBRARY_NATIVE_LIB_DIR at the repo root).
+/libwaffle_db.so

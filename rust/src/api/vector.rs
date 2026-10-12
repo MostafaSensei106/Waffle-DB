@@ -4,7 +4,7 @@ use roaring::RoaringBitmap;
 use usearch::{Index, IndexOptions, MetricKind, ScalarKind};
 
 use crate::api::config::WaffleMetric;
-use crate::api::error::{Result, WaffleError};
+use anyhow::{Result, anyhow};
 
 pub struct VectorEngine {
     index: Index,
@@ -98,7 +98,7 @@ impl VectorEngine {
             return Ok(());
         }
         std::fs::create_dir_all(dir)
-            .map_err(|e| WaffleError::Vector(format!("cannot create dir: {e}")))?;
+            .map_err(|e| anyhow!("cannot create dir: {e}"))?;
         self.index
             .save(dir.join("vectors.usearch").to_string_lossy().as_ref())?;
         Ok(())
