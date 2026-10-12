@@ -8,28 +8,41 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
 part 'error.freezed.dart';
 
-            // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `fmt`, `fmt`, `from`, `from`, `from`, `from`, `from`, `from`, `from`, `from`
 
+@freezed
+sealed class WaffleError with _$WaffleError implements FrbException {
+  const WaffleError._();
 
-            
-
-            @freezed
-                sealed class WaffleError with _$WaffleError implements FrbException {
-                    const WaffleError._();
-
-                     const factory WaffleError.storage(  String field0,) = WaffleError_Storage;
- const factory WaffleError.vector(  String field0,) = WaffleError_Vector;
- const factory WaffleError.text(  String field0,) = WaffleError_Text;
- const factory WaffleError.dimension({   required BigInt expected ,  required BigInt actual , }) = WaffleError_Dimension;
- const factory WaffleError.schema(  String field0,) = WaffleError_Schema;
- const factory WaffleError.filter(  String field0,) = WaffleError_Filter;
- const factory WaffleError.duplicateId(  String field0,) = WaffleError_DuplicateId;
- const factory WaffleError.notSupported(  String field0,) = WaffleError_NotSupported;
- const factory WaffleError.invalidHandle(  BigInt field0,) = WaffleError_InvalidHandle;
- const factory WaffleError.serialization(  String field0,) = WaffleError_Serialization;
-
-                    
-
-                    
-                }
-            
+  const factory WaffleError.storage(
+    String field0,
+  ) = WaffleError_Storage;
+  const factory WaffleError.vector(
+    String field0,
+  ) = WaffleError_Vector;
+  const factory WaffleError.text(
+    String field0,
+  ) = WaffleError_Text;
+  const factory WaffleError.dimension({
+    required BigInt expected,
+    required BigInt actual,
+  }) = WaffleError_Dimension;
+  const factory WaffleError.schema(
+    String field0,
+  ) = WaffleError_Schema;
+  const factory WaffleError.filter(
+    String field0,
+  ) = WaffleError_Filter;
+  const factory WaffleError.duplicateId(
+    String field0,
+  ) = WaffleError_DuplicateId;
+  const factory WaffleError.notSupported(
+    String field0,
+  ) = WaffleError_NotSupported;
+  const factory WaffleError.invalidHandle(
+    BigInt field0,
+  ) = WaffleError_InvalidHandle;
+  const factory WaffleError.serialization(
+    String field0,
+  ) = WaffleError_Serialization;
+}

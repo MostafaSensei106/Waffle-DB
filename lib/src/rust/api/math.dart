@@ -6,10 +6,6 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-
-            
-
-            Future<double>  cosineSimilarity({required List<double> a , required List<double> b }) => RustLib.instance.api.crateApiMathCosineSimilarity(a: a, b: b);
-
-            
-            
+Future<double> cosineSimilarity(
+        {required List<double> a, required List<double> b}) =>
+    RustLib.instance.api.crateApiMathCosineSimilarity(a: a, b: b);

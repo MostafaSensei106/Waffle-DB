@@ -6,65 +6,91 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `fmt`, `fmt`
 
-            // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `fmt`, `fmt`
+Future<List<(int, double, double?)>> rrfFuse(
+        {required List<(int, double)> dense,
+        required List<(int, double)> sparse,
+        required BigInt rrfK,
+        required double alpha,
+        required BigInt topK}) =>
+    RustLib.instance.api.crateApiQueryRrfFuse(
+        dense: dense, sparse: sparse, rrfK: rrfK, alpha: alpha, topK: topK);
 
+class WaffleHit {
+  final String id;
+  final double score;
+  final double? distance;
+  final String? text;
+  final String? payloadJson;
 
-            Future<List<(int,double,double?)>>  rrfFuse({required List<(int,double)> dense , required List<(int,double)> sparse , required BigInt rrfK , required double alpha , required BigInt topK }) => RustLib.instance.api.crateApiQueryRrfFuse(dense: dense, sparse: sparse, rrfK: rrfK, alpha: alpha, topK: topK);
+  const WaffleHit({
+    required this.id,
+    required this.score,
+    this.distance,
+    this.text,
+    this.payloadJson,
+  });
 
-            class WaffleHit  {
-                final String id;
-final double score;
-final double? distance;
-final String? text;
-final String? payloadJson;
+  @override
+  int get hashCode =>
+      id.hashCode ^
+      score.hashCode ^
+      distance.hashCode ^
+      text.hashCode ^
+      payloadJson.hashCode;
 
-                const WaffleHit({required this.id ,required this.score ,this.distance ,this.text ,this.payloadJson ,});
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WaffleHit &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          score == other.score &&
+          distance == other.distance &&
+          text == other.text &&
+          payloadJson == other.payloadJson;
+}
 
+class WaffleSearchRequest {
+  final Float32List? vector;
+  final String? text;
+  final int topK;
+  final String? filterJson;
+  final double? alpha;
+  final int? rrfK;
+  final int efSearch;
 
+  const WaffleSearchRequest({
+    this.vector,
+    this.text,
+    required this.topK,
+    this.filterJson,
+    this.alpha,
+    this.rrfK,
+    required this.efSearch,
+  });
 
+  @override
+  int get hashCode =>
+      vector.hashCode ^
+      text.hashCode ^
+      topK.hashCode ^
+      filterJson.hashCode ^
+      alpha.hashCode ^
+      rrfK.hashCode ^
+      efSearch.hashCode;
 
-
-        @override
-        int get hashCode => id.hashCode^score.hashCode^distance.hashCode^text.hashCode^payloadJson.hashCode;
-
-
-
-        @override
-        bool operator ==(Object other) =>
-            identical(this, other) ||
-            other is WaffleHit &&
-                runtimeType == other.runtimeType
-                && id == other.id&& score == other.score&& distance == other.distance&& text == other.text&& payloadJson == other.payloadJson;
-
-            }
-
-class WaffleSearchRequest  {
-                final Float32List? vector;
-final String? text;
-final int topK;
-final String? filterJson;
-final double? alpha;
-final int? rrfK;
-final int efSearch;
-
-                const WaffleSearchRequest({this.vector ,this.text ,required this.topK ,this.filterJson ,this.alpha ,this.rrfK ,required this.efSearch ,});
-
-
-
-
-
-        @override
-        int get hashCode => vector.hashCode^text.hashCode^topK.hashCode^filterJson.hashCode^alpha.hashCode^rrfK.hashCode^efSearch.hashCode;
-
-
-
-        @override
-        bool operator ==(Object other) =>
-            identical(this, other) ||
-            other is WaffleSearchRequest &&
-                runtimeType == other.runtimeType
-                && vector == other.vector&& text == other.text&& topK == other.topK&& filterJson == other.filterJson&& alpha == other.alpha&& rrfK == other.rrfK&& efSearch == other.efSearch;
-
-            }
-            
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WaffleSearchRequest &&
+          runtimeType == other.runtimeType &&
+          vector == other.vector &&
+          text == other.text &&
+          topK == other.topK &&
+          filterJson == other.filterJson &&
+          alpha == other.alpha &&
+          rrfK == other.rrfK &&
+          efSearch == other.efSearch;
+}

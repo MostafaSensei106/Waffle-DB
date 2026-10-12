@@ -9,41 +9,39 @@ import 'error.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'store.dart';
 
+// These functions are ignored because they are not marked as `pub`: `map_metric`
 
-            // These functions are ignored because they are not marked as `pub`: `map_metric`
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<VectorEngine>>
+abstract class VectorEngine implements RustOpaqueInterface {
+  Future<void> add({required int internal, required List<double> vector});
 
+  Future<bool> contains({required int internal});
 
-            
+  static Future<VectorEngine> open(
+          {required Path dir,
+          required BigInt dimension,
+          required WaffleMetric metric,
+          required BigInt connectivity,
+          required BigInt expansionAdd,
+          required BigInt expansionSearch,
+          required BigInt capacity}) =>
+      RustLib.instance.api.crateApiVectorVectorEngineOpen(
+          dir: dir,
+          dimension: dimension,
+          metric: metric,
+          connectivity: connectivity,
+          expansionAdd: expansionAdd,
+          expansionSearch: expansionSearch,
+          capacity: capacity);
 
-            
-                // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<VectorEngine>>
-                abstract class VectorEngine implements RustOpaqueInterface {
-                     Future<void>  add({required int internal , required List<double> vector });
+  Future<void> overrideExpansionSearch({required BigInt ef});
 
+  Future<bool> remove({required int internal});
 
- Future<bool>  contains({required int internal });
+  Future<void> save({required Path dir});
 
+  Future<List<(int, double)>> search(
+      {required List<double> query, required BigInt k, RoaringBitmap? allowed});
 
-static Future<VectorEngine>  open({required Path dir , required BigInt dimension , required WaffleMetric metric , required BigInt connectivity , required BigInt expansionAdd , required BigInt expansionSearch , required BigInt capacity })=>RustLib.instance.api.crateApiVectorVectorEngineOpen(dir: dir, dimension: dimension, metric: metric, connectivity: connectivity, expansionAdd: expansionAdd, expansionSearch: expansionSearch, capacity: capacity);
-
-
- Future<void>  overrideExpansionSearch({required BigInt ef });
-
-
- Future<bool>  remove({required int internal });
-
-
- Future<void>  save({required Path dir });
-
-
- Future<List<(int,double)>>  search({required List<double> query , required BigInt k , RoaringBitmap? allowed });
-
-
- Future<BigInt>  size();
-
-
-
-                    
-                }
-                
-            
+  Future<BigInt> size();
+}

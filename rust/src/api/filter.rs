@@ -10,7 +10,7 @@ use crate::api::store::Store;
 #[derive(Debug, serde::Deserialize)]
 #[flutter_rust_bridge::frb(ignore)]
 #[serde(tag = "op")]
-pub enum FilterNode {
+pub(crate) enum FilterNode {
     #[serde(rename = "eq")]
     Eq { field: String, value: serde_json::Value },
     #[serde(rename = "in")]
@@ -66,7 +66,7 @@ fn numeric_eq_bitmap(store: &Store, field: &str, n: f64) -> Result<RoaringBitmap
         .collect())
 }
 
-pub fn evaluate_filter(
+pub(crate) fn evaluate_filter(
     store: &Store,
     schema: &WaffleSchema,
     node: &FilterNode,
@@ -126,6 +126,6 @@ pub fn evaluate_filter(
     }
 }
 
-pub fn parse_filter(json: &str) -> Result<FilterNode> {
+pub(crate) fn parse_filter(json: &str) -> Result<FilterNode> {
     serde_json::from_str(json).map_err(|e| WaffleError::Filter(format!("invalid filter: {e}")))
 }

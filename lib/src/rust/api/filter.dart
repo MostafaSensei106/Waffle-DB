@@ -10,25 +10,32 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
 part 'filter.freezed.dart';
 
-            // These functions are ignored because they are not marked as `pub`: `json_scalar_to_canonical`, `numeric_eq_bitmap`
+// These functions are ignored because they are not marked as `pub`: `json_scalar_to_canonical`, `numeric_eq_bitmap`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `fmt`
 // These functions are ignored (category: IgnoreBecauseType): `evaluate_filter`
 
+Future<FilterNode> parseFilter({required String json}) =>
+    RustLib.instance.api.crateApiFilterParseFilter(json: json);
 
-            Future<FilterNode>  parseFilter({required String json }) => RustLib.instance.api.crateApiFilterParseFilter(json: json);
+@freezed
+sealed class FilterNode with _$FilterNode {
+  const FilterNode._();
 
-            @freezed
-                sealed class FilterNode with _$FilterNode  {
-                    const FilterNode._();
-
-                     const factory FilterNode.eq({   required String field ,  required Object? value , }) = FilterNode_Eq;
- const factory FilterNode.in_({   required String field ,  required List<Object?> values , }) = FilterNode_In;
- const factory FilterNode.and({   required List<FilterNode> filters , }) = FilterNode_And;
- const factory FilterNode.or({   required List<FilterNode> filters , }) = FilterNode_Or;
- const factory FilterNode.not({   required FilterNode filter , }) = FilterNode_Not;
-
-                    
-
-                    
-                }
-            
+  const factory FilterNode.eq({
+    required String field,
+    required Object? value,
+  }) = FilterNode_Eq;
+  const factory FilterNode.in_({
+    required String field,
+    required List<Object?> values,
+  }) = FilterNode_In;
+  const factory FilterNode.and({
+    required List<FilterNode> filters,
+  }) = FilterNode_And;
+  const factory FilterNode.or({
+    required List<FilterNode> filters,
+  }) = FilterNode_Or;
+  const factory FilterNode.not({
+    required FilterNode filter,
+  }) = FilterNode_Not;
+}

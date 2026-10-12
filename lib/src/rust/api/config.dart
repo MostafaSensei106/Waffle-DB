@@ -6,136 +6,171 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `clone`, `eq`, `fmt`, `fmt`, `fmt`
 
-            // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `clone`, `clone`, `eq`, `fmt`, `fmt`, `fmt`
+/// Main configuration for the Waffle Database.
+class WaffleConfig {
+  /// Dimensionality of the vectors to be stored.
+  final int dimension;
 
+  /// File path where the database will be persisted.
+  final String path;
 
-            
+  /// Configuration for the HNSW graph.
+  final WaffleGraphConfig graphConfig;
 
-            /// Main configuration for the Waffle Database.
-class WaffleConfig  {
-                /// Dimensionality of the vectors to be stored.
-final int dimension;
-/// File path where the database will be persisted.
-final String path;
-/// Configuration for the HNSW graph.
-final WaffleGraphConfig graphConfig;
-/// Maximum number of elements the database can hold.
-final int maxElements;
-/// Whether to use scalar quantization to save memory.
-final bool useQuantization;
-/// Size of the cache in bytes.
-final BigInt cacheSizeBytes;
-/// Number of worker threads for parallel operations.
-final int workerThreads;
+  /// Maximum number of elements the database can hold.
+  final int maxElements;
 
-                const WaffleConfig({required this.dimension ,required this.path ,required this.graphConfig ,required this.maxElements ,required this.useQuantization ,required this.cacheSizeBytes ,required this.workerThreads ,});
+  /// Whether to use scalar quantization to save memory.
+  final bool useQuantization;
 
-                static Future<WaffleConfig>  default_()=>RustLib.instance.api.crateApiConfigWaffleConfigDefault();
+  /// Size of the cache in bytes.
+  final BigInt cacheSizeBytes;
 
+  /// Number of worker threads for parallel operations.
+  final int workerThreads;
 
-/// Creates a configuration optimized for high-volume datasets (1M+ vectors).
-///
-/// Example:
-/// ```dart
-/// final config = await WaffleConfig.highVolumeProfile(path: 'db', dimension: 128);
-/// ```
-static Future<WaffleConfig>  highVolumeProfile({required String path , required int dimension })=>RustLib.instance.api.crateApiConfigWaffleConfigHighVolumeProfile(path: path, dimension: dimension);
+  const WaffleConfig({
+    required this.dimension,
+    required this.path,
+    required this.graphConfig,
+    required this.maxElements,
+    required this.useQuantization,
+    required this.cacheSizeBytes,
+    required this.workerThreads,
+  });
 
+  static Future<WaffleConfig> default_() =>
+      RustLib.instance.api.crateApiConfigWaffleConfigDefault();
 
-/// Creates a configuration optimized for mobile devices.
-///
-/// Example:
-/// ```dart
-/// final config = await WaffleConfig.mobileProfile(path: 'db', dimension: 128);
-/// ```
-static Future<WaffleConfig>  mobileProfile({required String path , required int dimension })=>RustLib.instance.api.crateApiConfigWaffleConfigMobileProfile(path: path, dimension: dimension);
+  /// Creates a configuration optimized for high-volume datasets (1M+ vectors).
+  ///
+  /// Example:
+  /// ```dart
+  /// final config = await WaffleConfig.highVolumeProfile(path: 'db', dimension: 128);
+  /// ```
+  static Future<WaffleConfig> highVolumeProfile(
+          {required String path, required int dimension}) =>
+      RustLib.instance.api.crateApiConfigWaffleConfigHighVolumeProfile(
+          path: path, dimension: dimension);
 
+  /// Creates a configuration optimized for mobile devices.
+  ///
+  /// Example:
+  /// ```dart
+  /// final config = await WaffleConfig.mobileProfile(path: 'db', dimension: 128);
+  /// ```
+  static Future<WaffleConfig> mobileProfile(
+          {required String path, required int dimension}) =>
+      RustLib.instance.api.crateApiConfigWaffleConfigMobileProfile(
+          path: path, dimension: dimension);
 
-/// Creates a configuration optimized for read-heavy workloads.
-///
-/// Example:
-/// ```dart
-/// final config = await WaffleConfig.readHeavyProfile(path: 'db', dimension: 1536);
-/// ```
-static Future<WaffleConfig>  readHeavyProfile({required String path , required int dimension })=>RustLib.instance.api.crateApiConfigWaffleConfigReadHeavyProfile(path: path, dimension: dimension);
+  /// Creates a configuration optimized for read-heavy workloads.
+  ///
+  /// Example:
+  /// ```dart
+  /// final config = await WaffleConfig.readHeavyProfile(path: 'db', dimension: 1536);
+  /// ```
+  static Future<WaffleConfig> readHeavyProfile(
+          {required String path, required int dimension}) =>
+      RustLib.instance.api.crateApiConfigWaffleConfigReadHeavyProfile(
+          path: path, dimension: dimension);
 
+  /// Creates a configuration optimized for server environments.
+  ///
+  /// Example:
+  /// ```dart
+  /// final config = await WaffleConfig.serverProfile(path: 'db', dimension: 1536);
+  /// ```
+  static Future<WaffleConfig> serverProfile(
+          {required String path, required int dimension}) =>
+      RustLib.instance.api.crateApiConfigWaffleConfigServerProfile(
+          path: path, dimension: dimension);
 
-/// Creates a configuration optimized for server environments.
-///
-/// Example:
-/// ```dart
-/// final config = await WaffleConfig.serverProfile(path: 'db', dimension: 1536);
-/// ```
-static Future<WaffleConfig>  serverProfile({required String path , required int dimension })=>RustLib.instance.api.crateApiConfigWaffleConfigServerProfile(path: path, dimension: dimension);
+  /// Creates a configuration optimized for write-heavy workloads.
+  ///
+  /// Example:
+  /// ```dart
+  /// final config = await WaffleConfig.writeHeavyProfile(path: 'db', dimension: 1536);
+  /// ```
+  static Future<WaffleConfig> writeHeavyProfile(
+          {required String path, required int dimension}) =>
+      RustLib.instance.api.crateApiConfigWaffleConfigWriteHeavyProfile(
+          path: path, dimension: dimension);
 
+  @override
+  int get hashCode =>
+      dimension.hashCode ^
+      path.hashCode ^
+      graphConfig.hashCode ^
+      maxElements.hashCode ^
+      useQuantization.hashCode ^
+      cacheSizeBytes.hashCode ^
+      workerThreads.hashCode;
 
-/// Creates a configuration optimized for write-heavy workloads.
-///
-/// Example:
-/// ```dart
-/// final config = await WaffleConfig.writeHeavyProfile(path: 'db', dimension: 1536);
-/// ```
-static Future<WaffleConfig>  writeHeavyProfile({required String path , required int dimension })=>RustLib.instance.api.crateApiConfigWaffleConfigWriteHeavyProfile(path: path, dimension: dimension);
-
-
-
-
-
-        @override
-        int get hashCode => dimension.hashCode^path.hashCode^graphConfig.hashCode^maxElements.hashCode^useQuantization.hashCode^cacheSizeBytes.hashCode^workerThreads.hashCode;
-
-
-
-        @override
-        bool operator ==(Object other) =>
-            identical(this, other) ||
-            other is WaffleConfig &&
-                runtimeType == other.runtimeType
-                && dimension == other.dimension&& path == other.path&& graphConfig == other.graphConfig&& maxElements == other.maxElements&& useQuantization == other.useQuantization&& cacheSizeBytes == other.cacheSizeBytes&& workerThreads == other.workerThreads;
-
-            }
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WaffleConfig &&
+          runtimeType == other.runtimeType &&
+          dimension == other.dimension &&
+          path == other.path &&
+          graphConfig == other.graphConfig &&
+          maxElements == other.maxElements &&
+          useQuantization == other.useQuantization &&
+          cacheSizeBytes == other.cacheSizeBytes &&
+          workerThreads == other.workerThreads;
+}
 
 /// Configuration for the underlying HNSW graph.
-class WaffleGraphConfig  {
-                /// Max number of connections per element in the graph.
-final int m;
-/// Distance metric to use.
-final WaffleMetric metric;
-/// Size of the dynamic list for the nearest neighbors (used during index build).
-final int efConstruction;
-/// Size of the dynamic list for the nearest neighbors (used during search).
-final int efSearch;
+class WaffleGraphConfig {
+  /// Max number of connections per element in the graph.
+  final int m;
 
-                const WaffleGraphConfig({required this.m ,required this.metric ,required this.efConstruction ,required this.efSearch ,});
+  /// Distance metric to use.
+  final WaffleMetric metric;
 
+  /// Size of the dynamic list for the nearest neighbors (used during index build).
+  final int efConstruction;
 
+  /// Size of the dynamic list for the nearest neighbors (used during search).
+  final int efSearch;
 
+  const WaffleGraphConfig({
+    required this.m,
+    required this.metric,
+    required this.efConstruction,
+    required this.efSearch,
+  });
 
+  @override
+  int get hashCode =>
+      m.hashCode ^
+      metric.hashCode ^
+      efConstruction.hashCode ^
+      efSearch.hashCode;
 
-        @override
-        int get hashCode => m.hashCode^metric.hashCode^efConstruction.hashCode^efSearch.hashCode;
-
-
-
-        @override
-        bool operator ==(Object other) =>
-            identical(this, other) ||
-            other is WaffleGraphConfig &&
-                runtimeType == other.runtimeType
-                && m == other.m&& metric == other.metric&& efConstruction == other.efConstruction&& efSearch == other.efSearch;
-
-            }
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WaffleGraphConfig &&
+          runtimeType == other.runtimeType &&
+          m == other.m &&
+          metric == other.metric &&
+          efConstruction == other.efConstruction &&
+          efSearch == other.efSearch;
+}
 
 /// Distance metric used for vector comparisons.
 enum WaffleMetric {
-                    /// Cosine similarity (1 - cosine distance). Best for normalized embeddings.
-cosine,
-/// Euclidean distance (L2 norm). Best for spatial data.
-euclidean,
-/// Dot product. Use when vectors are not normalized and magnitude matters.
-dotProduct,
-                    ;
-                    
-                }
-            
+  /// Cosine similarity (1 - cosine distance). Best for normalized embeddings.
+  cosine,
+
+  /// Euclidean distance (L2 norm). Best for spatial data.
+  euclidean,
+
+  /// Dot product. Use when vectors are not normalized and magnitude matters.
+  dotProduct,
+  ;
+}

@@ -12,7 +12,7 @@ use tantivy::{doc, DocAddress, Index, IndexReader, IndexWriter, ReloadPolicy, Ta
 use crate::api::error::{Result, WaffleError};
 use crate::api::schema::WaffleLanguage;
 
-pub const TOKENIZER_NAME: &str = "waffle_txt";
+const TOKENIZER_NAME: &str = "waffle_txt";
 const WRITER_HEAP_BYTES: usize = 50_000_000;
 
 fn analyzer_for(language: &WaffleLanguage) -> TextAnalyzer {

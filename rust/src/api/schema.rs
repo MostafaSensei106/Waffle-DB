@@ -105,7 +105,7 @@ impl WaffleSchema {
 
 #[derive(Archive, Serialize, Deserialize, Debug, Clone)]
 #[flutter_rust_bridge::frb(ignore)]
-pub struct ChunkRecord {
+pub(crate) struct ChunkRecord {
     pub external_id: String,
     pub parent_id: Option<String>,
     pub chunk_index: u32,
@@ -113,18 +113,18 @@ pub struct ChunkRecord {
     pub payload_json: String,
 }
 
-pub fn archive_chunk(record: &ChunkRecord) -> Result<Vec<u8>> {
+pub(crate) fn archive_chunk(record: &ChunkRecord) -> Result<Vec<u8>> {
     rkyv::to_bytes::<rkyv::rancor::Error>(record)
         .map(|b| b.to_vec())
         .map_err(|e| WaffleError::Serialization(e.to_string()))
 }
 
-pub fn unarchive_chunk(bytes: &[u8]) -> Result<ChunkRecord> {
+pub(crate) fn unarchive_chunk(bytes: &[u8]) -> Result<ChunkRecord> {
     rkyv::from_bytes::<ChunkRecord, rkyv::rancor::Error>(bytes)
         .map_err(|e| WaffleError::Serialization(e.to_string()))
 }
 
-pub fn field_value_key(field: &str, value: &str) -> String {
+pub(crate) fn field_value_key(field: &str, value: &str) -> String {
     let mut key = String::with_capacity(field.len() + value.len() + 1);
     key.push_str(field);
     key.push('\0');
@@ -132,7 +132,7 @@ pub fn field_value_key(field: &str, value: &str) -> String {
     key
 }
 
-pub fn f64_to_ordered_u64(v: f64) -> u64 {
+pub(crate) fn f64_to_ordered_u64(v: f64) -> u64 {
     let bits = v.to_bits();
     if bits & (1u64 << 63) == 0 {
         bits ^ (1u64 << 63)
@@ -141,7 +141,7 @@ pub fn f64_to_ordered_u64(v: f64) -> u64 {
     }
 }
 
-pub fn numeric_index_key(field_hash: u64, value: f64, internal_id: u32) -> [u8; 20] {
+pub(crate) fn numeric_index_key(field_hash: u64, value: f64, internal_id: u32) -> [u8; 20] {
     let mut key = [0u8; 20];
     key[0..8].copy_from_slice(&field_hash.to_be_bytes());
     key[8..16].copy_from_slice(&f64_to_ordered_u64(value).to_be_bytes());
@@ -149,11 +149,11 @@ pub fn numeric_index_key(field_hash: u64, value: f64, internal_id: u32) -> [u8; 
     key
 }
 
-pub fn numeric_index_prefix(field_hash: u64) -> [u8; 8] {
+pub(crate) fn numeric_index_prefix(field_hash: u64) -> [u8; 8] {
     field_hash.to_be_bytes()
 }
 
-pub fn field_hash(field: &str) -> u64 {
+pub(crate) fn field_hash(field: &str) -> u64 {
     use std::hash::{Hash, Hasher};
     let mut h = std::collections::hash_map::DefaultHasher::new();
     field.hash(&mut h);

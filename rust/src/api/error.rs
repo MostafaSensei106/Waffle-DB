@@ -2,7 +2,7 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 #[flutter_rust_bridge::frb(ignore)]
-pub enum WaffleError {
+pub(crate) enum WaffleError {
     #[error("storage error: {0}")]
     Storage(String),
     #[error("vector index error: {0}")]
@@ -25,7 +25,7 @@ pub enum WaffleError {
     Serialization(String),
 }
 
-pub type Result<T> = std::result::Result<T, WaffleError>;
+pub(crate) type Result<T> = std::result::Result<T, WaffleError>;
 
 impl From<WaffleError> for String {
     fn from(e: WaffleError) -> String {

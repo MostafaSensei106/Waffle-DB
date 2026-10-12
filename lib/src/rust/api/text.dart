@@ -9,32 +9,20 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'schema.dart';
 import 'store.dart';
 
+// These functions are ignored because they are not marked as `pub`: `analyzer_for`
 
-            // These functions are ignored because they are not marked as `pub`: `analyzer_for`
+// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<TextEngine>>
+abstract class TextEngine implements RustOpaqueInterface {
+  Future<void> add({required int internal, required String text});
 
+  Future<void> commit();
 
-            
+  Future<void> delete({required int internal});
 
-            
-                // Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<TextEngine>>
-                abstract class TextEngine implements RustOpaqueInterface {
-                     Future<void>  add({required int internal , required String text });
+  static Future<TextEngine> open(
+          {required Path dir, required WaffleLanguage language}) =>
+      RustLib.instance.api
+          .crateApiTextTextEngineOpen(dir: dir, language: language);
 
-
- Future<void>  commit();
-
-
- Future<void>  delete({required int internal });
-
-
-static Future<TextEngine>  open({required Path dir , required WaffleLanguage language })=>RustLib.instance.api.crateApiTextTextEngineOpen(dir: dir, language: language);
-
-
- Future<List<(int,double)>>  search({required String text , required BigInt k });
-
-
-
-                    
-                }
-                
-            
+  Future<List<(int, double)>> search({required String text, required BigInt k});
+}

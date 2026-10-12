@@ -18,7 +18,7 @@ pub struct WaffleHit {
     pub payload_json: Option<String>,
 }
 
-pub fn rrf_fuse(
+pub(crate) fn rrf_fuse(
     dense: &[(u32, f32)],
     sparse: &[(u32, f32)],
     rrf_k: usize,
