@@ -163,6 +163,14 @@ class AndroidEnvironment {
       '_CARGOKIT_NDK_LINK_TARGET': targetArg,
       '_CARGOKIT_NDK_LINK_CLANG': ccValue,
       'CARGOKIT_TOOL_TEMP_DIR': toolTempDir,
+      'ANDROID_NDK_ROOT': ndkPath,
+      'ANDROID_NDK_HOME': ndkPath,
+      'ANDROID_NDK': ndkPath,
+      // Statically link the C++ runtime into our .so: the `cc` crate links
+      // libc++_shared by default on Android, but Flutter APKs do not bundle
+      // it for plugin native libs (dlopen fails with "libc++_shared.so" not
+      // found). Static linking removes the dependency entirely.
+      'CXXSTDLIB': 'c++_static',
     };
   }
 

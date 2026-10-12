@@ -21,12 +21,12 @@ cxx = "1.0"
 # default-features disabled: drops the `numkong` C++ backend, whose
 # `syscall` declaration conflicts with Android NDK r28 headers.
 # Core Index API (add/search/filtered_search) is backend-independent.
-usearch = { version = "2", default-features = true }
+usearch = { version = "2", default-features = false }
 # Text Engine: BM25 inverted index + tokenization/stemming (EN + AR via rust-stemmers).
 tantivy = "0.26"
 # Storage Engine: ACID + MVCC (MRSW reads during writes). Pinned to v2 for edition 2021.
 redb = "2"
-# Filter Engine: compressed u32 bitmaps; serde for redb persistence, simd for fast builds.
+# Filter Engine: compressed u32 bitmaps persisted through redb.
 roaring = { version = "0.11", features = ["serde"] }
 # Background ingestion queue: MPSC worker so Flutter UI never blocks on writes.
 crossbeam-channel = "0.5"
