@@ -213,7 +213,7 @@ void main() {
       int qc = 0;
       final stats = await benchmark('Query k=10 (N=1000, dim=$dim)', () async {
         final idx = qc++;
-        db.search(vector: queries[idx], topK: 10);
+        await db.search(vector: queries[idx], topK: 10);
       });
       expect(stats.p99, lessThan(100000)); // < 100ms
     });
@@ -233,7 +233,7 @@ void main() {
       int qc = 0;
       final stats = await benchmark('Query k=50 (N=1000, dim=$dim)', () async {
         final idx = qc++;
-        db.search(vector: queries[idx], topK: 50);
+        await db.search(vector: queries[idx], topK: 50);
       });
       expect(stats.p99, lessThan(200000)); // < 200ms
     });
@@ -249,7 +249,7 @@ void main() {
       final stats = await benchmark(
         'Query k=10 ef=256 (N=1000, dim=$dim)',
         () async {
-          db.search(vector: randomVector(qc++), topK: 10, efSearch: 256);
+          await db.search(vector: randomVector(qc++), topK: 10, efSearch: 256);
         },
       );
       expect(stats.p99, lessThan(500000)); // < 500ms

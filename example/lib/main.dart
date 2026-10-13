@@ -243,7 +243,7 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  void _searchNearestColors() {
+  Future<void> _searchNearestColors() async {
     if (_db == null || _totalColors == 0) {
       _showErrorSnackBar('Database is empty! Please generate colors first.');
       return;
@@ -256,7 +256,8 @@ class _MyHomePageState extends State<MyHomePage> {
     ]);
 
     final sw = Stopwatch()..start();
-    final results = _db!.search(vector: queryVector, topK: _k, efSearch: 48);
+    final results =
+        await _db!.search(vector: queryVector, topK: _k, efSearch: 48);
     sw.stop();
 
     setState(() {

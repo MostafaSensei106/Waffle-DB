@@ -128,7 +128,7 @@ void main() {
         );
 
         stopwatch.start();
-        final results = db.search(vector: vec, topK: 10, efSearch: 32);
+        final results = await db.search(vector: vec, topK: 10, efSearch: 32);
         stopwatch.stop();
 
         // Ensure we actually got results to prevent the compiler from optimizing out the call

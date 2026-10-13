@@ -88,7 +88,7 @@ void main() {
     );
     final queryAvgUs = await benchmarkAverageUs(() async {
       final idx = qc++;
-      db.search(vector: queryVectors[idx], topK: 10);
+      await db.search(vector: queryVectors[idx], topK: 10);
     });
 
     await db.close();

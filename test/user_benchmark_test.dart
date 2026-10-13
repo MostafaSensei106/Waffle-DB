@@ -59,7 +59,7 @@ void main() {
 
       // Query 10 times
       for (int i = 0; i < 10; i++) {
-        db.search(
+        await db.search(
           vector: Float32List.fromList(
             List.generate(128, (j) => Random().nextDouble()),
           ),

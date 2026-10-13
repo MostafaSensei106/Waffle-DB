@@ -166,7 +166,7 @@ void main() {
         await db.insert('other-$i', randomVector(i + 100));
       }
 
-      final results = db.search(vector: v, topK: 1);
+      final results = await db.search(vector: v, topK: 1);
       expect(results, isNotEmpty);
       expect(results.first.id, 'target');
       expect(results.first.distance!, closeTo(0.0, 0.01));
@@ -177,8 +177,8 @@ void main() {
         await db.insert('qk-$i', randomVector(i));
       }
 
-      final results5 = db.search(vector: randomVector(0), topK: 5);
-      final results10 = db.search(vector: randomVector(0), topK: 10);
+      final results5 = await db.search(vector: randomVector(0), topK: 5);
+      final results10 = await db.search(vector: randomVector(0), topK: 10);
 
       expect(results5.length, 5);
       expect(results10.length, 10);
@@ -189,7 +189,7 @@ void main() {
         await db.insert('sorted-$i', randomVector(i));
       }
 
-      final results = db.search(vector: randomVector(0), topK: 10);
+      final results = await db.search(vector: randomVector(0), topK: 10);
       for (int i = 1; i < results.length; i++) {
         expect(
           results[i].distance!,
@@ -203,12 +203,12 @@ void main() {
         await db.insert('ef-$i', randomVector(i));
       }
 
-      final resultsLow = db.search(
+      final resultsLow = await db.search(
         vector: randomVector(0),
         topK: 5,
         efSearch: 8,
       );
-      final resultsHigh = db.search(
+      final resultsHigh = await db.search(
         vector: randomVector(0),
         topK: 5,
         efSearch: 128,
@@ -219,7 +219,7 @@ void main() {
     });
 
     testWidgets('query empty database returns empty', (tester) async {
-      final results = db.search(vector: randomVector(0), topK: 5);
+      final results = await db.search(vector: randomVector(0), topK: 5);
       expect(results, isEmpty);
     });
   });
@@ -573,7 +573,7 @@ void main() {
       }
 
       // Query should still work (HNSW rebuilt from disk)
-      final results = db.search(vector: v, topK: 1);
+      final results = await db.search(vector: v, topK: 1);
       expect(results, isNotEmpty);
       expect(results.first.id, 'persist-1');
     });

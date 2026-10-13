@@ -192,7 +192,7 @@ class _CodeSearchPageState extends State<CodeSearchPage> {
     _run();
   }
 
-  void _run() {
+  Future<void> _run() async {
     final db = _db;
     if (db == null) return;
     final q = _query.text.trim();
@@ -202,7 +202,7 @@ class _CodeSearchPageState extends State<CodeSearchPage> {
       if (_kind != 'all') WaffleEqFilter('kind', _kind),
     ];
     final sw = Stopwatch()..start();
-    final hits = db.search(
+    final hits = await db.search(
       vector: DemoEmbedder.embed(q),
       text: q,
       topK: 10,

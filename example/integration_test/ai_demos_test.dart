@@ -78,7 +78,7 @@ void main() {
     });
 
     testWidgets('hybrid finds the filtering guide', (tester) async {
-      final hits = db.search(
+      final hits = await db.search(
         vector: _v('how does filtering work'),
         text: 'how does filtering work',
         topK: 5,
@@ -89,7 +89,7 @@ void main() {
     });
 
     testWidgets('section pre-filter hides other sections', (tester) async {
-      final hits = db.search(
+      final hits = await db.search(
         vector: _v('metadata'),
         text: 'metadata',
         topK: 10,
@@ -146,13 +146,13 @@ void main() {
     });
 
     testWidgets('exact symbol name wins over fuzzy meaning', (tester) async {
-      final hits = db.search(text: 'bitmap_add', topK: 5);
+      final hits = await db.search(text: 'bitmap_add', topK: 5);
       expect(hits, isNotEmpty);
       expect(hits.first.id, 'bitmap-add');
     });
 
     testWidgets('language pre-filter scopes results', (tester) async {
-      final hits = db.search(
+      final hits = await db.search(
         vector: _v('filter'),
         text: 'filter',
         topK: 10,
@@ -215,14 +215,14 @@ void main() {
         ),
         isTrue,
       );
-      final open = db.search(
+      final open = await db.search(
         vector: _v('return'),
         text: 'return',
         topK: 10,
         filter: WaffleEqFilter('status', 'open'),
       );
       expect(open.map((h) => h.id), isNot(contains('t-1')));
-      final openSparseOnly = db.search(
+      final openSparseOnly = await db.search(
         text: 'return',
         topK: 10,
         filter: WaffleEqFilter('status', 'open'),
@@ -284,13 +284,13 @@ void main() {
     });
 
     testWidgets('arabic query finds the term', (tester) async {
-      final hits = db.search(text: 'دمج الرتب', topK: 5);
+      final hits = await db.search(text: 'دمج الرتب', topK: 5);
       expect(hits, isNotEmpty);
       expect(hits.first.id, 't-rrf');
     });
 
     testWidgets('domain pre-filter scopes lookup', (tester) async {
-      final hits = db.search(
+      final hits = await db.search(
         vector: _v('chunk'),
         text: 'chunk',
         topK: 10,

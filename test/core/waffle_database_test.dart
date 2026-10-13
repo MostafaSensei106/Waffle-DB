@@ -67,7 +67,7 @@ void main() {
 
       expect(db.count(), 2);
 
-      final results = db.search(
+      final results = await db.search(
         vector: Float32List.fromList([1.0, 0.0, 0.0, 0.0]),
         topK: 1,
         filter: WaffleEqFilter('category', 'auto'),
@@ -85,7 +85,7 @@ void main() {
         payload: const {'category': 'auto', 'price': 100},
       );
 
-      final results = db.search(
+      final results = await db.search(
         vector: Float32List.fromList([1.0, 0.0, 0.0, 0.0]),
         topK: 5,
         filter: WaffleEqFilter('category', 'marine'),
@@ -101,7 +101,7 @@ void main() {
         payload: const {'category': 'auto', 'price': 100},
       );
 
-      final results = db.search(text: 'quick fox', topK: 5);
+      final results = await db.search(text: 'quick fox', topK: 5);
       expect(results.length, 1);
       expect(results.first.id, '1');
     });
@@ -190,13 +190,13 @@ void main() {
       expect(db.getVector('1'), isNull);
       expect(db.count(), 0);
 
-      final dense = db.search(
+      final dense = await db.search(
         vector: Float32List.fromList([1.0, 0.0, 0.0, 0.0]),
         topK: 5,
       );
       expect(dense.where((h) => h.id == '1'), isEmpty);
 
-      final sparse = db.search(text: 'xyzzy', topK: 5);
+      final sparse = await db.search(text: 'xyzzy', topK: 5);
       expect(sparse.where((h) => h.id == '1'), isEmpty);
     });
 
@@ -274,7 +274,7 @@ void main() {
       expect(db.count(), 1);
       expect(db.getPayload('u1')?['category'], 'marine');
 
-      final filtered = db.search(
+      final filtered = await db.search(
         vector: v1,
         topK: 5,
         filter: WaffleEqFilter('category', 'auto'),
@@ -306,11 +306,11 @@ void main() {
         await db.insert('p$i', Float32List.fromList([1.0, 0.0, 0.0, 0.0]),
             payload: {'category': 'auto', 'price': i});
       }
-      final first = db.search(
+      final first = await db.search(
         vector: Float32List.fromList([1.0, 0.0, 0.0, 0.0]),
         topK: 2,
       );
-      final second = db.search(
+      final second = await db.search(
         vector: Float32List.fromList([1.0, 0.0, 0.0, 0.0]),
         topK: 2,
         offset: 2,

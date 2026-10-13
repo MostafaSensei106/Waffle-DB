@@ -203,7 +203,7 @@ class QueryWithoutMetadataBenchmark extends AsyncBenchmarkBase {
 
   @override
   Future<void> run() async {
-    db.search(vector: _queryVector, topK: 10, efSearch: 32);
+    await db.search(vector: _queryVector, topK: 10, efSearch: 32);
   }
 
   @override
@@ -258,7 +258,7 @@ class QueryWithMetadataBenchmark extends AsyncBenchmarkBase {
 
   @override
   Future<void> run() async {
-    db.search(vector: _queryVector, topK: 10, efSearch: 32);
+    await db.search(vector: _queryVector, topK: 10, efSearch: 32);
   }
 
   @override

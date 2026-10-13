@@ -204,13 +204,13 @@ class _DocsRagPageState extends State<DocsRagPage> {
     _run();
   }
 
-  void _run() {
+  Future<void> _run() async {
     final db = _db;
     if (db == null) return;
     final q = _query.text.trim();
     if (q.isEmpty) return;
     final sw = Stopwatch()..start();
-    final hits = db.search(
+    final hits = await db.search(
       vector: DemoEmbedder.embed(q),
       text: q,
       topK: 8,
