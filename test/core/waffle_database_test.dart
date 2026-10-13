@@ -255,5 +255,74 @@ void main() {
       expect(ids.length, 2);
       expect(ids, containsAll(['A', 'B']));
     });
+
+    test('Upsert replaces and reports', () async {
+      final v1 = Float32List.fromList([1.0, 0.0, 0.0, 0.0]);
+      expect(
+        await db.upsert('u1', v1,
+            payload: const {'category': 'auto', 'price': 1}),
+        isFalse,
+      );
+      expect(
+        await db.upsert(
+          'u1',
+          Float32List.fromList([0.0, 1.0, 0.0, 0.0]),
+          payload: const {'category': 'marine', 'price': 2},
+        ),
+        isTrue,
+      );
+      expect(db.count(), 1);
+      expect(db.getPayload('u1')?['category'], 'marine');
+
+      final filtered = db.search(
+        vector: v1,
+        topK: 5,
+        filter: WaffleEqFilter('category', 'auto'),
+      );
+      expect(filtered, isEmpty);
+    });
+
+    test('DeleteBatch removes many at once', () async {
+      for (var i = 0; i < 5; i++) {
+        await db.insert('d$i', Float32List.fromList([1.0, 0.0, 0.0, 0.0]),
+            payload: const {'category': 'auto', 'price': 1});
+      }
+      expect(await db.deleteBatch(['d0', 'd1', 'd9']), 2);
+      expect(db.count(), 3);
+    });
+
+    test('DeleteWhere re-indexes by filter', () async {
+      await db.insert('w1', Float32List.fromList([1.0, 0.0, 0.0, 0.0]),
+          payload: const {'category': 'auto', 'price': 1});
+      await db.insert('w2', Float32List.fromList([0.0, 1.0, 0.0, 0.0]),
+          payload: const {'category': 'marine', 'price': 2});
+      expect(await db.deleteWhere(WaffleEqFilter('category', 'auto')), 1);
+      expect(db.count(), 1);
+      expect(db.getAllIds(), ['w2']);
+    });
+
+    test('Offset paginates fused results', () async {
+      for (var i = 0; i < 5; i++) {
+        await db.insert('p$i', Float32List.fromList([1.0, 0.0, 0.0, 0.0]),
+            payload: {'category': 'auto', 'price': i});
+      }
+      final first = db.search(
+        vector: Float32List.fromList([1.0, 0.0, 0.0, 0.0]),
+        topK: 2,
+      );
+      final second = db.search(
+        vector: Float32List.fromList([1.0, 0.0, 0.0, 0.0]),
+        topK: 2,
+        offset: 2,
+      );
+      expect(first.length, 2);
+      expect(second.length, 2);
+      expect(
+        second.map((h) => h.id).toSet().intersection(
+              first.map((h) => h.id).toSet(),
+            ),
+        isEmpty,
+      );
+    });
   });
 }

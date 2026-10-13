@@ -9,7 +9,7 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'query.dart';
 import 'schema.dart';
 
-// These functions are ignored because they are not marked as `pub`: `hit_from_internal`, `indexed_values`, `insert_one`, `registry`, `with_engine`
+// These functions are ignored because they are not marked as `pub`: `delete_internal`, `hit_from_internal`, `indexed_values`, `insert_many`, `insert_one`, `registry`, `with_engine`
 // These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `InsertInput`, `WaffleEngine`
 
 Future<BigInt> waffleOpen(
@@ -61,6 +61,33 @@ List<WaffleHit> waffleSearch(
 
 Future<bool> waffleDelete({required BigInt handle, required String id}) =>
     RustLib.instance.api.crateApiWaffleDbWaffleDelete(handle: handle, id: id);
+
+Future<bool> waffleUpsert(
+        {required BigInt handle,
+        required String id,
+        required List<double> vector,
+        required String text,
+        required String payloadJson,
+        String? parentId,
+        required int chunkIndex}) =>
+    RustLib.instance.api.crateApiWaffleDbWaffleUpsert(
+        handle: handle,
+        id: id,
+        vector: vector,
+        text: text,
+        payloadJson: payloadJson,
+        parentId: parentId,
+        chunkIndex: chunkIndex);
+
+Future<BigInt> waffleDeleteBatch(
+        {required BigInt handle, required List<String> ids}) =>
+    RustLib.instance.api
+        .crateApiWaffleDbWaffleDeleteBatch(handle: handle, ids: ids);
+
+Future<BigInt> waffleDeleteWhere(
+        {required BigInt handle, required String filterJson}) =>
+    RustLib.instance.api.crateApiWaffleDbWaffleDeleteWhere(
+        handle: handle, filterJson: filterJson);
 
 Uint8List? waffleGetMetadata({required BigInt handle, required String id}) =>
     RustLib.instance.api

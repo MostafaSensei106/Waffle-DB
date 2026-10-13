@@ -1819,7 +1819,6 @@ name = "waffle_db"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "crossbeam-channel",
  "cxx",
  "flutter_rust_bridge",
  "num_cpus",

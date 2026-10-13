@@ -72,7 +72,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.13.0';
 
   @override
-  int get rustContentHash => -1695180646;
+  int get rustContentHash => 1635388861;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -110,6 +110,12 @@ abstract class RustLibApi extends BaseApi {
 
   Future<bool> crateApiWaffleDbWaffleDelete(
       {required BigInt handle, required String id});
+
+  Future<BigInt> crateApiWaffleDbWaffleDeleteBatch(
+      {required BigInt handle, required List<String> ids});
+
+  Future<BigInt> crateApiWaffleDbWaffleDeleteWhere(
+      {required BigInt handle, required String filterJson});
 
   Future<void> crateApiWaffleDbWaffleFlush({required BigInt handle});
 
@@ -150,6 +156,15 @@ abstract class RustLibApi extends BaseApi {
 
   List<WaffleHit> crateApiWaffleDbWaffleSearch(
       {required BigInt handle, required WaffleSearchRequest request});
+
+  Future<bool> crateApiWaffleDbWaffleUpsert(
+      {required BigInt handle,
+      required String id,
+      required List<double> vector,
+      required String text,
+      required String payloadJson,
+      String? parentId,
+      required int chunkIndex});
 }
 
 class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
@@ -423,13 +438,67 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<BigInt> crateApiWaffleDbWaffleDeleteBatch(
+      {required BigInt handle, required List<String> ids}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_u_64(handle, serializer);
+        sse_encode_list_String(ids, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 11, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_u_64,
+        decodeErrorData: sse_decode_String,
+      ),
+      constMeta: kCrateApiWaffleDbWaffleDeleteBatchConstMeta,
+      argValues: [handle, ids],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta get kCrateApiWaffleDbWaffleDeleteBatchConstMeta =>
+      const TaskConstMeta(
+        debugName: "waffle_delete_batch",
+        argNames: ["handle", "ids"],
+      );
+
+  @override
+  Future<BigInt> crateApiWaffleDbWaffleDeleteWhere(
+      {required BigInt handle, required String filterJson}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_u_64(handle, serializer);
+        sse_encode_String(filterJson, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 12, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_u_64,
+        decodeErrorData: sse_decode_String,
+      ),
+      constMeta: kCrateApiWaffleDbWaffleDeleteWhereConstMeta,
+      argValues: [handle, filterJson],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta get kCrateApiWaffleDbWaffleDeleteWhereConstMeta =>
+      const TaskConstMeta(
+        debugName: "waffle_delete_where",
+        argNames: ["handle", "filterJson"],
+      );
+
+  @override
   Future<void> crateApiWaffleDbWaffleFlush({required BigInt handle}) {
     return handler.executeNormal(NormalTask(
       callFfi: (port_) {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_u_64(handle, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 11, port: port_);
+            funcId: 13, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_unit,
@@ -453,7 +522,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       callFfi: () {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_u_64(handle, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 12)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 14)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_list_String,
@@ -479,7 +548,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_u_64(handle, serializer);
         sse_encode_String(id, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 13)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 15)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_opt_list_prim_u_8_strict,
@@ -506,7 +575,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_u_64(handle, serializer);
         sse_encode_String(id, serializer);
         sse_encode_u_32(window, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 14)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 16)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_list_waffle_hit,
@@ -532,7 +601,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_u_64(handle, serializer);
         sse_encode_String(id, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 15)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 17)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_opt_box_autoadd_waffle_hit,
@@ -558,7 +627,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_u_64(handle, serializer);
         sse_encode_String(id, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 16)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 18)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_opt_list_prim_f_32_strict,
@@ -596,7 +665,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_opt_String(parentId, serializer);
         sse_encode_u_32(chunkIndex, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 17, port: port_);
+            funcId: 19, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_unit,
@@ -642,7 +711,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_list_String(parentIds, serializer);
         sse_encode_list_prim_u_32_loose(chunkIndices, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 18, port: port_);
+            funcId: 20, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_unit,
@@ -685,7 +754,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_box_autoadd_waffle_config(config, serializer);
         sse_encode_box_autoadd_waffle_schema(schema, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 19, port: port_);
+            funcId: 21, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_u_64,
@@ -710,7 +779,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_u_64(handle, serializer);
         sse_encode_box_autoadd_waffle_search_request(request, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 20)!;
+        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 22)!;
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_list_waffle_hit,
@@ -726,6 +795,52 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(
         debugName: "waffle_search",
         argNames: ["handle", "request"],
+      );
+
+  @override
+  Future<bool> crateApiWaffleDbWaffleUpsert(
+      {required BigInt handle,
+      required String id,
+      required List<double> vector,
+      required String text,
+      required String payloadJson,
+      String? parentId,
+      required int chunkIndex}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_u_64(handle, serializer);
+        sse_encode_String(id, serializer);
+        sse_encode_list_prim_f_32_loose(vector, serializer);
+        sse_encode_String(text, serializer);
+        sse_encode_String(payloadJson, serializer);
+        sse_encode_opt_String(parentId, serializer);
+        sse_encode_u_32(chunkIndex, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 23, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_bool,
+        decodeErrorData: sse_decode_String,
+      ),
+      constMeta: kCrateApiWaffleDbWaffleUpsertConstMeta,
+      argValues: [handle, id, vector, text, payloadJson, parentId, chunkIndex],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta get kCrateApiWaffleDbWaffleUpsertConstMeta =>
+      const TaskConstMeta(
+        debugName: "waffle_upsert",
+        argNames: [
+          "handle",
+          "id",
+          "vector",
+          "text",
+          "payloadJson",
+          "parentId",
+          "chunkIndex"
+        ],
       );
 
   @protected
@@ -990,16 +1105,17 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   WaffleSearchRequest dco_decode_waffle_search_request(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 7)
-      throw Exception('unexpected arr length: expect 7 but see ${arr.length}');
+    if (arr.length != 8)
+      throw Exception('unexpected arr length: expect 8 but see ${arr.length}');
     return WaffleSearchRequest(
       vector: dco_decode_opt_list_prim_f_32_strict(arr[0]),
       text: dco_decode_opt_String(arr[1]),
       topK: dco_decode_u_32(arr[2]),
-      filterJson: dco_decode_opt_String(arr[3]),
-      alpha: dco_decode_opt_box_autoadd_f_32(arr[4]),
-      rrfK: dco_decode_opt_box_autoadd_u_32(arr[5]),
-      efSearch: dco_decode_u_32(arr[6]),
+      offset: dco_decode_u_32(arr[3]),
+      filterJson: dco_decode_opt_String(arr[4]),
+      alpha: dco_decode_opt_box_autoadd_f_32(arr[5]),
+      rrfK: dco_decode_opt_box_autoadd_u_32(arr[6]),
+      efSearch: dco_decode_u_32(arr[7]),
     );
   }
 
@@ -1326,6 +1442,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_vector = sse_decode_opt_list_prim_f_32_strict(deserializer);
     var var_text = sse_decode_opt_String(deserializer);
     var var_topK = sse_decode_u_32(deserializer);
+    var var_offset = sse_decode_u_32(deserializer);
     var var_filterJson = sse_decode_opt_String(deserializer);
     var var_alpha = sse_decode_opt_box_autoadd_f_32(deserializer);
     var var_rrfK = sse_decode_opt_box_autoadd_u_32(deserializer);
@@ -1334,6 +1451,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         vector: var_vector,
         text: var_text,
         topK: var_topK,
+        offset: var_offset,
         filterJson: var_filterJson,
         alpha: var_alpha,
         rrfK: var_rrfK,
@@ -1635,6 +1753,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_opt_list_prim_f_32_strict(self.vector, serializer);
     sse_encode_opt_String(self.text, serializer);
     sse_encode_u_32(self.topK, serializer);
+    sse_encode_u_32(self.offset, serializer);
     sse_encode_opt_String(self.filterJson, serializer);
     sse_encode_opt_box_autoadd_f_32(self.alpha, serializer);
     sse_encode_opt_box_autoadd_u_32(self.rrfK, serializer);

@@ -93,6 +93,7 @@ class WaffleDatabase {
     Float32List? vector,
     String? text,
     int topK = 10,
+    int offset = 0,
     WaffleFilter? filter,
     List<WaffleFilter>? filters,
     double? alpha,
@@ -110,6 +111,7 @@ class WaffleDatabase {
         vector: vector,
         text: text,
         topK: topK,
+        offset: offset,
         filterJson: all.isEmpty
             ? null
             : all.length == 1
@@ -123,9 +125,50 @@ class WaffleDatabase {
   }
 
   /// Physically removes a record from every engine. Returns false if absent.
+  /// Inserts or fully replaces a record. Returns true when an
+  /// existing record was replaced.
+  Future<bool> upsert(
+    String id,
+    Float32List vector, {
+    String text = '',
+    Map<String, dynamic> payload = const {},
+    String? parentId,
+    int chunkIndex = 0,
+  }) async {
+    _assertOpen();
+    return ffi.waffleUpsert(
+      handle: _handle,
+      id: id,
+      vector: vector,
+      text: text,
+      payloadJson: jsonEncode(payload),
+      parentId: parentId,
+      chunkIndex: chunkIndex,
+    );
+  }
+
+  /// Physically removes a record from every engine. Returns false if absent.
   Future<bool> delete(String id) async {
     _assertOpen();
     return ffi.waffleDelete(handle: _handle, id: id);
+  }
+
+  /// Removes many records by ID. Returns how many existed.
+  Future<int> deleteBatch(List<String> ids) async {
+    _assertOpen();
+    if (ids.isEmpty) return 0;
+    return (await ffi.waffleDeleteBatch(handle: _handle, ids: ids)).toInt();
+  }
+
+  /// Removes every record matching [filter]. Returns how many were removed.
+  /// This is the re-index primitive: deleteWhere + insertBatch.
+  Future<int> deleteWhere(WaffleFilter filter) async {
+    _assertOpen();
+    return (await ffi.waffleDeleteWhere(
+      handle: _handle,
+      filterJson: filter.encode(),
+    ))
+        .toInt();
   }
 
   /// Returns the raw payload bytes for [id], or null when missing.

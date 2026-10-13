@@ -48,6 +48,7 @@ class WaffleSearchRequest {
   final Float32List? vector;
   final String? text;
   final int topK;
+  final int offset;
   final String? filterJson;
   final double? alpha;
   final int? rrfK;
@@ -57,6 +58,7 @@ class WaffleSearchRequest {
     this.vector,
     this.text,
     required this.topK,
+    required this.offset,
     this.filterJson,
     this.alpha,
     this.rrfK,
@@ -68,6 +70,7 @@ class WaffleSearchRequest {
       vector.hashCode ^
       text.hashCode ^
       topK.hashCode ^
+      offset.hashCode ^
       filterJson.hashCode ^
       alpha.hashCode ^
       rrfK.hashCode ^
@@ -81,6 +84,7 @@ class WaffleSearchRequest {
           vector == other.vector &&
           text == other.text &&
           topK == other.topK &&
+          offset == other.offset &&
           filterJson == other.filterJson &&
           alpha == other.alpha &&
           rrfK == other.rrfK &&

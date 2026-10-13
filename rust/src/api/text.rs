@@ -4,7 +4,7 @@ use std::sync::{Mutex, RwLock};
 use tantivy::collector::TopDocs;
 use tantivy::query::QueryParser;
 use tantivy::schema::{
-    Field, NumericOptions, Schema, TextFieldIndexing, TextOptions, Value,
+    Field, IndexRecordOption, NumericOptions, Schema, TextFieldIndexing, TextOptions, Value,
 };
 use tantivy::tokenizer::{Language, LowerCaser, RemoveLongFilter, SimpleTokenizer, Stemmer, TextAnalyzer};
 use tantivy::{doc, DocAddress, Index, IndexReader, IndexWriter, ReloadPolicy, TantivyDocument, Term};
@@ -43,7 +43,9 @@ impl TextEngine {
         let mut schema_builder = Schema::builder();
         let text_options = TextOptions::default()
             .set_indexing_options(
-                TextFieldIndexing::default().set_tokenizer(TOKENIZER_NAME),
+                TextFieldIndexing::default()
+                    .set_tokenizer(TOKENIZER_NAME)
+                    .set_index_option(IndexRecordOption::WithFreqsAndPositions),
             )
             .set_stored();
         let f_text = schema_builder.add_text_field("text", text_options);

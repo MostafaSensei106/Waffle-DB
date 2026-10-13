@@ -9,6 +9,7 @@ class WaffleQueryBuilder {
   Float32List? _vector;
   String? _text;
   int _limit = 10;
+  int _offset = 0;
   int _efSearch = 0;
   double? _alpha;
   int? _rrfK;
@@ -48,6 +49,12 @@ class WaffleQueryBuilder {
     return this;
   }
 
+  /// Skips the first [n] fused hits (pagination).
+  WaffleQueryBuilder offset(int n) {
+    _offset = n;
+    return this;
+  }
+
   /// Overrides index expansion for this query when greater than zero.
   WaffleQueryBuilder efSearch(int ef) {
     _efSearch = ef;
@@ -84,6 +91,18 @@ class WaffleQueryBuilder {
     return this;
   }
 
+  /// Adds a pre-built filter object.
+  WaffleQueryBuilder filter(WaffleFilter filter) {
+    _filters.add(filter);
+    return this;
+  }
+
+  /// Requires every filter in [filters] to match.
+  WaffleQueryBuilder and(List<WaffleFilter> filters) {
+    _filters.add(WaffleAndFilter(filters));
+    return this;
+  }
+
   /// Runs the query and returns fused hits.
   Future<List<WaffleHit>> execute() async {
     if (_vector == null && _text == null) {
@@ -95,6 +114,7 @@ class WaffleQueryBuilder {
       vector: _vector,
       text: _text,
       topK: _limit,
+      offset: _offset,
       filters: _filters.isEmpty ? null : _filters,
       alpha: _alpha,
       rrfK: _rrfK,

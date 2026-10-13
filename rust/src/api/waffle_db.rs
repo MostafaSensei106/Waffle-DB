@@ -127,53 +127,69 @@ pub(crate) struct InsertInput<'a> {
 }
 
 fn insert_one(engine: &WaffleEngine, input: InsertInput<'_>) -> Result<()> {
-    let dim = engine.config.dimension as usize;
-    if input.vector.len() != dim {
-        return Err(anyhow!(
-            "dimension mismatch: expected {dim}, got {}",
-            input.vector.len()
-        ));
-    }
-    let payload: serde_json::Value = if input.payload_json.trim().is_empty() {
-        serde_json::Value::Object(Default::default())
-    } else {
-        serde_json::from_str(input.payload_json).map_err(|e| {
-            anyhow!("payload is not valid JSON: {e}")
-        })?
-    };
-    let values = indexed_values(&engine.schema, &payload)?;
+    insert_many(engine, &[input])
+}
 
-    let tx = engine.store.begin_write()?;
-    if engine.store.lookup_internal(input.id)?.is_some() {
-        return Err(anyhow!("duplicate id: {}", input.id));
+fn insert_many(engine: &WaffleEngine, inputs: &[InsertInput<'_>]) -> Result<()> {
+    let dim = engine.config.dimension as usize;
+    struct Prepared {
+        internal: u32,
     }
-    let internal = engine.store.alloc_id(&tx)?;
-    let record = ChunkRecord {
-        external_id: input.id.to_owned(),
-        parent_id: input.parent_id,
-        chunk_index: input.chunk_index,
-        text: input.text.to_owned(),
-        payload_json: input.payload_json.to_owned(),
-    };
-    engine
-        .store
-        .write_record(&tx, input.id, internal, &record, input.vector)?;
-    for (field, _ft, canonical, numeric) in &values {
-        match numeric {
-            Some(n) => {
-                let key = numeric_index_key(field_hash(field), *n, internal);
-                engine.store.numeric_put(&tx, &key)?;
-            }
-            None => {
-                engine.store.bitmap_add(&tx, field, canonical, internal)?;
+    let tx = engine.store.begin_write()?;
+    let mut prepared = Vec::with_capacity(inputs.len());
+    for input in inputs {
+        if input.vector.len() != dim {
+            return Err(anyhow!(
+                "dimension mismatch: expected {dim}, got {}",
+                input.vector.len()
+            ));
+        }
+        let payload: serde_json::Value = if input.payload_json.trim().is_empty() {
+            serde_json::Value::Object(Default::default())
+        } else {
+            serde_json::from_str(input.payload_json).map_err(|e| {
+                anyhow!("payload is not valid JSON: {e}")
+            })?
+        };
+        let values = indexed_values(&engine.schema, &payload)?;
+        if engine.store.lookup_internal(input.id)?.is_some() {
+            return Err(anyhow!("duplicate id: {}", input.id));
+        }
+        let internal = engine.store.alloc_id(&tx)?;
+        let record = ChunkRecord {
+            external_id: input.id.to_owned(),
+            parent_id: input.parent_id.clone(),
+            chunk_index: input.chunk_index,
+            text: input.text.to_owned(),
+            payload_json: input.payload_json.to_owned(),
+        };
+        engine
+            .store
+            .write_record(&tx, input.id, internal, &record, input.vector)?;
+        for (field, _ft, canonical, numeric) in &values {
+            match numeric {
+                Some(n) => {
+                    let key = numeric_index_key(field_hash(field), *n, internal);
+                    engine.store.numeric_put(&tx, &key)?;
+                }
+                None => {
+                    engine.store.bitmap_add(&tx, field, canonical, internal)?;
+                }
             }
         }
+        prepared.push(Prepared { internal });
     }
     tx.commit()?;
 
-    engine.vector.add(internal, input.vector)?;
-    engine.text.add(internal, input.text)?;
-    if input.commit_text {
+    let mut texts_added = false;
+    for (input, item) in inputs.iter().zip(prepared.iter()) {
+        engine.vector.add(item.internal, input.vector)?;
+        if !input.text.trim().is_empty() {
+            engine.text.add(item.internal, input.text)?;
+            texts_added = true;
+        }
+    }
+    if texts_added || inputs.iter().any(|i| i.commit_text) {
         engine.text.commit()?;
     }
     Ok(())
@@ -305,23 +321,22 @@ pub fn waffle_insert_batch(
             ));
         }
         let mut parent_iter = parent_ids.into_iter();
+        let mut inputs = Vec::with_capacity(n);
         for i in 0..n {
             let start = i * dim;
             let parent = parent_iter.next().unwrap_or_default();
             let parent = if parent.is_empty() { None } else { Some(parent) };
-            insert_one(
-                engine,
-                InsertInput {
-                    id: &ids[i],
-                    vector: &vectors_flat[start..start + dim],
-                    text: &texts[i],
-                    payload_json: &payload_jsons[i],
-                    parent_id: parent,
-                    chunk_index: chunk_indices[i],
-                    commit_text: false,
-                },
-            )?;
+            inputs.push(InsertInput {
+                id: &ids[i],
+                vector: &vectors_flat[start..start + dim],
+                text: &texts[i],
+                payload_json: &payload_jsons[i],
+                parent_id: parent,
+                chunk_index: chunk_indices[i],
+                commit_text: false,
+            });
         }
+        insert_many(engine, &inputs)?;
         engine.text.commit()?;
         Ok(())
     })
@@ -346,6 +361,8 @@ pub fn waffle_search(
             return Err(anyhow!("search request needs a vector, a text, or both"));
         }
         let top_k = (request.top_k as usize).clamp(1, 10_000);
+        let offset = request.offset as usize;
+        let fetch = (top_k + offset).min(10_000);
         let allowed: Option<RoaringBitmap> = match &request.filter_json {
             Some(json) => Some(evaluate_filter(&engine.store, &engine.schema, &parse_filter(json)?)?),
             None => None,
@@ -360,13 +377,13 @@ pub fn waffle_search(
                                 anyhow!("lock poisoned: {e}")
                             })?;
                             engine.vector.override_expansion_search(request.ef_search as usize);
-                            let r = engine.vector.search(v, top_k, allowed.as_ref());
+                            let r = engine.vector.search(v, fetch, allowed.as_ref());
                             engine.vector.override_expansion_search(
                                 engine.config.graph_config.ef_search as usize,
                             );
                             r?
                         } else {
-                            engine.vector.search(v, top_k, allowed.as_ref())?
+                            engine.vector.search(v, fetch, allowed.as_ref())?
                         };
                         Ok(Some(res))
                     }
@@ -375,7 +392,38 @@ pub fn waffle_search(
             },
             || -> Result<Option<Vec<(u32, f32)>>> {
                 match &request.text {
-                    Some(t) => Ok(Some(engine.text.search(t, top_k)?)),
+                    Some(t) => {
+                        // Tantivy has no predicate pushdown: over-fetch and
+                        // apply the allowed-ids bitmap here, growing the
+                        // limit until enough filtered hits are collected.
+                        let mut limit = fetch;
+                        let mut collected: Vec<(u32, f32)> = Vec::new();
+                        for _ in 0..4 {
+                            let page = engine.text.search(t, limit)?;
+                            if page.is_empty() {
+                                break;
+                            }
+                            collected.clear();
+                            for (id, score) in &page {
+                                let keep = match &allowed {
+                                    Some(bm) => bm.contains(*id),
+                                    None => true,
+                                };
+                                if keep {
+                                    collected.push((*id, *score));
+                                }
+                                if collected.len() >= fetch {
+                                    break;
+                                }
+                            }
+                            if collected.len() >= fetch || page.len() < limit {
+                                break;
+                            }
+                            limit = (limit * 2).min(10_000);
+                        }
+                        collected.truncate(fetch);
+                        Ok(Some(collected))
+                    }
                     None => Ok(None),
                 }
             },
@@ -387,7 +435,7 @@ pub fn waffle_search(
             (Some(d), Some(s)) => {
                 let rrf_k = request.rrf_k.unwrap_or(60) as usize;
                 let alpha = request.alpha.unwrap_or(0.5).clamp(0.0, 1.0);
-                rrf_fuse(&d, &s, rrf_k, alpha, top_k)
+                rrf_fuse(&d, &s, rrf_k, alpha, fetch)
             }
             (Some(d), None) => {
                 let mut v: Vec<(u32, f32, Option<f32>)> = d
@@ -395,21 +443,21 @@ pub fn waffle_search(
                     .map(|(id, dist)| (id, 1.0 / (1.0 + dist), Some(dist)))
                     .collect();
                 v.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
-                v.truncate(top_k);
+                v.truncate(fetch);
                 v
             }
             (None, Some(s)) => {
                 let mut v: Vec<(u32, f32, Option<f32>)> =
                     s.into_iter().map(|(id, score)| (id, score, None)).collect();
                 v.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
-                v.truncate(top_k);
+                v.truncate(fetch);
                 v
             }
             (None, None) => unreachable!(),
         };
 
-        let mut hits = Vec::with_capacity(fused.len());
-        for (internal, score, distance) in fused {
+        let mut hits = Vec::with_capacity(fused.len().min(top_k));
+        for (internal, score, distance) in fused.into_iter().skip(offset).take(top_k) {
             if let Some(hit) = hit_from_internal(&engine.store, internal, score, distance)? {
                 hits.push(hit);
             }
@@ -418,36 +466,116 @@ pub fn waffle_search(
     })
 }
 
-pub fn waffle_delete(handle: u64, id: String) -> std::result::Result<bool, String> {
-    with_engine(handle, |engine| {
-        let internal = match engine.store.lookup_internal(&id)? {
-            Some(v) => v,
-            None => return Ok(false),
-        };
-        let tx = engine.store.begin_write()?;
-        let old = engine.store.remove_record(&tx, &id, internal)?;
-        if let Some(rec) = &old {
-            if let Ok(payload) = serde_json::from_str::<serde_json::Value>(&rec.payload_json) {
-                if let Ok(values) = indexed_values(&engine.schema, &payload) {
-                    for (field, _ft, canonical, numeric) in &values {
-                        match numeric {
-                            Some(n) => {
-                                let key = numeric_index_key(field_hash(field), *n, internal);
-                                engine.store.numeric_remove(&tx, &key)?;
-                            }
-                            None => {
-                                engine.store.bitmap_remove(&tx, field, canonical, internal)?;
-                            }
-                        }
+fn delete_internal(engine: &WaffleEngine, internal: u32, commit_text: bool) -> Result<bool> {
+    let rec = match engine.store.read_chunk(internal)? {
+        Some(r) => r,
+        None => return Ok(false),
+    };
+    let tx = engine.store.begin_write()?;
+    engine
+        .store
+        .remove_record(&tx, &rec.external_id, internal)?;
+    if let Ok(payload) = serde_json::from_str::<serde_json::Value>(&rec.payload_json) {
+        if let Ok(values) = indexed_values(&engine.schema, &payload) {
+            for (field, _ft, canonical, numeric) in &values {
+                match numeric {
+                    Some(n) => {
+                        let key = numeric_index_key(field_hash(field), *n, internal);
+                        engine.store.numeric_remove(&tx, &key)?;
+                    }
+                    None => {
+                        engine.store.bitmap_remove(&tx, field, canonical, internal)?;
                     }
                 }
             }
         }
-        tx.commit()?;
-        engine.vector.remove(internal)?;
-        engine.text.delete(internal)?;
+    }
+    tx.commit()?;
+    engine.vector.remove(internal)?;
+    engine.text.delete(internal)?;
+    if commit_text {
         engine.text.commit()?;
-        Ok(true)
+    }
+    Ok(true)
+}
+
+pub fn waffle_delete(handle: u64, id: String) -> std::result::Result<bool, String> {
+    with_engine(handle, |engine| {
+        match engine.store.lookup_internal(&id)? {
+            Some(internal) => delete_internal(engine, internal, true),
+            None => Ok(false),
+        }
+    })
+}
+
+pub fn waffle_upsert(
+    handle: u64,
+    id: String,
+    vector: Vec<f32>,
+    text: String,
+    payload_json: String,
+    parent_id: Option<String>,
+    chunk_index: u32,
+) -> std::result::Result<bool, String> {
+    with_engine(handle, |engine| {
+        let replaced = match engine.store.lookup_internal(&id)? {
+            Some(internal) => delete_internal(engine, internal, false)?,
+            None => false,
+        };
+        insert_one(
+            engine,
+            InsertInput {
+                id: &id,
+                vector: &vector,
+                text: &text,
+                payload_json: &payload_json,
+                parent_id,
+                chunk_index,
+                commit_text: true,
+            },
+        )?;
+        Ok(replaced)
+    })
+}
+
+pub fn waffle_delete_batch(
+    handle: u64,
+    ids: Vec<String>,
+) -> std::result::Result<u64, String> {
+    with_engine(handle, |engine| {
+        let mut removed = 0u64;
+        for id in &ids {
+            if let Some(internal) = engine.store.lookup_internal(id)? {
+                if delete_internal(engine, internal, false)? {
+                    removed += 1;
+                }
+            }
+        }
+        if removed > 0 {
+            engine.text.commit()?;
+        }
+        Ok(removed)
+    })
+}
+
+pub fn waffle_delete_where(
+    handle: u64,
+    filter_json: String,
+) -> std::result::Result<u64, String> {
+    with_engine(handle, |engine| {
+        let bitmap =
+            evaluate_filter(&engine.store, &engine.schema, &parse_filter(&filter_json)?)?;
+        let targets: Vec<u32> = bitmap.iter().collect();
+        let mut removed = 0u64;
+        for internal in targets {
+            if delete_internal(engine, internal, false)? {
+                removed += 1;
+            }
+        }
+        if removed > 0 {
+            engine.text.commit()?;
+        }
+        Ok(removed)
     })
 }
 
@@ -621,6 +749,7 @@ mod tests {
                 vector: Some(vec_a.clone()),
                 text: None,
                 top_k: 5,
+                offset: 0,
                 filter_json: Some(r#"{"op":"eq","field":"category","value":"auto"}"#.to_owned()),
                 alpha: None,
                 rrf_k: None,
@@ -637,6 +766,7 @@ mod tests {
                 vector: Some(vec_a.clone()),
                 text: None,
                 top_k: 5,
+                offset: 0,
                 filter_json: Some(r#"{"op":"eq","field":"category","value":"marine"}"#.to_owned()),
                 alpha: None,
                 rrf_k: None,
@@ -658,6 +788,7 @@ mod tests {
                 vector: Some(vec_a),
                 text: None,
                 top_k: 5,
+                offset: 0,
                 filter_json: None,
                 alpha: None,
                 rrf_k: None,
@@ -666,6 +797,43 @@ mod tests {
         )
         .unwrap();
         assert!(after.iter().all(|h| h.id != "doc-a"));
+
+        let replaced = waffle_upsert(
+            handle,
+            "doc-b".to_owned(),
+            vec![0.5, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "updated boat text".to_owned(),
+            r#"{"category":"marine","price":250}"#.to_owned(),
+            None,
+            0,
+        )
+        .unwrap();
+        assert!(replaced);
+        assert_eq!(waffle_count(handle).unwrap(), 1);
+
+        let page = waffle_search(
+            handle,
+            WaffleSearchRequest {
+                vector: None,
+                text: Some("boat".to_owned()),
+                top_k: 5,
+                offset: 1,
+                filter_json: None,
+                alpha: None,
+                rrf_k: None,
+                ef_search: 0,
+            },
+        )
+        .unwrap();
+        assert!(page.is_empty());
+
+        let wiped = waffle_delete_where(
+            handle,
+            r#"{"op":"eq","field":"category","value":"marine"}"#.to_owned(),
+        )
+        .unwrap();
+        assert_eq!(wiped, 1);
+        assert_eq!(waffle_count(handle).unwrap(), 0);
 
         waffle_close(handle).unwrap();
         let _ = std::fs::remove_dir_all(path);

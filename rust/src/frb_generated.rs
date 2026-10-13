@@ -39,7 +39,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.13.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -1695180646;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1635388861;
 
 // Section: executor
 
@@ -398,6 +398,76 @@ fn wire__crate__api__waffle_db__waffle_delete_impl(
         },
     )
 }
+fn wire__crate__api__waffle_db__waffle_delete_batch_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "waffle_delete_batch",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_handle = <u64>::sse_decode(&mut deserializer);
+            let api_ids = <Vec<String>>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, String>((move || {
+                    let output_ok =
+                        crate::api::waffle_db::waffle_delete_batch(api_handle, api_ids)?;
+                    std::result::Result::Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__waffle_db__waffle_delete_where_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "waffle_delete_where",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_handle = <u64>::sse_decode(&mut deserializer);
+            let api_filter_json = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, String>((move || {
+                    let output_ok =
+                        crate::api::waffle_db::waffle_delete_where(api_handle, api_filter_json)?;
+                    std::result::Result::Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
 fn wire__crate__api__waffle_db__waffle_flush_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -747,6 +817,53 @@ fn wire__crate__api__waffle_db__waffle_search_impl(
         },
     )
 }
+fn wire__crate__api__waffle_db__waffle_upsert_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "waffle_upsert",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_handle = <u64>::sse_decode(&mut deserializer);
+            let api_id = <String>::sse_decode(&mut deserializer);
+            let api_vector = <Vec<f32>>::sse_decode(&mut deserializer);
+            let api_text = <String>::sse_decode(&mut deserializer);
+            let api_payload_json = <String>::sse_decode(&mut deserializer);
+            let api_parent_id = <Option<String>>::sse_decode(&mut deserializer);
+            let api_chunk_index = <u32>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, String>((move || {
+                    let output_ok = crate::api::waffle_db::waffle_upsert(
+                        api_handle,
+                        api_id,
+                        api_vector,
+                        api_text,
+                        api_payload_json,
+                        api_parent_id,
+                        api_chunk_index,
+                    )?;
+                    std::result::Result::Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
 
 // Section: dart2rust
 
@@ -1071,6 +1188,7 @@ impl SseDecode for crate::api::query::WaffleSearchRequest {
         let mut var_vector = <Option<Vec<f32>>>::sse_decode(deserializer);
         let mut var_text = <Option<String>>::sse_decode(deserializer);
         let mut var_topK = <u32>::sse_decode(deserializer);
+        let mut var_offset = <u32>::sse_decode(deserializer);
         let mut var_filterJson = <Option<String>>::sse_decode(deserializer);
         let mut var_alpha = <Option<f32>>::sse_decode(deserializer);
         let mut var_rrfK = <Option<u32>>::sse_decode(deserializer);
@@ -1079,6 +1197,7 @@ impl SseDecode for crate::api::query::WaffleSearchRequest {
             vector: var_vector,
             text: var_text,
             top_k: var_topK,
+            offset: var_offset,
             filter_json: var_filterJson,
             alpha: var_alpha,
             rrf_k: var_rrfK,
@@ -1132,12 +1251,19 @@ fn pde_ffi_dispatcher_primary_impl(
             data_len,
         ),
         10 => wire__crate__api__waffle_db__waffle_delete_impl(port, ptr, rust_vec_len, data_len),
-        11 => wire__crate__api__waffle_db__waffle_flush_impl(port, ptr, rust_vec_len, data_len),
-        17 => wire__crate__api__waffle_db__waffle_insert_impl(port, ptr, rust_vec_len, data_len),
-        18 => {
+        11 => {
+            wire__crate__api__waffle_db__waffle_delete_batch_impl(port, ptr, rust_vec_len, data_len)
+        }
+        12 => {
+            wire__crate__api__waffle_db__waffle_delete_where_impl(port, ptr, rust_vec_len, data_len)
+        }
+        13 => wire__crate__api__waffle_db__waffle_flush_impl(port, ptr, rust_vec_len, data_len),
+        19 => wire__crate__api__waffle_db__waffle_insert_impl(port, ptr, rust_vec_len, data_len),
+        20 => {
             wire__crate__api__waffle_db__waffle_insert_batch_impl(port, ptr, rust_vec_len, data_len)
         }
-        19 => wire__crate__api__waffle_db__waffle_open_impl(port, ptr, rust_vec_len, data_len),
+        21 => wire__crate__api__waffle_db__waffle_open_impl(port, ptr, rust_vec_len, data_len),
+        23 => wire__crate__api__waffle_db__waffle_upsert_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -1151,12 +1277,12 @@ fn pde_ffi_dispatcher_sync_impl(
     // Codec=Pde (Serialization + dispatch), see doc to use other codecs
     match func_id {
         9 => wire__crate__api__waffle_db__waffle_count_impl(ptr, rust_vec_len, data_len),
-        12 => wire__crate__api__waffle_db__waffle_get_all_ids_impl(ptr, rust_vec_len, data_len),
-        13 => wire__crate__api__waffle_db__waffle_get_metadata_impl(ptr, rust_vec_len, data_len),
-        14 => wire__crate__api__waffle_db__waffle_get_neighbors_impl(ptr, rust_vec_len, data_len),
-        15 => wire__crate__api__waffle_db__waffle_get_parent_impl(ptr, rust_vec_len, data_len),
-        16 => wire__crate__api__waffle_db__waffle_get_vector_impl(ptr, rust_vec_len, data_len),
-        20 => wire__crate__api__waffle_db__waffle_search_impl(ptr, rust_vec_len, data_len),
+        14 => wire__crate__api__waffle_db__waffle_get_all_ids_impl(ptr, rust_vec_len, data_len),
+        15 => wire__crate__api__waffle_db__waffle_get_metadata_impl(ptr, rust_vec_len, data_len),
+        16 => wire__crate__api__waffle_db__waffle_get_neighbors_impl(ptr, rust_vec_len, data_len),
+        17 => wire__crate__api__waffle_db__waffle_get_parent_impl(ptr, rust_vec_len, data_len),
+        18 => wire__crate__api__waffle_db__waffle_get_vector_impl(ptr, rust_vec_len, data_len),
+        22 => wire__crate__api__waffle_db__waffle_search_impl(ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -1350,6 +1476,7 @@ impl flutter_rust_bridge::IntoDart for crate::api::query::WaffleSearchRequest {
             self.vector.into_into_dart().into_dart(),
             self.text.into_into_dart().into_dart(),
             self.top_k.into_into_dart().into_dart(),
+            self.offset.into_into_dart().into_dart(),
             self.filter_json.into_into_dart().into_dart(),
             self.alpha.into_into_dart().into_dart(),
             self.rrf_k.into_into_dart().into_dart(),
@@ -1653,6 +1780,7 @@ impl SseEncode for crate::api::query::WaffleSearchRequest {
         <Option<Vec<f32>>>::sse_encode(self.vector, serializer);
         <Option<String>>::sse_encode(self.text, serializer);
         <u32>::sse_encode(self.top_k, serializer);
+        <u32>::sse_encode(self.offset, serializer);
         <Option<String>>::sse_encode(self.filter_json, serializer);
         <Option<f32>>::sse_encode(self.alpha, serializer);
         <Option<u32>>::sse_encode(self.rrf_k, serializer);

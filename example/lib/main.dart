@@ -5,10 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:waffle_db/waffle_db.dart';
 import 'package:path_provider/path_provider.dart';
 
-import 'demos/contacts_page.dart';
-import 'demos/notes_rag_page.dart';
-import 'demos/product_search_page.dart';
-import 'demos/recipes_page.dart';
+import 'demos/code_search_page.dart';
+import 'demos/docs_rag_page.dart';
+import 'demos/glossary_page.dart';
+import 'demos/support_page.dart';
 
 final _benchSchema = WaffleSchema(
   fields: [WaffleFields.string('tag', indexed: false)],
@@ -49,10 +49,10 @@ class _DemoHubState extends State<DemoHub> {
 
   static const _pages = [
     MyHomePage(),
-    ProductSearchPage(),
-    RecipesPage(),
-    ContactsPage(),
-    NotesRagPage(),
+    DocsRagPage(),
+    CodeSearchPage(),
+    SupportPage(),
+    GlossaryPage(),
   ];
 
   @override
@@ -65,15 +65,14 @@ class _DemoHubState extends State<DemoHub> {
         destinations: const [
           NavigationDestination(icon: Icon(Icons.palette), label: 'Colors'),
           NavigationDestination(
-            icon: Icon(Icons.shopping_bag),
-            label: 'Products',
+            icon: Icon(Icons.menu_book),
+            label: 'Docs RAG',
           ),
-          NavigationDestination(icon: Icon(Icons.restaurant), label: 'Recipes'),
-          NavigationDestination(icon: Icon(Icons.contacts), label: 'Contacts'),
+          NavigationDestination(icon: Icon(Icons.code), label: 'Code'),
           NavigationDestination(
-            icon: Icon(Icons.auto_stories),
-            label: 'RAG Notes',
-          ),
+              icon: Icon(Icons.support_agent), label: 'Support'),
+          NavigationDestination(
+              icon: Icon(Icons.translate), label: 'Glossary'),
         ],
       ),
     );

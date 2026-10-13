@@ -6,7 +6,10 @@ import 'package:integration_test/integration_test.dart';
 import 'package:waffle_db/waffle_db.dart';
 
 final _benchSchema = WaffleSchema(
-  fields: [WaffleFields.string('tag', indexed: false)],
+  fields: [
+    WaffleFields.string('tag', indexed: false),
+    WaffleFields.string('_collection'),
+  ],
   textLanguage: WaffleLanguage.english,
 );
 
@@ -441,6 +444,21 @@ void main() {
       final results = await col.search(v, topK: 1);
       expect(results, isNotEmpty);
       expect(results.first.id, 'doc-1');
+    });
+
+    testWidgets('collections are isolated by pre-filtering', (tester) async {
+      final docs = WaffleCollection(db, 'docs');
+      final other = WaffleCollection(db, 'other');
+      final v = randomVector(1);
+      await docs.add('doc-1', v);
+      for (int i = 0; i < 10; i++) {
+        await other.add('noise-$i', randomVector(i + 200));
+      }
+
+      final results = await docs.search(v, topK: 10);
+      expect(results, isNotEmpty);
+      expect(results.map((r) => r.id), contains('doc-1'));
+      expect(results.every((r) => !r.id.startsWith('noise-')), isTrue);
     });
 
     testWidgets('collection IDs are namespaced', (tester) async {

@@ -1,12 +1,18 @@
 import 'dart:typed_data';
 
 import '../core/query/waffle_query_builder.dart';
+import '../core/schema/waffle_dsl.dart';
 import '../core/waffle_database.dart';
 import '../rust/api/query.dart';
 import 'waffle_record.dart';
 
 /// Logical namespace over one database. IDs are prefixed internally
 /// with the collection name to prevent collisions.
+///
+/// Collection searches use true pre-filtering: every member carries an
+/// indexed `_collection` payload field, so results never leak across
+/// collections. The database schema must therefore declare
+/// `WaffleFields.string('_collection')` as an indexed field.
 class WaffleCollection {
   final WaffleDatabase _db;
 
@@ -48,7 +54,7 @@ class WaffleCollection {
       _prefixId(id),
       vector,
       text: text,
-      payload: payload,
+      payload: {...payload, '_collection': name},
       parentId: parentId == null ? null : _prefixId(parentId),
       chunkIndex: chunkIndex,
     );
@@ -62,7 +68,7 @@ class WaffleCollection {
             id: _prefixId(r.id),
             vector: r.vector,
             text: r.text,
-            payload: r.payload,
+            payload: {...r.payload, '_collection': name},
             parentId: r.parentId == null ? null : _prefixId(r.parentId!),
             chunkIndex: r.chunkIndex,
           ),
@@ -71,7 +77,7 @@ class WaffleCollection {
     await _db.insertBatch(prefixed);
   }
 
-  /// Dense search restricted to this collection's IDs.
+  /// Dense search restricted to this collection via pre-filtering.
   Future<List<WaffleHit>> search(
     Float32List queryVector, {
     int topK = 10,
@@ -81,11 +87,9 @@ class WaffleCollection {
       vector: queryVector,
       topK: topK,
       efSearch: efSearch,
+      filter: WaffleEqFilter('_collection', name),
     );
-    return results
-        .where((r) => r.id.startsWith(_prefix))
-        .map(_unprefix)
-        .toList();
+    return results.map(_unprefix).toList();
   }
 
   /// Deletes one member by ID.

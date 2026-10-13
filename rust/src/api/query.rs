@@ -3,6 +3,7 @@ pub struct WaffleSearchRequest {
     pub vector: Option<Vec<f32>>,
     pub text: Option<String>,
     pub top_k: u32,
+    pub offset: u32,
     pub filter_json: Option<String>,
     pub alpha: Option<f32>,
     pub rrf_k: Option<u32>,
