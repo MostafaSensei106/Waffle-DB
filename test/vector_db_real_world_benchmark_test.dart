@@ -91,7 +91,6 @@ class SingleInsertBenchmark extends AsyncBenchmarkBase {
     await db.insert(
       'item-$_counter',
       _vector,
-
     );
     _counter++;
   }
@@ -137,7 +136,6 @@ class BatchInsertBenchmark extends AsyncBenchmarkBase {
         id: 'temp-$i',
         vector: Float32List.fromList(
             List.generate(128, (_) => _random.nextDouble())),
-
       ),
     );
   }
@@ -148,7 +146,6 @@ class BatchInsertBenchmark extends AsyncBenchmarkBase {
       return WaffleRecord(
         id: 'item-${_counter++}',
         vector: r.vector,
-
       );
     }).toList();
     await db.insertBatch(records);
@@ -197,7 +194,6 @@ class QueryWithoutMetadataBenchmark extends AsyncBenchmarkBase {
         id: 'item-$i',
         vector: Float32List.fromList(
             List.generate(128, (_) => _random.nextDouble())),
-
       ),
     );
     await db.insertBatch(records);
@@ -253,7 +249,6 @@ class QueryWithMetadataBenchmark extends AsyncBenchmarkBase {
         id: 'item-$i',
         vector: Float32List.fromList(
             List.generate(128, (_) => _random.nextDouble())),
-
       ),
     );
     await db.insertBatch(records);
@@ -348,7 +343,6 @@ class GetMetadataBenchmark extends AsyncBenchmarkBase {
     await db.insert(
       'target-item',
       Float32List.fromList(List.generate(128, (_) => _random.nextDouble())),
-
     );
   }
 
@@ -502,7 +496,6 @@ class MillionInsertBenchmark extends AsyncBenchmarkBase {
           vector: Float32List.fromList(
             List.generate(dimension, (_) => _random.nextDouble()),
           ),
-
         );
       });
 

@@ -282,11 +282,7 @@ void main() {
 
     testWidgets('GetMetadata Latency', (tester) async {
       for (int i = 0; i < 100; i++) {
-        await db.insert(
-          'gm-$i',
-          randomVector(i),
-          payload: {'tag': 'gm-$i'},
-        );
+        await db.insert('gm-$i', randomVector(i), payload: {'tag': 'gm-$i'});
       }
 
       int mc = 0;
@@ -386,7 +382,10 @@ void main() {
             cacheSizeBytes: BigInt.from(64 * 1024 * 1024),
             workerThreads: 4,
           );
-          final reopened = await WaffleDatabase.open(config, schema: _benchSchema);
+          final reopened = await WaffleDatabase.open(
+            config,
+            schema: _benchSchema,
+          );
           await reopened.close();
         },
         warmupRuns: 1,

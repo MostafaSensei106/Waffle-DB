@@ -7,10 +7,7 @@ import 'demo_db.dart';
 import 'demo_embed.dart';
 
 final _codeSchema = WaffleSchema(
-  fields: [
-    WaffleFields.string('language'),
-    WaffleFields.string('kind'),
-  ],
+  fields: [WaffleFields.string('language'), WaffleFields.string('kind')],
   textLanguage: WaffleLanguage.english,
 );
 
@@ -166,8 +163,10 @@ class _CodeSearchPageState extends State<CodeSearchPage> {
     );
     if (db.count() == 0) {
       setState(() => _status = 'Indexing symbols...');
-      await db.insertBatch(_seedCode
-          .map((s) => WaffleRecord(
+      await db.insertBatch(
+        _seedCode
+            .map(
+              (s) => WaffleRecord(
                 id: s.id,
                 vector: DemoEmbedder.embed('${s.name} ${s.detail}'),
                 text: '${s.name}: ${s.detail}',
@@ -178,8 +177,10 @@ class _CodeSearchPageState extends State<CodeSearchPage> {
                 },
                 parentId: s.parentId,
                 chunkIndex: s.chunkIndex,
-              ))
-          .toList());
+              ),
+            )
+            .toList(),
+      );
       await db.flush();
     }
     if (!mounted) return;
@@ -276,11 +277,13 @@ class _CodeSearchPageState extends State<CodeSearchPage> {
                     Expanded(
                       child: DropdownButtonFormField<String>(
                         initialValue: _language,
-                        decoration:
-                            const InputDecoration(labelText: 'Language'),
+                        decoration: const InputDecoration(
+                          labelText: 'Language',
+                        ),
                         items: const ['all', 'rust', 'dart']
-                            .map((l) => DropdownMenuItem(
-                                value: l, child: Text(l)))
+                            .map(
+                              (l) => DropdownMenuItem(value: l, child: Text(l)),
+                            )
                             .toList(),
                         onChanged: (v) =>
                             setState(() => _language = v ?? 'all'),
@@ -290,25 +293,20 @@ class _CodeSearchPageState extends State<CodeSearchPage> {
                     Expanded(
                       child: DropdownButtonFormField<String>(
                         initialValue: _kind,
-                        decoration:
-                            const InputDecoration(labelText: 'Kind'),
+                        decoration: const InputDecoration(labelText: 'Kind'),
                         items: const ['all', 'file', 'function', 'method']
-                            .map((k) => DropdownMenuItem(
-                                value: k, child: Text(k)))
+                            .map(
+                              (k) => DropdownMenuItem(value: k, child: Text(k)),
+                            )
                             .toList(),
-                        onChanged: (v) =>
-                            setState(() => _kind = v ?? 'all'),
+                        onChanged: (v) => setState(() => _kind = v ?? 'all'),
                       ),
                     ),
                     const SizedBox(width: 8),
-                    FilledButton(
-                      onPressed: _run,
-                      child: const Text('Find'),
-                    ),
+                    FilledButton(onPressed: _run, child: const Text('Find')),
                   ],
                 ),
-                Text(_status,
-                    style: Theme.of(context).textTheme.bodySmall),
+                Text(_status, style: Theme.of(context).textTheme.bodySmall),
               ],
             ),
           ),
@@ -318,37 +316,42 @@ class _CodeSearchPageState extends State<CodeSearchPage> {
               itemCount: _hits.length,
               itemBuilder: (context, i) {
                 final h = _hits[i];
-                final payload = jsonDecode(h.payloadJson ?? '{}')
-                    as Map<String, dynamic>;
+                final payload =
+                    jsonDecode(h.payloadJson ?? '{}') as Map<String, dynamic>;
                 return Card(
                   margin: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 4),
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
                   child: ListTile(
                     leading: const Icon(Icons.code),
                     title: Text(
                       payload['name']?.toString() ?? h.id,
                       style: const TextStyle(
-                          fontFamily: 'monospace',
-                          fontWeight: FontWeight.bold),
+                        fontFamily: 'monospace',
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(h.text ?? '',
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis),
+                        Text(
+                          h.text ?? '',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                         const SizedBox(height: 4),
                         Wrap(
                           spacing: 6,
                           children: [
                             Chip(
                               label: Text(
-                                  payload['language']?.toString() ?? ''),
+                                payload['language']?.toString() ?? '',
+                              ),
                               visualDensity: VisualDensity.compact,
                             ),
                             Chip(
-                              label: Text(
-                                  payload['kind']?.toString() ?? ''),
+                              label: Text(payload['kind']?.toString() ?? ''),
                               visualDensity: VisualDensity.compact,
                             ),
                           ],

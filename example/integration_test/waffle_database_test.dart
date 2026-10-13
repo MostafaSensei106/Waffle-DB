@@ -14,10 +14,7 @@ final _benchSchema = WaffleSchema(
 );
 
 final _filterSchema = WaffleSchema(
-  fields: [
-    WaffleFields.string('category'),
-    WaffleFields.integer('price'),
-  ],
+  fields: [WaffleFields.string('category'), WaffleFields.integer('price')],
   textLanguage: WaffleLanguage.english,
 );
 
@@ -206,8 +203,16 @@ void main() {
         await db.insert('ef-$i', randomVector(i));
       }
 
-      final resultsLow = db.search(vector: randomVector(0), topK: 5, efSearch: 8);
-      final resultsHigh = db.search(vector: randomVector(0), topK: 5, efSearch: 128);
+      final resultsLow = db.search(
+        vector: randomVector(0),
+        topK: 5,
+        efSearch: 8,
+      );
+      final resultsHigh = db.search(
+        vector: randomVector(0),
+        topK: 5,
+        efSearch: 128,
+      );
 
       expect(resultsLow.length, 5);
       expect(resultsHigh.length, 5);
@@ -373,16 +378,20 @@ void main() {
         ),
         schema: _filterSchema,
       );
-      await db.insert('auto-1', randomVector(0),
-          payload: const {'category': 'auto', 'price': 100});
-      await db.insert('marine-1', randomVector(1),
-          payload: const {'category': 'marine', 'price': 200});
+      await db.insert(
+        'auto-1',
+        randomVector(0),
+        payload: const {'category': 'auto', 'price': 100},
+      );
+      await db.insert(
+        'marine-1',
+        randomVector(1),
+        payload: const {'category': 'marine', 'price': 200},
+      );
 
-      final results = await WaffleQueryBuilder(db)
-          .withVector(randomVector(0))
-          .limit(5)
-          .eq('category', 'marine')
-          .execute();
+      final results = await WaffleQueryBuilder(
+        db,
+      ).withVector(randomVector(0)).limit(5).eq('category', 'marine').execute();
 
       expect(results.length, 1);
       expect(results.first.id, 'marine-1');

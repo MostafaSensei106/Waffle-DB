@@ -7,21 +7,20 @@ import 'package:waffle_db/waffle_db.dart';
 
 import 'package:waffle_db_example/demos/demo_embed.dart';
 
-WaffleConfig _config(String path, int dim, WaffleMetric metric) =>
-    WaffleConfig(
-      dimension: dim,
-      path: path,
-      graphConfig: WaffleGraphConfig(
-        m: 12,
-        metric: metric,
-        efConstruction: 48,
-        efSearch: 32,
-      ),
-      maxElements: 1000,
-      useQuantization: false,
-      cacheSizeBytes: BigInt.from(16 * 1024 * 1024),
-      workerThreads: 2,
-    );
+WaffleConfig _config(String path, int dim, WaffleMetric metric) => WaffleConfig(
+  dimension: dim,
+  path: path,
+  graphConfig: WaffleGraphConfig(
+    m: 12,
+    metric: metric,
+    efConstruction: 48,
+    efSearch: 32,
+  ),
+  maxElements: 1000,
+  useQuantization: false,
+  cacheSizeBytes: BigInt.from(16 * 1024 * 1024),
+  workerThreads: 2,
+);
 
 Float32List _v(String text) => DemoEmbedder.embed(text);
 
@@ -86,10 +85,7 @@ void main() {
         alpha: 0.5,
       );
       expect(hits, isNotEmpty);
-      expect(
-        hits.map((h) => h.id),
-        containsAll(['filtering', 'filtering-c0']),
-      );
+      expect(hits.map((h) => h.id), containsAll(['filtering', 'filtering-c0']));
     });
 
     testWidgets('section pre-filter hides other sections', (tester) async {
@@ -149,8 +145,7 @@ void main() {
       if (await dir.exists()) await dir.delete(recursive: true);
     });
 
-    testWidgets('exact symbol name wins over fuzzy meaning',
-        (tester) async {
+    testWidgets('exact symbol name wins over fuzzy meaning', (tester) async {
       final hits = db.search(text: 'bitmap_add', topK: 5);
       expect(hits, isNotEmpty);
       expect(hits.first.id, 'bitmap-add');
@@ -190,21 +185,13 @@ void main() {
         't-1',
         _v('customer wants to return headphones'),
         text: 'Customer wants to return headphones bought twelve days ago.',
-        payload: const {
-          'kind': 'ticket',
-          'priority': 'high',
-          'status': 'open',
-        },
+        payload: const {'kind': 'ticket', 'priority': 'high', 'status': 'open'},
       );
       await db.insert(
         't-2',
         _v('late delivery compensation'),
         text: 'Order delayed by a week, customer asks for compensation.',
-        payload: const {
-          'kind': 'ticket',
-          'priority': 'high',
-          'status': 'open',
-        },
+        payload: const {'kind': 'ticket', 'priority': 'high', 'status': 'open'},
       );
     });
 

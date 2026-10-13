@@ -72,22 +72,22 @@ class WaffleOrFilter extends WaffleFilter {
 /// Factories for declaring schema fields.
 abstract final class WaffleFields {
   /// Declares an exact-match string field.
-  static WaffleField string(String name, {bool indexed = true}) =>
-      WaffleField(name: name, fieldType: WaffleFieldType.string, indexed: indexed);
+  static WaffleField string(String name, {bool indexed = true}) => WaffleField(
+      name: name, fieldType: WaffleFieldType.string, indexed: indexed);
 
   /// Declares an exact-match integer field.
-  static WaffleField integer(String name, {bool indexed = true}) =>
-      WaffleField(name: name, fieldType: WaffleFieldType.integer, indexed: indexed);
+  static WaffleField integer(String name, {bool indexed = true}) => WaffleField(
+      name: name, fieldType: WaffleFieldType.integer, indexed: indexed);
 
   /// Declares an exact-match double field.
-  static WaffleField double(String name, {bool indexed = true}) =>
-      WaffleField(name: name, fieldType: WaffleFieldType.double, indexed: indexed);
+  static WaffleField double(String name, {bool indexed = true}) => WaffleField(
+      name: name, fieldType: WaffleFieldType.double, indexed: indexed);
 
   /// Declares an exact-match boolean field.
-  static WaffleField boolean(String name, {bool indexed = true}) =>
-      WaffleField(name: name, fieldType: WaffleFieldType.boolean, indexed: indexed);
+  static WaffleField boolean(String name, {bool indexed = true}) => WaffleField(
+      name: name, fieldType: WaffleFieldType.boolean, indexed: indexed);
 
   /// Declares a full-text field for BM25 keyword search.
-  static WaffleField text(String name, {bool indexed = true}) =>
-      WaffleField(name: name, fieldType: WaffleFieldType.text, indexed: indexed);
+  static WaffleField text(String name, {bool indexed = true}) => WaffleField(
+      name: name, fieldType: WaffleFieldType.text, indexed: indexed);
 }

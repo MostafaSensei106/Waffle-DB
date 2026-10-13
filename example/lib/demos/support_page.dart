@@ -37,7 +37,8 @@ const _seedTickets = [
   _Ticket(
     id: 'faq-returns',
     title: 'FAQ: returns policy',
-    text: 'Customers can return any product within fourteen days in its original condition with the receipt.',
+    text:
+        'Customers can return any product within fourteen days in its original condition with the receipt.',
     kind: 'faq',
     priority: 'low',
     status: 'open',
@@ -45,7 +46,8 @@ const _seedTickets = [
   _Ticket(
     id: 't-101',
     title: 'Return request #101',
-    text: 'Customer wants to return headphones bought twelve days ago, has the receipt and the box.',
+    text:
+        'Customer wants to return headphones bought twelve days ago, has the receipt and the box.',
     kind: 'ticket',
     priority: 'high',
     status: 'open',
@@ -53,7 +55,8 @@ const _seedTickets = [
   _Ticket(
     id: 't-102',
     title: 'Late delivery #102',
-    text: 'Order delayed by a week, customer asks for compensation and a new delivery date.',
+    text:
+        'Order delayed by a week, customer asks for compensation and a new delivery date.',
     kind: 'ticket',
     priority: 'high',
     status: 'open',
@@ -61,7 +64,8 @@ const _seedTickets = [
   _Ticket(
     id: 't-103',
     title: 'Damaged box #103',
-    text: 'Package arrived with a dented corner but the device works, customer wants a partial refund.',
+    text:
+        'Package arrived with a dented corner but the device works, customer wants a partial refund.',
     kind: 'ticket',
     priority: 'medium',
     status: 'open',
@@ -69,7 +73,8 @@ const _seedTickets = [
   _Ticket(
     id: 't-104',
     title: 'Wrong color #104',
-    text: 'Customer ordered black earbuds and received white ones, asks for an exchange.',
+    text:
+        'Customer ordered black earbuds and received white ones, asks for an exchange.',
     kind: 'ticket',
     priority: 'medium',
     status: 'resolved',
@@ -77,7 +82,8 @@ const _seedTickets = [
   _Ticket(
     id: 't-105',
     title: 'Refund status #105',
-    text: 'Customer asks where the refund for the returned charger is after ten days.',
+    text:
+        'Customer asks where the refund for the returned charger is after ten days.',
     kind: 'ticket',
     priority: 'low',
     status: 'open',
@@ -126,8 +132,10 @@ class _SupportPageState extends State<SupportPage> {
     );
     if (db.count() == 0) {
       setState(() => _status = 'Indexing tickets...');
-      await db.insertBatch(_seedTickets
-          .map((t) => WaffleRecord(
+      await db.insertBatch(
+        _seedTickets
+            .map(
+              (t) => WaffleRecord(
                 id: t.id,
                 vector: DemoEmbedder.embed('${t.title} ${t.text}'),
                 text: '${t.title}. ${t.text}',
@@ -137,8 +145,10 @@ class _SupportPageState extends State<SupportPage> {
                   'status': t.status,
                   'title': t.title,
                 },
-              ))
-          .toList());
+              ),
+            )
+            .toList(),
+      );
       await db.flush();
     }
     if (!mounted) return;
@@ -178,8 +188,7 @@ class _SupportPageState extends State<SupportPage> {
   Future<void> _resolve(WaffleHit hit) async {
     final db = _db;
     if (db == null) return;
-    final payload =
-        jsonDecode(hit.payloadJson ?? '{}') as Map<String, dynamic>;
+    final payload = jsonDecode(hit.payloadJson ?? '{}') as Map<String, dynamic>;
     await db.upsert(
       hit.id,
       DemoEmbedder.embed(hit.text ?? hit.id),
@@ -192,9 +201,9 @@ class _SupportPageState extends State<SupportPage> {
       },
     );
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Resolved ${hit.id} via upsert')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Resolved ${hit.id} via upsert')));
     _run();
   }
 
@@ -203,17 +212,17 @@ class _SupportPageState extends State<SupportPage> {
     if (db == null) return;
     final n = await db.deleteWhere(WaffleEqFilter('status', 'resolved'));
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Swept $n resolved tickets')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Swept $n resolved tickets')));
     _run();
   }
 
   Color _priorityColor(String? p) => switch (p) {
-        'high' => Colors.red.shade100,
-        'medium' => Colors.orange.shade100,
-        _ => Colors.green.shade100,
-      };
+    'high' => Colors.red.shade100,
+    'medium' => Colors.orange.shade100,
+    _ => Colors.green.shade100,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -264,11 +273,13 @@ class _SupportPageState extends State<SupportPage> {
                     Expanded(
                       child: DropdownButtonFormField<String>(
                         initialValue: _priority,
-                        decoration:
-                            const InputDecoration(labelText: 'Priority'),
+                        decoration: const InputDecoration(
+                          labelText: 'Priority',
+                        ),
                         items: const ['all', 'high', 'medium', 'low']
-                            .map((p) => DropdownMenuItem(
-                                value: p, child: Text(p)))
+                            .map(
+                              (p) => DropdownMenuItem(value: p, child: Text(p)),
+                            )
                             .toList(),
                         onChanged: (v) =>
                             setState(() => _priority = v ?? 'all'),
@@ -278,25 +289,21 @@ class _SupportPageState extends State<SupportPage> {
                     Expanded(
                       child: DropdownButtonFormField<String>(
                         initialValue: _statusFilter,
-                        decoration:
-                            const InputDecoration(labelText: 'Status'),
+                        decoration: const InputDecoration(labelText: 'Status'),
                         items: const ['all', 'open', 'resolved']
-                            .map((s) => DropdownMenuItem(
-                                value: s, child: Text(s)))
+                            .map(
+                              (s) => DropdownMenuItem(value: s, child: Text(s)),
+                            )
                             .toList(),
                         onChanged: (v) =>
                             setState(() => _statusFilter = v ?? 'all'),
                       ),
                     ),
                     const SizedBox(width: 8),
-                    FilledButton(
-                      onPressed: _run,
-                      child: const Text('Match'),
-                    ),
+                    FilledButton(onPressed: _run, child: const Text('Match')),
                   ],
                 ),
-                Text(_status,
-                    style: Theme.of(context).textTheme.bodySmall),
+                Text(_status, style: Theme.of(context).textTheme.bodySmall),
               ],
             ),
           ),
@@ -306,42 +313,45 @@ class _SupportPageState extends State<SupportPage> {
               itemCount: _hits.length,
               itemBuilder: (context, i) {
                 final h = _hits[i];
-                final payload = jsonDecode(h.payloadJson ?? '{}')
-                    as Map<String, dynamic>;
+                final payload =
+                    jsonDecode(h.payloadJson ?? '{}') as Map<String, dynamic>;
                 return Card(
                   margin: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 4),
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
                   child: ListTile(
                     title: Text(
                       payload['title']?.toString() ?? h.id,
-                      style:
-                          const TextStyle(fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(h.text ?? '',
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis),
+                        Text(
+                          h.text ?? '',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                         const SizedBox(height: 4),
                         Wrap(
                           spacing: 6,
                           children: [
                             Chip(
-                              label: Text(
-                                  payload['kind']?.toString() ?? ''),
+                              label: Text(payload['kind']?.toString() ?? ''),
                               visualDensity: VisualDensity.compact,
                             ),
                             Chip(
                               label: Text(
-                                  payload['priority']?.toString() ?? ''),
+                                payload['priority']?.toString() ?? '',
+                              ),
                               visualDensity: VisualDensity.compact,
                               backgroundColor: _priorityColor(
-                                  payload['priority']?.toString()),
+                                payload['priority']?.toString(),
+                              ),
                             ),
                             Chip(
-                              label: Text(
-                                  payload['status']?.toString() ?? ''),
+                              label: Text(payload['status']?.toString() ?? ''),
                               visualDensity: VisualDensity.compact,
                             ),
                           ],
@@ -355,8 +365,7 @@ class _SupportPageState extends State<SupportPage> {
                             tooltip: 'Resolve via upsert',
                             onPressed: () => _resolve(h),
                           )
-                        : const Icon(Icons.check_circle,
-                            color: Colors.green),
+                        : const Icon(Icons.check_circle, color: Colors.green),
                   ),
                 );
               },

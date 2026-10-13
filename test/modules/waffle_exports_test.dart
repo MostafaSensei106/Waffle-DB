@@ -57,8 +57,10 @@ void main() {
     test('WaffleFilter builders are accessible', () {
       final filter = WaffleEqFilter('category', 'auto');
       expect(filter.encode(), contains('"op":"eq"'));
-      final combined =
-          WaffleAndFilter([filter, WaffleInFilter('price', [1, 2])]);
+      final combined = WaffleAndFilter([
+        filter,
+        WaffleInFilter('price', [1, 2])
+      ]);
       expect(combined.encode(), contains('"op":"and"'));
     });
   });

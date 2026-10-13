@@ -5,10 +5,7 @@ import 'demo_db.dart';
 import 'demo_embed.dart';
 
 final _glossarySchema = WaffleSchema(
-  fields: [
-    WaffleFields.string('domain'),
-    WaffleFields.string('direction'),
-  ],
+  fields: [WaffleFields.string('domain'), WaffleFields.string('direction')],
   textLanguage: WaffleLanguage.arabic,
 );
 
@@ -47,7 +44,8 @@ const _seedTerms = [
   ),
   _Term(
     id: 't-rrf-defined',
-    source: 'reciprocal rank fusion merges ranked lists without score normalization',
+    source:
+        'reciprocal rank fusion merges ranked lists without score normalization',
     target: 'دمج الرتب المتبادلة يدمج القوائم المرتبة دون توحيد الدرجات',
     domain: 'search',
   ),
@@ -63,12 +61,7 @@ const _seedTerms = [
     target: 'التضمين المتجهي يحول النص إلى متجه كثيف',
     domain: 'ml',
   ),
-  _Term(
-    id: 't-chunk',
-    source: 'chunk',
-    target: 'مقطع',
-    domain: 'rag',
-  ),
+  _Term(id: 't-chunk', source: 'chunk', target: 'مقطع', domain: 'rag'),
   _Term(
     id: 't-chunk-defined',
     source: 'a chunk is a slice of a parent document with an index',
@@ -130,8 +123,10 @@ class _GlossaryPageState extends State<GlossaryPage> {
     );
     if (db.count() == 0) {
       setState(() => _status = 'Indexing glossary...');
-      await db.insertBatch(_seedTerms
-          .map((t) => WaffleRecord(
+      await db.insertBatch(
+        _seedTerms
+            .map(
+              (t) => WaffleRecord(
                 id: t.id,
                 vector: DemoEmbedder.embed('${t.source} ${t.target}'),
                 text: '${t.source} = ${t.target}',
@@ -141,8 +136,10 @@ class _GlossaryPageState extends State<GlossaryPage> {
                   'source': t.source,
                   'target': t.target,
                 },
-              ))
-          .toList());
+              ),
+            )
+            .toList(),
+      );
       await db.flush();
     }
     if (!mounted) return;
@@ -215,31 +212,20 @@ class _GlossaryPageState extends State<GlossaryPage> {
                     Expanded(
                       child: DropdownButtonFormField<String>(
                         initialValue: _domain,
-                        decoration:
-                            const InputDecoration(labelText: 'Domain'),
-                        items: const [
-                          'all',
-                          'search',
-                          'ml',
-                          'rag',
-                          'storage'
-                        ]
-                            .map((d) => DropdownMenuItem(
-                                value: d, child: Text(d)))
+                        decoration: const InputDecoration(labelText: 'Domain'),
+                        items: const ['all', 'search', 'ml', 'rag', 'storage']
+                            .map(
+                              (d) => DropdownMenuItem(value: d, child: Text(d)),
+                            )
                             .toList(),
-                        onChanged: (v) =>
-                            setState(() => _domain = v ?? 'all'),
+                        onChanged: (v) => setState(() => _domain = v ?? 'all'),
                       ),
                     ),
                     const SizedBox(width: 8),
-                    FilledButton(
-                      onPressed: _run,
-                      child: const Text('Lookup'),
-                    ),
+                    FilledButton(onPressed: _run, child: const Text('Lookup')),
                   ],
                 ),
-                Text(_status,
-                    style: Theme.of(context).textTheme.bodySmall),
+                Text(_status, style: Theme.of(context).textTheme.bodySmall),
               ],
             ),
           ),
@@ -252,17 +238,17 @@ class _GlossaryPageState extends State<GlossaryPage> {
                 final parts = (h.text ?? '').split(' = ');
                 return Card(
                   margin: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 4),
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
                   child: ListTile(
                     leading: const Icon(Icons.translate),
                     title: Text(
                       parts.isNotEmpty ? parts[0] : h.id,
-                      style:
-                          const TextStyle(fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     subtitle: parts.length > 1
-                        ? Text(parts[1],
-                            textDirection: TextDirection.rtl)
+                        ? Text(parts[1], textDirection: TextDirection.rtl)
                         : null,
                     trailing: Text(
                       's=${h.score.toStringAsFixed(3)}',

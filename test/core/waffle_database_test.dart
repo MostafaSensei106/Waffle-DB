@@ -259,8 +259,8 @@ void main() {
     test('Upsert replaces and reports', () async {
       final v1 = Float32List.fromList([1.0, 0.0, 0.0, 0.0]);
       expect(
-        await db.upsert('u1', v1,
-            payload: const {'category': 'auto', 'price': 1}),
+        await db
+            .upsert('u1', v1, payload: const {'category': 'auto', 'price': 1}),
         isFalse,
       );
       expect(

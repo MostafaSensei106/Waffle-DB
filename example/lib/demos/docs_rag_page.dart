@@ -7,10 +7,7 @@ import 'demo_db.dart';
 import 'demo_embed.dart';
 
 final _docsSchema = WaffleSchema(
-  fields: [
-    WaffleFields.string('section'),
-    WaffleFields.string('version'),
-  ],
+  fields: [WaffleFields.string('section'), WaffleFields.string('version')],
   textLanguage: WaffleLanguage.english,
 );
 
@@ -178,8 +175,10 @@ class _DocsRagPageState extends State<DocsRagPage> {
     );
     if (db.count() == 0) {
       setState(() => _status = 'Indexing docs...');
-      await db.insertBatch(_seedDocs
-          .map((d) => WaffleRecord(
+      await db.insertBatch(
+        _seedDocs
+            .map(
+              (d) => WaffleRecord(
                 id: d.id,
                 vector: DemoEmbedder.embed('${d.title} ${d.text}'),
                 text: '${d.title}. ${d.text}',
@@ -190,8 +189,10 @@ class _DocsRagPageState extends State<DocsRagPage> {
                 },
                 parentId: d.parentId,
                 chunkIndex: d.chunkIndex,
-              ))
-          .toList());
+              ),
+            )
+            .toList(),
+      );
       await db.flush();
     }
     if (!mounted) return;
@@ -266,14 +267,13 @@ class _DocsRagPageState extends State<DocsRagPage> {
                     Expanded(
                       child: DropdownButtonFormField<String>(
                         initialValue: _section,
-                        decoration:
-                            const InputDecoration(labelText: 'Section'),
+                        decoration: const InputDecoration(labelText: 'Section'),
                         items: const ['all', 'search', 'api']
-                            .map((s) => DropdownMenuItem(
-                                value: s, child: Text(s)))
+                            .map(
+                              (s) => DropdownMenuItem(value: s, child: Text(s)),
+                            )
                             .toList(),
-                        onChanged: (v) =>
-                            setState(() => _section = v ?? 'all'),
+                        onChanged: (v) => setState(() => _section = v ?? 'all'),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -286,21 +286,16 @@ class _DocsRagPageState extends State<DocsRagPage> {
                               value: _alpha,
                               divisions: 10,
                               label: _alpha.toStringAsFixed(1),
-                              onChanged: (v) =>
-                                  setState(() => _alpha = v),
+                              onChanged: (v) => setState(() => _alpha = v),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    FilledButton(
-                      onPressed: _run,
-                      child: const Text('Ask'),
-                    ),
+                    FilledButton(onPressed: _run, child: const Text('Ask')),
                   ],
                 ),
-                Text(_status,
-                    style: Theme.of(context).textTheme.bodySmall),
+                Text(_status, style: Theme.of(context).textTheme.bodySmall),
               ],
             ),
           ),
@@ -310,12 +305,14 @@ class _DocsRagPageState extends State<DocsRagPage> {
               itemCount: _hits.length,
               itemBuilder: (context, i) {
                 final h = _hits[i];
-                final payload = jsonDecode(h.payloadJson ?? '{}')
-                    as Map<String, dynamic>;
+                final payload =
+                    jsonDecode(h.payloadJson ?? '{}') as Map<String, dynamic>;
                 final expanded = _expandedId == h.id;
                 return Card(
                   margin: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 4),
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(8),
                     child: Column(
@@ -326,53 +323,51 @@ class _DocsRagPageState extends State<DocsRagPage> {
                             Expanded(
                               child: Text(
                                 payload['title']?.toString() ?? h.id,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleSmall,
+                                style: Theme.of(context).textTheme.titleSmall,
                               ),
                             ),
                             Chip(
-                              label: Text(
-                                  payload['section']?.toString() ?? ''),
+                              label: Text(payload['section']?.toString() ?? ''),
                               visualDensity: VisualDensity.compact,
                             ),
                             const SizedBox(width: 4),
-                            Text('s=${h.score.toStringAsFixed(3)}',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall),
+                            Text(
+                              's=${h.score.toStringAsFixed(3)}',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
                           ],
                         ),
                         const SizedBox(height: 4),
-                        Text(h.text ?? '',
-                            maxLines: expanded ? null : 3,
-                            overflow: expanded
-                                ? TextOverflow.visible
-                                : TextOverflow.ellipsis),
+                        Text(
+                          h.text ?? '',
+                          maxLines: expanded ? null : 3,
+                          overflow: expanded
+                              ? TextOverflow.visible
+                              : TextOverflow.ellipsis,
+                        ),
                         if (expanded)
                           Container(
                             margin: const EdgeInsets.only(top: 8),
                             padding: const EdgeInsets.all(8),
-                            color: Theme.of(context)
-                                .colorScheme
-                                .surfaceContainerHighest,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
                             child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                    'Cited context (${_window.length} chunks):',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .labelSmall),
+                                  'Cited context (${_window.length} chunks):',
+                                  style: Theme.of(context).textTheme.labelSmall,
+                                ),
                                 for (final w in _window)
                                   Padding(
-                                    padding:
-                                        const EdgeInsets.only(top: 4),
-                                    child: Text('• ${w.text ?? ''}',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall),
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Text(
+                                      '• ${w.text ?? ''}',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodySmall,
+                                    ),
                                   ),
                               ],
                             ),
@@ -382,9 +377,8 @@ class _DocsRagPageState extends State<DocsRagPage> {
                           children: [
                             TextButton(
                               onPressed: () {
-                                final window = _db?.getNeighbors(h.id,
-                                        window: 1) ??
-                                    [];
+                                final window =
+                                    _db?.getNeighbors(h.id, window: 1) ?? [];
                                 setState(() {
                                   _expandedId = h.id;
                                   _window = window;

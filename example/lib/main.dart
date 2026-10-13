@@ -64,15 +64,13 @@ class _DemoHubState extends State<DemoHub> {
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
           NavigationDestination(icon: Icon(Icons.palette), label: 'Colors'),
-          NavigationDestination(
-            icon: Icon(Icons.menu_book),
-            label: 'Docs RAG',
-          ),
+          NavigationDestination(icon: Icon(Icons.menu_book), label: 'Docs RAG'),
           NavigationDestination(icon: Icon(Icons.code), label: 'Code'),
           NavigationDestination(
-              icon: Icon(Icons.support_agent), label: 'Support'),
-          NavigationDestination(
-              icon: Icon(Icons.translate), label: 'Glossary'),
+            icon: Icon(Icons.support_agent),
+            label: 'Support',
+          ),
+          NavigationDestination(icon: Icon(Icons.translate), label: 'Glossary'),
         ],
       ),
     );
