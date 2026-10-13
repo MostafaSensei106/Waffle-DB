@@ -9,9 +9,6 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'query.dart';
 import 'schema.dart';
 
-// These functions are ignored because they are not marked as `pub`: `delete_internal`, `hit_from_internal`, `indexed_values`, `insert_many`, `insert_one`, `registry`, `with_engine`
-// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `InsertInput`, `WaffleEngine`
-
 Future<BigInt> waffleOpen(
         {required WaffleConfig config, required WaffleSchema schema}) =>
     RustLib.instance.api
