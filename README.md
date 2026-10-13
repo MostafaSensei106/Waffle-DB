@@ -61,7 +61,7 @@ General-purpose local databases (SQLite, Hive) have no vector index, and pure-Da
 | **Filtered Search** | SQL WHERE | Post-filter in Dart | **Pre-filtering (`roaring` bitmaps)** |
 | **Storage Guarantees** | ACID | ❌ | **ACID transactions for stored data** |
 | **Chunk Relations** | Manual joins | Manual | **Parent/neighbor chunk APIs** |
-| **FFI Model** | — | — | **Sync search, async writes** |
+| **FFI Model** | — | — | **Async search + writes; sync point lookups** |
 | **Vector Dimensions** | ❌ | Limited | **Arbitrary (tested 3–1536)** |
 
 ### 🛠️ Tech Stack
@@ -98,7 +98,7 @@ Since this library uses a high-speed bridge to connect Flutter and Rust, you nee
   ```
 
 > [!IMPORTANT]
-> Once Rust is installed, the build system will automatically detect your Flutter target and compile the Rust core into a high-performance native shared library. You only need to set this up once!
+> Once Rust is installed, the build system compiles the Rust core into a native shared library during the normal Flutter build (via cargokit)  no manual `cargo` step. Android builds additionally need the NDK (Flutter resolves it from your SDK install) and link the C++ runtime statically, so nothing extra ships in the APK. You only need to set this up once!
 
 ### 2. Add the Dependency
 
@@ -144,7 +144,7 @@ For a great Developer Experience (DX), WaffleDB comes with built-in configuratio
 | **`writeHeavyProfile`** | Cheap construction (`ef_construction: 32`), 128MB cache, 20M capacity. |
 
 > [!NOTE]
-> The `useQuantization` flag is currently reserved and has no effect: vectors are stored as full-precision floats. Profiles differ in graph shape, cache size and capacity.
+> The `useQuantization` flag is currently reserved and has no effect: vectors are stored as full-precision floats. Profiles differ in graph shape, cache size and capacity. `maxElements` also sizes the initial HNSW reservation (~36 bytes per slot, measured; the index grows automatically past it), so prefer the smallest profile that fits  a 20M cap reserves real memory on open, not just a logical limit. Raw vector bytes are `dimensions × 4` per record (1536-dim ≈ 6KB) before indexes, payload and cache.
 
 Configure and open your high-speed vector store using a profile (or customize with the `copyWith` extension):
 
@@ -199,7 +199,7 @@ Future<void> runVectorStore() async {
 }
 ```
 
-The schema is mandatory and versioned. Indexed fields get `roaring` bitmaps for true pre-filtering; everything else rides along as free payload:
+The schema is mandatory and versioned: its canonical JSON is pinned in storage on creation, and reopening with a different schema or dimension fails loudly. There is deliberately no auto-migration  schema evolution means opening a fresh path and reindexing. Indexed fields get `roaring` bitmaps for pre-filtering; everything else rides along as free payload. The text language is chosen once per database (one text index per open), so multilingual apps open one database per language.
 
 ```dart
 final schema = WaffleSchema(
@@ -244,7 +244,7 @@ await db.insertBatch(records);
 
 ### 4. Querying & Query Builder
 
-WaffleDB offers dense search, keyword search and fused hybrid search through one API. Filters are pushed into the engine as bitmap predicates  never applied after the fact.
+WaffleDB offers dense search, keyword search and fused hybrid search through one API. Dense traversal applies the filter as a predicate inside the graph walk. The text side over-fetches BM25 candidates and verifies them against the same allowed-IDs bitmap, growing the fetch until the page is full  so constrained queries do not silently lose matches that exist deeper in the ranking.
 
 **Dense + pre-filter:**
 ```dart
@@ -406,7 +406,7 @@ Design decisions:
 * **Strict schema + free payload**  indexed fields are declared up front (`WaffleSchema`); anything else rides along unindexed in the payload.
 * **Dual ID mapping**  developers use external `String` IDs (UUIDv7, Firebase IDs); the engine maps them to dense internal `u32` keys. Deleted keys recycle through a FreeList.
 * **Buffered writes + explicit flush**  single inserts commit immediately; batches share one storage transaction and one text commit; `flush()` persists the vector index.
-* **Unified hybrid query**  one request carries `vector?`, `text?`, filter AST, `alpha`, RRF constant and pagination; dense + sparse run in parallel and fuse via RRF inside Rust. The sparse side over-fetches and applies the same allowed-IDs bitmap.
+* **Unified hybrid query**  one request carries `vector?`, `text?`, filter AST, `alpha`, RRF constant and pagination; dense + sparse run in parallel and fuse inside Rust with weighted RRF, `score = alpha/(k+rank_dense) + (1-alpha)/(k+rank_sparse)`, default `alpha = 0.5`, `k = 60`. Dense-only hits score `1/(1+distance)`; sparse-only hits carry raw BM25. The sparse side over-fetches and applies the same allowed-IDs bitmap.
 * **True delete**  physical removal from the graph, text tombstones, storage cleanup and bitmap pruning in one path shared by single, batch and filtered deletes.
 
 ### Engine architecture
@@ -446,7 +446,7 @@ flowchart LR
 
 ### Storage layout
 
-Eight `redb` tables hold everything; keys are shown with their sort order:
+Eight `redb` tables hold everything; keys are shown with their sort order. Vectors live in their own table so a crashed index file can always be rebuilt from storage, and `META` pins the schema JSON, dimension and ID counter the database was created with:
 
 
 ```mermaid
@@ -481,6 +481,16 @@ erDiagram
     }
     FREELIST {
         int free_id PK
+    }
+    VECTORS {
+        int internal_id PK
+        bytes vector_f32
+    }
+    META {
+        string key PK
+        bytes schema_json
+        bytes next_id
+        bytes dimension
     }
 ```
 
@@ -554,6 +564,36 @@ sequenceDiagram
     Core-->>DB: removal count
     DB-->>App: count
 ```
+
+### Consistency, concurrency and recovery
+
+Source of truth is the `redb` store: every write commits its record, vector bytes, index entries and bitmap updates in one transaction first, then touches the graph and text writer. Consequences, all covered by tests in `rust/tests/`:
+
+* **Crash windows**: a crash between the store commit and the index updates leaves storage ahead of the indexes. On open, any size mismatch triggers a **full index rebuild from storage**, so neither missing vectors nor stale entries survive a restart. Unacknowledged writes may be partial  durability is only promised after the call returns.
+* **Single writer**: opening a live path twice fails loudly (storage file lock); concurrent writers from threads are serialized safely (4×250 parallel inserts verified with exact counts).
+* **`flush()`** commits the text writer and persists the vector index; **`close()`** flushes and releases the handle. Buffered text becomes searchable at batch end, `flush()` or `close()`.
+* **Deletes never leak**: removed records resolve to missing chunks and are skipped by every read path, including index entries left behind by a crash (cleaned on the next rebuild).
+* **Chunk policy**: `chunkIndex` is unique per parent (duplicates are rejected); deleting a parent does not cascade  children survive with `getParent` returning null.
+* **Threading for Flutter**: `search` and all writes run on the bridge thread pool (`await` them freely from the UI isolate). Point lookups (`getVector`, `getMetadata`, `count`, `getAllIds`) stay synchronous: they complete in microseconds.
+* **Filtered recall** (2000-vector fixture, cosine, recall@10 vs brute force): ≥ 0.6 unfiltered, ≥ 0.4 at 5% selectivity; selective filters fill the full requested page.
+
+### Where WaffleDB sits in a RAG pipeline
+
+```mermaid
+flowchart LR
+    %% WaffleDB covers retrieval and context; embeddings and inference stay outside
+    DOC[Documents] --> CHUNK[Chunking]
+    CHUNK --> EMB[Embedding model<br/>outside WaffleDB]
+    EMB --> DB[(WaffleDB<br/>store plus retrieve plus filter)]
+    Q[User query] --> QE[Query embedding<br/>outside WaffleDB]
+    QE --> DB
+    DB --> CTX[Chunk context<br/>neighbors plus parent]
+    CTX --> PROMPT[Prompt construction]
+    PROMPT --> LLM[LLM inference]
+    style DB fill:#e8f5e9
+```
+
+WaffleDB owns storage, retrieval, filtering and chunk context. Embeddings and inference stay outside by design: bring any model, keep the same search API.
 
 ### Current Limitations
 
@@ -635,7 +675,7 @@ xychart-beta
 ```
 
 > [!NOTE]
-> Benchmarks run inside a Dart test environment calling the Rust engine over FFI (Linux x64, debug build). Reproduce with `flutter test test/vector_db_real_world_benchmark_test.dart` and `flutter test test/stress_test.dart`. Release builds and mobile hardware will differ.
+> Benchmarks run inside a Dart test environment calling the Rust engine over FFI (Linux x64, debug build). Core-operation figures are `benchmark_harness` means; stress figures are percentiles over fixed samples (5,000 singles, 20 batches, 5,000 queries  so treat p99/max on the 20-sample batch row as indicative, not a tail guarantee). Reproduce with `flutter test test/vector_db_real_world_benchmark_test.dart` and `flutter test test/stress_test.dart`. Release builds and mobile hardware will differ.
 
 ---
 
