@@ -80,6 +80,23 @@ impl TextEngine {
         })
     }
 
+    pub(crate) fn rebuild(
+        dir: &Path,
+        language: &WaffleLanguage,
+        records: &[(u32, String)],
+    ) -> Result<Self> {
+        if dir.exists() {
+            std::fs::remove_dir_all(dir)
+                .map_err(|e| anyhow!("cannot clear text index: {e}"))?;
+        }
+        let engine = Self::open(dir, language)?;
+        for (internal, text) in records {
+            engine.add(*internal, text)?;
+        }
+        engine.commit()?;
+        Ok(engine)
+    }
+
     pub(crate) fn add(&self, internal: u32, text: &str) -> Result<()> {
         if text.trim().is_empty() {
             return Ok(());

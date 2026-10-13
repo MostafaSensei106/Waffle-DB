@@ -135,7 +135,8 @@ impl Store {
         Ok((read(META_MUTATION)?, read(META_VECTOR_SEQ)?, read(META_TEXT_SEQ)?))
     }
 
-    pub(crate) fn stamp_sequences(&self, vector_seq: u64, text_seq: u64) -> Result<()> {        // Max-merge: concurrent writers must never move a generation backward.
+    pub(crate) fn stamp_sequences(&self, vector_seq: u64, text_seq: u64) -> Result<()> {
+        // Max-merge: concurrent writers must never move a generation backward.
         // A stale stamp only causes a redundant rebuild, never a missed one.
         let tx = self.db.begin_write()?;
         {
@@ -162,6 +163,65 @@ impl Store {
         }
         tx.commit()?;
         Ok(())
+    }
+
+    fn read_seq_guard(guard: Option<redb::AccessGuard<'_, &[u8]>>) -> u64 {
+        match guard {
+            Some(g) => {
+                let bytes = g.value();
+                if bytes.len() < 8 {
+                    0
+                } else {
+                    let mut arr = [0u8; 8];
+                    arr.copy_from_slice(&bytes[0..8]);
+                    u64::from_le_bytes(arr)
+                }
+            }
+            None => 0,
+        }
+    }
+
+    pub(crate) fn set_vector_seq(&self, value: u64) -> Result<()> {
+        let tx = self.db.begin_write()?;
+        {
+            let mut table = tx.open_table(T_META)?;
+            let current = Self::read_seq_guard(table.get(META_VECTOR_SEQ)?);
+            table.insert(META_VECTOR_SEQ, &value.max(current).to_le_bytes()[..])?;
+        }
+        tx.commit()?;
+        Ok(())
+    }
+
+    pub(crate) fn set_text_seq(&self, value: u64) -> Result<()> {
+        let tx = self.db.begin_write()?;
+        {
+            let mut table = tx.open_table(T_META)?;
+            let current = Self::read_seq_guard(table.get(META_TEXT_SEQ)?);
+            table.insert(META_TEXT_SEQ, &value.max(current).to_le_bytes()[..])?;
+        }
+        tx.commit()?;
+        Ok(())
+    }
+
+    /// Reads the generation triple, initializing pre-generation databases.
+    /// Returns `(mutation, vector_stale, text_stale)`. Missing keys mean the
+    /// database predates generation tracking: both indexes rebuild once,
+    /// then counting restarts at 1.
+    pub(crate) fn ensure_generations(&self) -> Result<(u64, bool, bool)> {
+        match self.seq_triple()? {
+            (Some(m), Some(v), Some(t)) => Ok((m, v != m, t != m)),
+            _ => {
+                let tx = self.db.begin_write()?;
+                {
+                    let mut table = tx.open_table(T_META)?;
+                    table.insert(META_MUTATION, &1u64.to_le_bytes()[..])?;
+                    table.insert(META_VECTOR_SEQ, &0u64.to_le_bytes()[..])?;
+                    table.insert(META_TEXT_SEQ, &0u64.to_le_bytes()[..])?;
+                }
+                tx.commit()?;
+                Ok((1, true, true))
+            }
+        }
     }
 
     pub(crate) fn bump_mutation_tx(tx: &redb::WriteTransaction) -> Result<u64> {

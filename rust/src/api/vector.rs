@@ -34,6 +34,24 @@ impl VectorEngine {
                 return Ok(Self { index });
             }
         }
+        Self::fresh(
+            dimension,
+            metric,
+            connectivity,
+            expansion_add,
+            expansion_search,
+            capacity,
+        )
+    }
+
+    pub(crate) fn fresh(
+        dimension: usize,
+        metric: &WaffleMetric,
+        connectivity: usize,
+        expansion_add: usize,
+        expansion_search: usize,
+        capacity: usize,
+    ) -> Result<Self> {
         let options = IndexOptions {
             dimensions: dimension,
             metric: map_metric(metric),
@@ -44,9 +62,6 @@ impl VectorEngine {
             multi: false,
         };
         let index = Index::new(&options)?;
-        // Reserve a bounded initial capacity: usearch grows automatically on
-        // insert, while a full max_elements reservation would pin ~36 bytes
-        // per slot up front (hundreds of MB on server profiles).
         index.reserve(capacity.clamp(1024, 65_536))?;
         Ok(Self { index })
     }
@@ -85,11 +100,6 @@ impl VectorEngine {
 
     pub(crate) fn remove(&self, internal: u32) -> Result<bool> {
         Ok(self.index.remove(internal as u64)? > 0)
-    }
-
-    pub(crate) fn reset(&self) -> Result<()> {
-        self.index.reset()?;
-        Ok(())
     }
 
     pub(crate) fn size(&self) -> usize {

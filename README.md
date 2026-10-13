@@ -36,7 +36,7 @@
 | Area | What you get |
 | :--- | :--- |
 | **Retrieval** | Dense k-NN, BM25 keywords (EN+AR stemming), and RRF hybrid fusion with alpha blending and offset pagination |
-| **Filtering** | `eq`/`in`/`and`/`or` pre-filters evaluated as bitmap predicates during search  never after it |
+| **Filtering** | `eq`/`in`/`and`/`or` filters compiled to bitmaps; dense traversal skips non-matches, text candidates are verified against the same bitmap |
 | **Storage** | ACID transactions, dual String↔u32 ID mapping with FreeList recycling, crash recovery by index rebuild |
 | **Chunks** | Parent/neighbor window context for LLM prompts, batch upserts, filtered bulk deletes |
 | **Collections** | Logical namespaces backed by an indexed `_collection` pre-filter, so searches never leak across collections |
@@ -244,11 +244,11 @@ await db.insertBatch(records);
 
 ### 4. Querying & Query Builder
 
-WaffleDB offers dense search, keyword search and fused hybrid search through one API. Dense traversal applies the filter as a predicate inside the graph walk. The text side over-fetches BM25 candidates and verifies them against the same allowed-IDs bitmap, growing the fetch until the page is full  so constrained queries do not silently lose matches that exist deeper in the ranking.
+WaffleDB offers dense search, keyword search and fused hybrid search through one API. Dense traversal applies the filter as a predicate inside the graph walk. The text side over-fetches BM25 candidates and verifies them against the same allowed-IDs bitmap, growing the fetch until the page is full — so constrained queries do not silently lose matches that exist deeper in the ranking.
 
 **Dense + pre-filter:**
 ```dart
-final results = db.search(
+final results = await db.search(
   vector: queryVector,
   topK: 5,
   filter: WaffleEqFilter('category', 'electronics'),
@@ -379,7 +379,7 @@ await db.insert(
   payload: {'category': 'electronics', 'price': 299},
 );
 
-final results = db.search(
+final results = await db.search(
   vector: queryVector,
   topK: 5,
   filters: [
@@ -397,7 +397,7 @@ One database file set, four cooperating engines:
 | Engine | Crate | Responsibility |
 | :--- | :--- | :--- |
 | **Vector** | `usearch` | Dense k-NN over an HNSW graph with predicate pre-filtering during traversal |
-| **Text** | `tantivy` | BM25 keyword search with per-collection English/Arabic tokenizers |
+| **Text** | `tantivy` | BM25 keyword search with one English/Arabic tokenizer per database |
 | **Storage** | `redb` | Chunks, vectors, ID mappings, bitmaps and indexes in ACID transactions |
 | **Filter** | `roaring` | `field=value → bitmap` indexes; one `AND`/`OR` pass produces the allowed-ID set |
 
@@ -419,7 +419,7 @@ flowchart LR
         DSL[WaffleSchema<br/>WaffleFilter DSL]
     end
     subgraph FFI["FFI bridge"]
-        FRB[flutter_rust_bridge<br/>sync search, async writes]
+        FRB[flutter_rust_bridge<br/>async search plus writes]
     end
     subgraph Rust["Rust core"]
         REQ[WaffleSearchRequest]
@@ -755,6 +755,7 @@ This project is dual-licensed:
 2. **Commercial License**:
    - Required for using the library in proprietary / closed-source products.
    - Only available from the copyright holder (Mostafa Mahmoud).
+   - Its terms are set by the separate commercial agreement, not by the GPL text.
    - Contact: [mostafasensei106@gmail.com]
 
 See the [LICENSE](LICENSE) file for full details.
