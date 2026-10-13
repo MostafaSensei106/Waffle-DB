@@ -135,8 +135,7 @@ impl Store {
         Ok((read(META_MUTATION)?, read(META_VECTOR_SEQ)?, read(META_TEXT_SEQ)?))
     }
 
-    pub(crate) fn stamp_sequences(&self, vector_seq: u64, text_seq: u64) -> Result<()> {
-        // Max-merge: concurrent writers must never move a generation backward.
+    pub(crate) fn stamp_sequences(&self, vector_seq: u64, text_seq: u64) -> Result<()> {        // Max-merge: concurrent writers must never move a generation backward.
         // A stale stamp only causes a redundant rebuild, never a missed one.
         let tx = self.db.begin_write()?;
         {

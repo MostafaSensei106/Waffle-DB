@@ -1,10 +1,8 @@
-use anyhow::{Result, anyhow};
+use anyhow::{anyhow, Result};
 
 use crate::api::engine::WaffleEngine;
 use crate::api::filter::{evaluate_filter, parse_filter};
-use crate::api::schema::{
-    ChunkRecord, WaffleFieldType, field_hash, numeric_index_key,
-};
+use crate::api::schema::{field_hash, numeric_index_key, ChunkRecord, WaffleFieldType};
 
 pub(crate) type IndexedValues = Vec<(String, WaffleFieldType, String, Option<f64>)>;
 
@@ -29,48 +27,33 @@ pub(crate) fn indexed_values(
         .iter()
         .filter(|f| f.indexed)
         .map(|field| {
-            let v = obj.get(&field.name).ok_or_else(|| {
-                anyhow!("payload is missing indexed field {:?}", field.name)
-            })?;
+            let v = obj
+                .get(&field.name)
+                .ok_or_else(|| anyhow!("payload is missing indexed field {:?}", field.name))?;
             let (canonical, numeric) = match &field.field_type {
                 WaffleFieldType::String | WaffleFieldType::Text => match v {
                     serde_json::Value::String(s) => (s.clone(), None),
-                    _ => {
-                        return Err(anyhow!(
-                            "field {:?} expects a string",
-                            field.name
-                        ))
-                    }
+                    _ => return Err(anyhow!("field {:?} expects a string", field.name)),
                 },
                 WaffleFieldType::Boolean => match v {
                     serde_json::Value::Bool(b) => (b.to_string(), None),
-                    _ => {
-                        return Err(anyhow!(
-                            "field {:?} expects true/false",
-                            field.name
-                        ))
-                    }
+                    _ => return Err(anyhow!("field {:?} expects true/false", field.name)),
                 },
                 WaffleFieldType::Integer => match v.as_i64() {
                     Some(i) => (i.to_string(), Some(i as f64)),
-                    None => {
-                        return Err(anyhow!(
-                            "field {:?} expects an integer",
-                            field.name
-                        ))
-                    }
+                    None => return Err(anyhow!("field {:?} expects an integer", field.name)),
                 },
                 WaffleFieldType::Double => match v.as_f64() {
                     Some(f) => (f.to_string(), Some(f)),
-                    None => {
-                        return Err(anyhow!(
-                            "field {:?} expects a number",
-                            field.name
-                        ))
-                    }
+                    None => return Err(anyhow!("field {:?} expects a number", field.name)),
                 },
             };
-            Ok((field.name.clone(), field.field_type.clone(), canonical, numeric))
+            Ok((
+                field.name.clone(),
+                field.field_type.clone(),
+                canonical,
+                numeric,
+            ))
         })
         .collect()
 }
@@ -94,9 +77,8 @@ fn insert_many(engine: &WaffleEngine, inputs: &[InsertInput<'_>]) -> Result<u64>
         let payload: serde_json::Value = if input.payload_json.trim().is_empty() {
             serde_json::Value::Object(Default::default())
         } else {
-            serde_json::from_str(input.payload_json).map_err(|e| {
-                anyhow!("payload is not valid JSON: {e}")
-            })?
+            serde_json::from_str(input.payload_json)
+                .map_err(|e| anyhow!("payload is not valid JSON: {e}"))?
         };
         let values = indexed_values(&engine.schema, &payload)?;
         if engine.store.lookup_internal(input.id)?.is_some() {
@@ -171,7 +153,9 @@ fn delete_internal(engine: &WaffleEngine, internal: u32) -> Result<Option<u64>> 
                         engine.store.numeric_remove(&tx, &key)?;
                     }
                     None => {
-                        engine.store.bitmap_remove(&tx, field, canonical, internal)?;
+                        engine
+                            .store
+                            .bitmap_remove(&tx, field, canonical, internal)?;
                     }
                 }
             }
@@ -242,16 +226,20 @@ pub(crate) fn insert_batch(
         .zip(payload_jsons.iter())
         .zip(chunk_indices.iter())
         .zip(parent_ids)
-        .map(|(((((id, vector), text), payload_json), chunk_index), parent)| {
-            InsertInput {
+        .map(
+            |(((((id, vector), text), payload_json), chunk_index), parent)| InsertInput {
                 id: id.as_str(),
                 vector,
                 text,
                 payload_json,
-                parent_id: if parent.is_empty() { None } else { Some(parent) },
+                parent_id: if parent.is_empty() {
+                    None
+                } else {
+                    Some(parent)
+                },
                 chunk_index: *chunk_index,
-            }
-        })
+            },
+        )
         .collect();
     if inputs.is_empty() {
         return Ok(());
@@ -320,8 +308,7 @@ pub(crate) fn delete_batch(engine: &WaffleEngine, ids: &[String]) -> Result<u64>
 }
 
 pub(crate) fn delete_where(engine: &WaffleEngine, filter_json: &str) -> Result<u64> {
-    let bitmap =
-        evaluate_filter(&engine.store, &engine.schema, &parse_filter(filter_json)?)?;
+    let bitmap = evaluate_filter(&engine.store, &engine.schema, &parse_filter(filter_json)?)?;
     let mut removed = 0u64;
     let mut last_mutation = 0u64;
     for internal in bitmap.iter().collect::<Vec<u32>>() {

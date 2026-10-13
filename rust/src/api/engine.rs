@@ -28,7 +28,17 @@ impl WaffleEngine {
         let dim = config.dimension as usize;
         let store = Store::open(&dir, &schema, config.dimension)
             .context("open storage engine")?;
-        let vector = VectorEngine::open(
+        // Generation protocol: every committed mutation bumps mutation_seq;
+        // each index stamps its own sequence only after its own work
+        // completes. Any lagging index is rebuilt from storage, which is
+        // always ahead. Missing keys (pre-generation databases) force a
+        // one-time rebuild of both indexes.
+        let (mutation, vector_seq, text_seq) = match store.seq_triple()? {
+            (Some(m), Some(v), Some(t)) => (m, v, t),
+            _ => (1, 0, 0),
+        };
+        let vector_stale = vector_seq != mutation;
+        let text_stale = text_seq != mutation;
             &dir,
             dim,
             &config.graph_config.metric,
