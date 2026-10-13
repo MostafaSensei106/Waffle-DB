@@ -30,21 +30,6 @@
   <a href="#-contributing">Contributing</a>
 </p>
 
-## Contents
-
-- [✨ Key Features](#-key-features)
-- [🤔 Why Waffle-DB?](#-why-waffle-db)
-- [📦 Installation](#-installation)
-- [🚀 Basic Usage](#-basic-usage)
-- [🔬 Advanced Usage](#-advanced-usage)
-- [🧠 Architecture](#-architecture)
-- [🖥️ Showcase Demo](#-showcase-demo)
-- [🏎️ Performance Benchmarks](#-performance-benchmarks)
-- [📚 API Reference](#-api-reference)
-- [🤝 Contributing](#-contributing)
-- [⚖️ License](#-license)
-
----
 
 ## ✨ Key Features
 
@@ -93,38 +78,6 @@ General-purpose local databases (SQLite, Hive) have no vector index, and pure-Da
 
 > [!NOTE]
 > Databases created by pre-0.1.0 releases (`sled` engine) are incompatible and require a reindex. There is no auto-migration by design.
-
----
-
-## 🏎️ Performance Benchmarks
-
-Measured on the current engine (Linux x64, debug build) via `flutter test`. Writes cost more than a bare key-value store because every insert commits a storage transaction and single inserts also commit the text index; deletes remove data from all three engines. Queries stay sub-millisecond.
-
-### Core Operation Latencies
-
-| Database Operation | Average Latency | Throughput |
-| :--- | :---: | :---: |
-| **Database Open & Close** | 56.54 ms | ~18 cycles/sec |
-| **Insert Single Vector (128-dim)** | 2.36 ms | ~420 inserts/sec |
-| **Insert Batch (1,000 vectors)** | 303.84 ms | ~3,290 vectors/sec |
-| **Query KNN (k=10, efSearch=32)** | 0.29 ms | ~3,460 queries/sec |
-| **Get Vector by ID** | 0.043 ms | ~23,000 reads/sec |
-| **Get Metadata by ID** | 0.040 ms | ~25,000 reads/sec |
-| **Delete Record** | 2.06 ms | ~486 deletes/sec |
-| **Get All IDs (1,000 elements)** | 3.06 ms | ~320 scans/sec |
-
-### Stress Test & Load Percentiles
-
-During rigorous stress testing (5000+ operations in a tight loop), Waffle-DB guarantees low latency tails under pressure.
-
-| Operation (Stress Test) | p50 (Median) | p90 | p95 | p99 | Max (Tail) |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **5,000 Single Insertions** | 2.15 ms | 2.57 ms | 2.72 ms | 3.47 ms | 35.46 ms |
-| **20 Batches (1000/batch)** | 435.02 ms | 474.23 ms | 498.99 ms | 498.99 ms | 498.99 ms |
-| **5,000 KNN Queries (k=10)** | 0.34 ms | 0.46 ms | 0.50 ms | 0.60 ms | 4.89 ms |
-
-> [!NOTE]
-> Benchmarks run inside a Dart test environment calling the Rust engine over FFI (Linux x64, debug build). Reproduce with `flutter test test/vector_db_real_world_benchmark_test.dart` and `flutter test test/stress_test.dart`. Release builds and mobile hardware will differ.
 
 ---
 
@@ -388,6 +341,26 @@ await db.flush();
 await db.close();
 ```
 
+### Chunk context for LLM prompts
+
+```mermaid
+flowchart TB
+    %% Parent document split into citable chunks with neighbor windows
+    DOC[(parent document<br/>full guide text)]
+    C0[chunk 0<br/>intro]
+    C1[chunk 1<br/>matched hit]
+    C2[chunk 2<br/>next step]
+    LLM[LLM prompt<br/>window context]
+    DOC --> C0
+    DOC --> C1
+    DOC --> C2
+    C1 -->|getNeighbors window 1| WIN[chunk 0 plus 1 plus 2]
+    WIN --> LLM
+    C1 -.->|getParent| DOC
+    style C1 fill:#fff3e0
+    style WIN fill:#e8f5e9
+```
+
 ### Bringing Your Own Embeddings
 
 WaffleDB stores vectors; it does not embed text. Use any embedding model (a local ONNX model, OpenAI, Gemini) to produce `Float32List` vectors of the configured dimension, then insert and query with them. The `example/` app ships a tiny hashed trigram embedder purely so the demos run offline — it captures lexical overlap, not meaning, and should be replaced by a real model in production apps.
@@ -434,39 +407,6 @@ Design decisions:
 * **Unified hybrid query** — one request carries `vector?`, `text?`, filter AST, `alpha`, RRF constant and pagination; dense + sparse run in parallel and fuse via RRF inside Rust. The sparse side over-fetches and applies the same allowed-IDs bitmap.
 * **True delete** — physical removal from the graph, text tombstones, storage cleanup and bitmap pruning in one path shared by single, batch and filtered deletes.
 
-### How a Search Flows
-
-1. Dart builds a `WaffleSearchRequest` (vector and/or text, top-k + offset, filter AST).
-2. Rust compiles the filter AST into one `RoaringBitmap` from the stored bitmaps and the ordered numeric index.
-3. `rayon::join` runs the `usearch` filtered search and the `tantivy` BM25 search concurrently.
-4. RRF fuses the two ranked lists (`alpha`-weighted, default 0.5/60); offset pagination applies to the fused list.
-5. Chunk records for the surviving IDs are point-fetched from `redb` and returned as `WaffleHit`s with text and payload.
-
-### How a Write Flows
-
-1. Payload is validated against the schema (indexed fields required, types checked).
-2. One `redb` transaction writes the ID mapping, chunk bytes, vector bytes, children entry, numeric entries and bitmap updates.
-3. The vector is added to the HNSW graph; text goes to the `tantivy` writer (committed per single insert, once per batch, or on `flush()`/`close()`).
-4. Duplicate external IDs are rejected on insert; `upsert` replaces explicitly.
-
-### Current Limitations
-
-* Filters support `eq`/`in`/`and`/`or` only — no `NOT`, no range comparisons yet (the numeric index layout already supports them; tracked for v1.1).
-* No auto-migration between storage formats; open with a mismatched schema or dimension fails loudly.
-* One writer at a time; concurrent reads are fine.
-* Flutter Web is not supported in v1 (native engines have no WASM builds).
-* Text indexes store positions; databases created before positions were enabled need a fresh path.
-
-### 🗺️ Roadmap
-
-1. **Core replacement** (done in 0.1.0): `redb` + `usearch` + dual mapping + strict schema. Breaking: old databases are incompatible.
-2. **Filtering + text** (mostly done): bitmap filters, numeric index (EQ/IN), EN/AR tokenizers, parent/neighbor chunk APIs. Left: range filters.
-3. **Next**: local embedding adapter, `waffle_db_langchain` bridge package, range filters, recall benchmarks incl. Arabic eval.
-
----
-
-### System diagrams
-
 ### Engine architecture
 
 ```mermaid
@@ -502,35 +442,10 @@ flowchart LR
     style RRF fill:#fff3e0
 ```
 
-### Search flow
-
-```mermaid
-sequenceDiagram
-    participant App
-    participant DB as WaffleDatabase
-    participant Core as Rust core
-    participant Dense as usearch
-    participant Sparse as tantivy
-    participant Store as redb
-    App->>DB: search with vector, text, filter, topK
-    DB->>Core: WaffleSearchRequest
-    Core->>Store: evaluate filter AST to bitmap
-    Store-->>Core: allowed-ids bitmap
-    par dense and sparse
-        Core->>Dense: filtered_search with predicate
-        Core->>Sparse: BM25 search with over-fetch
-    end
-    Dense-->>Core: ranked ids plus distances
-    Sparse-->>Core: ranked ids plus scores
-    Core->>Core: bitmap-filter sparse hits
-    Core->>Core: RRF fuse, skip offset, take topK
-    Core->>Store: point-fetch surviving chunks
-    Store-->>Core: text plus payload
-    Core-->>DB: WaffleHit list
-    DB-->>App: hits
-```
-
 ### Storage layout
+
+Eight `redb` tables hold everything; keys are shown with their sort order:
+
 
 ```mermaid
 erDiagram
@@ -567,23 +482,90 @@ erDiagram
     }
 ```
 
-### Measured latencies
+### How a Search Flows
+
+1. Dart builds a `WaffleSearchRequest` (vector and/or text, top-k + offset, filter AST).
+2. Rust compiles the filter AST into one `RoaringBitmap` from the stored bitmaps and the ordered numeric index.
+3. `rayon::join` runs the `usearch` filtered search and the `tantivy` BM25 search concurrently.
+4. RRF fuses the two ranked lists (`alpha`-weighted, default 0.5/60); offset pagination applies to the fused list.
+5. Chunk records for the surviving IDs are point-fetched from `redb` and returned as `WaffleHit`s with text and payload.
+
+### Search flow
 
 ```mermaid
-xychart-beta
-    title "Query and read path (microseconds, lower is better)"
-    x-axis ["KNN k10", "Get vector", "Get metadata", "All IDs x1000"]
-    y-axis "us" 0 --> 3200
-    bar [288, 43, 40, 3065]
+sequenceDiagram
+    participant App
+    participant DB as WaffleDatabase
+    participant Core as Rust core
+    participant Dense as usearch
+    participant Sparse as tantivy
+    participant Store as redb
+    App->>DB: search with vector, text, filter, topK
+    DB->>Core: WaffleSearchRequest
+    Core->>Store: evaluate filter AST to bitmap
+    Store-->>Core: allowed-ids bitmap
+    par dense and sparse
+        Core->>Dense: filtered_search with predicate
+        Core->>Sparse: BM25 search with over-fetch
+    end
+    Dense-->>Core: ranked ids plus distances
+    Sparse-->>Core: ranked ids plus scores
+    Core->>Core: bitmap-filter sparse hits
+    Core->>Core: RRF fuse, skip offset, take topK
+    Core->>Store: point-fetch surviving chunks
+    Store-->>Core: text plus payload
+    Core-->>DB: WaffleHit list
+    DB-->>App: hits
 ```
 
+### How a Write Flows
+
+1. Payload is validated against the schema (indexed fields required, types checked).
+2. One `redb` transaction writes the ID mapping, chunk bytes, vector bytes, children entry, numeric entries and bitmap updates.
+3. The vector is added to the HNSW graph; text goes to the `tantivy` writer (committed per single insert, once per batch, or on `flush()`/`close()`).
+4. Duplicate external IDs are rejected on insert; `upsert` replaces explicitly.
+
+### Write lifecycle
+
 ```mermaid
-xychart-beta
-    title "Write path (milliseconds, lower is better)"
-    x-axis ["Open plus close", "Insert single", "Batch x1000", "Delete"]
-    y-axis "ms" 0 --> 320
-    bar [56.5, 2.36, 303.8, 2.06]
+sequenceDiagram
+    participant App
+    participant DB as WaffleDatabase
+    participant Core as Rust core
+    participant Store as redb
+    participant Vector as usearch
+    participant Text as tantivy
+    App->>DB: insert with vector, text, payload
+    DB->>Core: validate against schema
+    Core->>Store: one transaction writes mapping, chunk, vector, indexes, bitmaps
+    Store-->>Core: commit
+    Core->>Vector: add to HNSW graph
+    Core->>Text: add to writer, commit
+    Core-->>DB: done
+    DB-->>App: ok
+    Note over App,Text: batches share one transaction plus one text commit
+    App->>DB: deleteWhere with filter
+    DB->>Core: bitmap lists matching ids
+    Core->>Store: remove records, prune bitmaps, recycle ids
+    Core->>Vector: remove from graph
+    Core->>Text: tombstone plus commit
+    Core-->>DB: removal count
+    DB-->>App: count
 ```
+
+### Current Limitations
+
+* Filters support `eq`/`in`/`and`/`or` only — no `NOT`, no range comparisons yet (the numeric index layout already supports them; tracked for v1.1).
+* No auto-migration between storage formats; open with a mismatched schema or dimension fails loudly.
+* One writer at a time; concurrent reads are fine.
+* Flutter Web is not supported in v1 (native engines have no WASM builds).
+* Text indexes store positions; databases created before positions were enabled need a fresh path.
+
+### 🗺️ Roadmap
+
+1. **Core replacement** (done in 0.1.0): `redb` + `usearch` + dual mapping + strict schema. Breaking: old databases are incompatible.
+2. **Filtering + text** (mostly done): bitmap filters, numeric index (EQ/IN), EN/AR tokenizers, parent/neighbor chunk APIs. Left: range filters.
+3. **Next**: local embedding adapter, `waffle_db_langchain` bridge package, range filters, recall benchmarks incl. Arabic eval.
 
 ---
 
@@ -602,6 +584,56 @@ xychart-beta
 Dense vectors in the demos come from a tiny hashed-trigram embedder (`demo_embed.dart`) so everything runs offline — see “Bringing Your Own Embeddings” before shipping.
 
 Headless versions of the flows live in `example/integration_test/ai_demos_test.dart` and run with `flutter test integration_test`.
+
+---
+
+## 🏎️ Performance Benchmarks
+
+Measured on the current engine (Linux x64, debug build) via `flutter test`. Writes cost more than a bare key-value store because every insert commits a storage transaction and single inserts also commit the text index; deletes remove data from all three engines. Queries stay sub-millisecond.
+
+### Core Operation Latencies
+
+| Database Operation | Average Latency | Throughput |
+| :--- | :---: | :---: |
+| **Database Open & Close** | 56.54 ms | ~18 cycles/sec |
+| **Insert Single Vector (128-dim)** | 2.36 ms | ~420 inserts/sec |
+| **Insert Batch (1,000 vectors)** | 303.84 ms | ~3,290 vectors/sec |
+| **Query KNN (k=10, efSearch=32)** | 0.29 ms | ~3,460 queries/sec |
+| **Get Vector by ID** | 0.043 ms | ~23,000 reads/sec |
+| **Get Metadata by ID** | 0.040 ms | ~25,000 reads/sec |
+| **Delete Record** | 2.06 ms | ~486 deletes/sec |
+| **Get All IDs (1,000 elements)** | 3.06 ms | ~320 scans/sec |
+
+### Stress Test & Load Percentiles
+
+Stress percentiles over tight loops (5,000 single inserts, 20 batches of 1,000, 5,000 queries):
+
+| Operation (Stress Test) | p50 (Median) | p90 | p95 | p99 | Max (Tail) |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **5,000 Single Insertions** | 2.15 ms | 2.57 ms | 2.72 ms | 3.47 ms | 35.46 ms |
+| **20 Batches (1000/batch)** | 435.02 ms | 474.23 ms | 498.99 ms | 498.99 ms | 498.99 ms |
+| **5,000 KNN Queries (k=10)** | 0.34 ms | 0.46 ms | 0.50 ms | 0.60 ms | 4.89 ms |
+
+### Measured latencies
+
+```mermaid
+xychart-beta
+    title "Query and read path (microseconds, lower is better)"
+    x-axis ["KNN k10", "Get vector", "Get metadata", "All IDs x1000"]
+    y-axis "us" 0 --> 3200
+    bar [288, 43, 40, 3065]
+```
+
+```mermaid
+xychart-beta
+    title "Write path (milliseconds, lower is better)"
+    x-axis ["Open plus close", "Insert single", "Batch x1000", "Delete"]
+    y-axis "ms" 0 --> 320
+    bar [56.5, 2.36, 303.8, 2.06]
+```
+
+> [!NOTE]
+> Benchmarks run inside a Dart test environment calling the Rust engine over FFI (Linux x64, debug build). Reproduce with `flutter test test/vector_db_real_world_benchmark_test.dart` and `flutter test test/stress_test.dart`. Release builds and mobile hardware will differ.
 
 ---
 
