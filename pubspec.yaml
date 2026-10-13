@@ -1,5 +1,5 @@
 name: waffle_db
-description: "An advanced,local vector database for Flutter, powered by Rust and HNSW graph indexing."
+description: "A local database for Flutter combining dense vector search, full-text search and filtered storage in one Rust engine."
 version: 0.1.0-dev.1
 
 repository: https://github.com/MostafaSensei106/Waffle-DB
