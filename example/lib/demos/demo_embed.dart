@@ -9,7 +9,7 @@ import 'dart:typed_data';
 /// with no network and no 90MB download. Trigram hashing gives near-duplicate
 /// and paraphrase-level similarity; it does NOT understand meaning the way a
 /// transformer does. Swap it with a real model through the embedder adapter
-/// when one lands — the search API is identical.
+/// when one lands  the search API is identical.
 abstract final class DemoEmbedder {
   static const int dim = 128;
 

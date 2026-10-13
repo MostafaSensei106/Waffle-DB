@@ -20,8 +20,17 @@
 - **Fix**: the sparse side of hybrid/text search now applies the same allowed-IDs bitmap (adaptive over-fetch), so filtered text queries can no longer leak excluded records.
 - **Fix**: text fields index positions, enabling phrase queries.
 - **Performance**: batch inserts share one storage transaction (batch p50 1413ms → 435ms per 1000 vectors).
-- **Android**: `rust/build.rs` links NDK `libc++_static.a` + `libc++abi.a` by absolute path and `CXXSTDLIB=c++_static` stops the shared link — the APK carries zero C++ runtime dependency (verified: only libdl/libm/libc NEEDED, zero undefined C++ symbols).
-- **Docs**: README rewritten without marketing claims — factual comparison, full API reference, how-it-works (search/write flows), honest limitations and roadmap, measured benchmark tables.
+- **Android**: `rust/build.rs` links NDK `libc++_static.a` + `libc++abi.a` by absolute path and `CXXSTDLIB=c++_static` stops the shared link  the APK carries zero C++ runtime dependency (verified: only libdl/libm/libc NEEDED, zero undefined C++ symbols).
+- **Docs**: README rewritten without marketing claims  factual comparison, full API reference, how-it-works (search/write flows), honest limitations and roadmap, measured benchmark tables.
+- **Changed**: `rust/src/api/` restructured into focused modules (`engine.rs`, `registry.rs`, `writes.rs`, `reads.rs`) behind a thin `waffle_db.rs` facade. No FFI or Dart API change  regenerated bindings are identical. The engine roundtrip test moved to `rust/tests/enterprise_roundtrip.rs`.
+
+## Upgrading from 0.0.x to 0.1.0-dev.1 (breaking)
+
+- **Storage is incompatible**: databases created by 0.0.x cannot be opened. Reindex your vectors into a fresh path; there is no auto-migration.
+- **Schema is now mandatory**: `WaffleDatabase.open` requires a `WaffleSchema`. Declare every field you filter on as indexed; everything else goes in the free payload. Collections additionally require an indexed `_collection` string field.
+- **API renames**: `db.query(vector, k:)` → `db.search(vector:, topK:)`; `WaffleQueryResult` → `WaffleHit` (with `score` instead of threshold filtering); `metadata:` bytes → `payload:` map plus `text:`; `threshold()`/`includeMetadata()` builder options are gone (filter with `eq`/`inList` instead).
+- **Deletes are real now**: `delete` removes data from every engine (previously the vector stayed until reopen). `getMetadata` returns payload JSON bytes; decode with `getPayload` for a map.
+- **Android**: no action needed  the C++ runtime links statically since this version.
 
 
 
