@@ -15,7 +15,6 @@ pub(crate) struct InsertInput<'a> {
     payload_json: &'a str,
     parent_id: Option<String>,
     chunk_index: u32,
-    commit_text: bool,
 }
 
 pub(crate) fn indexed_values(
@@ -74,10 +73,6 @@ pub(crate) fn indexed_values(
             Ok((field.name.clone(), field.field_type.clone(), canonical, numeric))
         })
         .collect()
-}
-
-fn insert_one(engine: &WaffleEngine, input: InsertInput<'_>) -> Result<()> {
-    insert_many(engine, &[input])
 }
 
 fn insert_many(engine: &WaffleEngine, inputs: &[InsertInput<'_>]) -> Result<u64> {
@@ -157,12 +152,13 @@ fn insert_many(engine: &WaffleEngine, inputs: &[InsertInput<'_>]) -> Result<u64>
     Ok(mutation)
 }
 
-fn delete_internal(engine: &WaffleEngine, internal: u32, commit_text: bool) -> Result<bool> {
+fn delete_internal(engine: &WaffleEngine, internal: u32) -> Result<Option<u64>> {
     let rec = match engine.store.read_chunk(internal)? {
         Some(r) => r,
-        None => return Ok(false),
+        None => return Ok(None),
     };
     let tx = engine.store.begin_write()?;
+    let mutation = crate::api::store::Store::bump_mutation_tx(&tx)?;
     engine
         .store
         .remove_record(&tx, &rec.external_id, internal)?;
@@ -184,10 +180,7 @@ fn delete_internal(engine: &WaffleEngine, internal: u32, commit_text: bool) -> R
     tx.commit()?;
     engine.vector.remove(internal)?;
     engine.text.delete(internal)?;
-    if commit_text {
-        engine.text.commit()?;
-    }
-    Ok(true)
+    Ok(Some(mutation))
 }
 
 pub(crate) fn insert(
@@ -199,18 +192,20 @@ pub(crate) fn insert(
     parent_id: Option<String>,
     chunk_index: u32,
 ) -> Result<()> {
-    insert_one(
+    let mutation = insert_many(
         engine,
-        InsertInput {
+        &[InsertInput {
             id: &id,
             vector: &vector,
             text: &text,
             payload_json: &payload_json,
             parent_id,
             chunk_index,
-            commit_text: true,
-        },
-    )
+        }],
+    )?;
+    engine.text.commit()?;
+    engine.store.stamp_sequences(mutation, mutation)?;
+    Ok(())
 }
 
 pub(crate) fn insert_batch(
@@ -255,12 +250,15 @@ pub(crate) fn insert_batch(
                 payload_json,
                 parent_id: if parent.is_empty() { None } else { Some(parent) },
                 chunk_index: *chunk_index,
-                commit_text: false,
             }
         })
         .collect();
-    insert_many(engine, &inputs)?;
+    if inputs.is_empty() {
+        return Ok(());
+    }
+    let mutation = insert_many(engine, &inputs)?;
     engine.text.commit()?;
+    engine.store.stamp_sequences(mutation, mutation)?;
     Ok(())
 }
 
@@ -274,7 +272,7 @@ pub(crate) fn upsert(
     chunk_index: u32,
 ) -> Result<bool> {
     let replaced = match engine.store.lookup_internal(&id)? {
-        Some(internal) => delete_internal(engine, internal, false)?,
+        Some(internal) => delete_internal(engine, internal)?.is_some(),
         None => false,
     };
     insert(
@@ -291,20 +289,32 @@ pub(crate) fn upsert(
 
 pub(crate) fn delete(engine: &WaffleEngine, id: &str) -> Result<bool> {
     match engine.store.lookup_internal(id)? {
-        Some(internal) => delete_internal(engine, internal, true),
+        Some(internal) => match delete_internal(engine, internal)? {
+            Some(mutation) => {
+                engine.text.commit()?;
+                engine.store.stamp_sequences(mutation, mutation)?;
+                Ok(true)
+            }
+            None => Ok(false),
+        },
         None => Ok(false),
     }
 }
 
 pub(crate) fn delete_batch(engine: &WaffleEngine, ids: &[String]) -> Result<u64> {
     let mut removed = 0u64;
+    let mut last_mutation = 0u64;
     for id in ids {
         if let Some(internal) = engine.store.lookup_internal(id)? {
-            removed += u64::from(delete_internal(engine, internal, false)?);
+            if let Some(mutation) = delete_internal(engine, internal)? {
+                removed += 1;
+                last_mutation = mutation;
+            }
         }
     }
     if removed > 0 {
         engine.text.commit()?;
+        engine.store.stamp_sequences(last_mutation, last_mutation)?;
     }
     Ok(removed)
 }
@@ -312,15 +322,17 @@ pub(crate) fn delete_batch(engine: &WaffleEngine, ids: &[String]) -> Result<u64>
 pub(crate) fn delete_where(engine: &WaffleEngine, filter_json: &str) -> Result<u64> {
     let bitmap =
         evaluate_filter(&engine.store, &engine.schema, &parse_filter(filter_json)?)?;
-    let removed: u64 = bitmap
-        .iter()
-        .collect::<Vec<u32>>()
-        .iter()
-        .try_fold(0u64, |acc, &internal| {
-            delete_internal(engine, internal, false).map(|ok| acc + u64::from(ok))
-        })?;
+    let mut removed = 0u64;
+    let mut last_mutation = 0u64;
+    for internal in bitmap.iter().collect::<Vec<u32>>() {
+        if let Some(mutation) = delete_internal(engine, internal)? {
+            removed += 1;
+            last_mutation = mutation;
+        }
+    }
     if removed > 0 {
         engine.text.commit()?;
+        engine.store.stamp_sequences(last_mutation, last_mutation)?;
     }
     Ok(removed)
 }

@@ -136,9 +136,28 @@ impl Store {
     }
 
     pub(crate) fn stamp_sequences(&self, vector_seq: u64, text_seq: u64) -> Result<()> {
+        // Max-merge: concurrent writers must never move a generation backward.
+        // A stale stamp only causes a redundant rebuild, never a missed one.
         let tx = self.db.begin_write()?;
         {
             let mut table = tx.open_table(T_META)?;
+            let current = |key: &str| -> Result<u64> {
+                match table.get(key)? {
+                    Some(g) => {
+                        let bytes = g.value();
+                        if bytes.len() < 8 {
+                            Ok(0)
+                        } else {
+                            let mut arr = [0u8; 8];
+                            arr.copy_from_slice(&bytes[0..8]);
+                            Ok(u64::from_le_bytes(arr))
+                        }
+                    }
+                    None => Ok(0),
+                }
+            };
+            let vector_seq = vector_seq.max(current(META_VECTOR_SEQ)?);
+            let text_seq = text_seq.max(current(META_TEXT_SEQ)?);
             table.insert(META_VECTOR_SEQ, &vector_seq.to_le_bytes()[..])?;
             table.insert(META_TEXT_SEQ, &text_seq.to_le_bytes()[..])?;
         }
