@@ -21,7 +21,7 @@
 - **Fix**: text fields index positions, enabling phrase queries.
 - **Performance**: batch inserts share one storage transaction (batch p50 1413ms → 435ms per 1000 vectors).
 - **Android**: `rust/build.rs` links NDK `libc++_static.a` + `libc++abi.a` by absolute path and `CXXSTDLIB=c++_static` stops the shared link  the APK carries zero C++ runtime dependency (verified: only libdl/libm/libc NEEDED, zero undefined C++ symbols).
-- **Docs**: README rewritten without marketing claims — factual comparison, full API reference, how-it-works (search/write flows), honest limitations and roadmap, measured benchmark tables, render-verified Mermaid diagrams (architecture, search flow, storage ERD, latency charts).
+- **Docs**: README rewritten without marketing claims  factual comparison, full API reference, how-it-works (search/write flows), honest limitations and roadmap, measured benchmark tables, render-verified Mermaid diagrams (architecture, search flow, storage ERD, latency charts).
 - **Changed**: `rust/src/api/` restructured into focused modules (`engine.rs`, `registry.rs`, `writes.rs`, `reads.rs`) behind a thin `waffle_db.rs` facade. No FFI or Dart API change  regenerated bindings are identical. The engine roundtrip test moved to `rust/tests/enterprise_roundtrip.rs`.
 
 ## Upgrading from 0.0.x to 0.1.0-dev.1 (breaking)

@@ -16,7 +16,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="License: GPL-3.0"></a>
 </p>
 
-> **Development preview (`0.1.0-dev.1`):** this is a trial release for early feedback. The public API may still change before the first stable version — pin the exact version in your `pubspec.yaml` and report anything that breaks.
+> **Development preview (`0.1.0-dev.1`):** this is a trial release for early feedback. The public API may still change before the first stable version  pin the exact version in your `pubspec.yaml` and report anything that breaks.
 
 <p align="center">
   <a href="#-key-features">Key Features</a> •
@@ -36,7 +36,7 @@
 | Area | What you get |
 | :--- | :--- |
 | **Retrieval** | Dense k-NN, BM25 keywords (EN+AR stemming), and RRF hybrid fusion with alpha blending and offset pagination |
-| **Filtering** | `eq`/`in`/`and`/`or` pre-filters evaluated as bitmap predicates during search — never after it |
+| **Filtering** | `eq`/`in`/`and`/`or` pre-filters evaluated as bitmap predicates during search  never after it |
 | **Storage** | ACID transactions, dual String↔u32 ID mapping with FreeList recycling, crash recovery by index rebuild |
 | **Chunks** | Parent/neighbor window context for LLM prompts, batch upserts, filtered bulk deletes |
 | **Collections** | Logical namespaces backed by an indexed `_collection` pre-filter, so searches never leak across collections |
@@ -242,7 +242,7 @@ await db.insertBatch(records);
 
 ### 4. Querying & Query Builder
 
-WaffleDB offers dense search, keyword search and fused hybrid search through one API. Filters are pushed into the engine as bitmap predicates — never applied after the fact.
+WaffleDB offers dense search, keyword search and fused hybrid search through one API. Filters are pushed into the engine as bitmap predicates  never applied after the fact.
 
 **Dense + pre-filter:**
 ```dart
@@ -363,7 +363,7 @@ flowchart TB
 
 ### Bringing Your Own Embeddings
 
-WaffleDB stores vectors; it does not embed text. Use any embedding model (a local ONNX model, OpenAI, Gemini) to produce `Float32List` vectors of the configured dimension, then insert and query with them. The `example/` app ships a tiny hashed trigram embedder purely so the demos run offline — it captures lexical overlap, not meaning, and should be replaced by a real model in production apps.
+WaffleDB stores vectors; it does not embed text. Use any embedding model (a local ONNX model, OpenAI, Gemini) to produce `Float32List` vectors of the configured dimension, then insert and query with them. The `example/` app ships a tiny hashed trigram embedder purely so the demos run offline  it captures lexical overlap, not meaning, and should be replaced by a real model in production apps.
 
 ### Pre-filtering & Payloads
 
@@ -401,11 +401,11 @@ One database file set, four cooperating engines:
 
 Design decisions:
 
-* **Strict schema + free payload** — indexed fields are declared up front (`WaffleSchema`); anything else rides along unindexed in the payload.
-* **Dual ID mapping** — developers use external `String` IDs (UUIDv7, Firebase IDs); the engine maps them to dense internal `u32` keys. Deleted keys recycle through a FreeList.
-* **Buffered writes + explicit flush** — single inserts commit immediately; batches share one storage transaction and one text commit; `flush()` persists the vector index.
-* **Unified hybrid query** — one request carries `vector?`, `text?`, filter AST, `alpha`, RRF constant and pagination; dense + sparse run in parallel and fuse via RRF inside Rust. The sparse side over-fetches and applies the same allowed-IDs bitmap.
-* **True delete** — physical removal from the graph, text tombstones, storage cleanup and bitmap pruning in one path shared by single, batch and filtered deletes.
+* **Strict schema + free payload**  indexed fields are declared up front (`WaffleSchema`); anything else rides along unindexed in the payload.
+* **Dual ID mapping**  developers use external `String` IDs (UUIDv7, Firebase IDs); the engine maps them to dense internal `u32` keys. Deleted keys recycle through a FreeList.
+* **Buffered writes + explicit flush**  single inserts commit immediately; batches share one storage transaction and one text commit; `flush()` persists the vector index.
+* **Unified hybrid query**  one request carries `vector?`, `text?`, filter AST, `alpha`, RRF constant and pagination; dense + sparse run in parallel and fuse via RRF inside Rust. The sparse side over-fetches and applies the same allowed-IDs bitmap.
+* **True delete**  physical removal from the graph, text tombstones, storage cleanup and bitmap pruning in one path shared by single, batch and filtered deletes.
 
 ### Engine architecture
 
@@ -555,7 +555,7 @@ sequenceDiagram
 
 ### Current Limitations
 
-* Filters support `eq`/`in`/`and`/`or` only — no `NOT`, no range comparisons yet (the numeric index layout already supports them; tracked for v1.1).
+* Filters support `eq`/`in`/`and`/`or` only  no `NOT`, no range comparisons yet (the numeric index layout already supports them; tracked for v1.1).
 * No auto-migration between storage formats; open with a mismatched schema or dimension fails loudly.
 * One writer at a time; concurrent reads are fine.
 * Flutter Web is not supported in v1 (native engines have no WASM builds).
@@ -581,7 +581,7 @@ sequenceDiagram
 | 4 | **Support** | Triage an incoming ticket, resolve it, sweep resolved ones | Priority/status pre-filters, upsert-to-resolve, deleteWhere |
 | 5 | **Glossary** | Look up a term in English or Arabic | Bilingual stemming search, domain pre-filters |
 
-Dense vectors in the demos come from a tiny hashed-trigram embedder (`demo_embed.dart`) so everything runs offline — see “Bringing Your Own Embeddings” before shipping.
+Dense vectors in the demos come from a tiny hashed-trigram embedder (`demo_embed.dart`) so everything runs offline  see “Bringing Your Own Embeddings” before shipping.
 
 Headless versions of the flows live in `example/integration_test/ai_demos_test.dart` and run with `flutter test integration_test`.
 
