@@ -9,13 +9,53 @@
 </p>
 
 <p align="center">
-  <a href="#-why-choose-waffle-db">Why?</a> •
+  <a href="https://pub.dev/packages/waffle_db"><img src="https://img.shields.io/pub/v/waffle_db.svg" alt="pub version"></a>
+  <a href="https://pub.dev/packages/waffle_db/score"><img src="https://img.shields.io/pub/points/waffle_db.svg" alt="pub points"></a>
+  <img src="https://img.shields.io/badge/status-dev%20preview-orange" alt="Status: development preview">
+  <img src="https://img.shields.io/badge/platforms-android%20%7C%20ios%20%7C%20linux%20%7C%20macos%20%7C%20windows-blue" alt="Platforms">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="License: GPL-3.0"></a>
+</p>
+
+> **Development preview (`0.1.0-dev.1`):** this is a trial release for early feedback. The public API may still change before the first stable version — pin the exact version in your `pubspec.yaml` and report anything that breaks.
+
+<p align="center">
   <a href="#-key-features">Key Features</a> •
+  <a href="#-why-waffle-db">Why?</a> •
   <a href="#-installation">Installation</a> •
   <a href="#-basic-usage">Basic Usage</a> •
   <a href="#-advanced-usage">Advanced Usage</a> •
+  <a href="#-architecture">Architecture</a> •
+  <a href="#-showcase-demo">Showcase Demo</a> •
+  <a href="#-performance-benchmarks">Benchmarks</a> •
   <a href="#-contributing">Contributing</a>
 </p>
+
+## Contents
+
+- [✨ Key Features](#-key-features)
+- [🤔 Why Waffle-DB?](#-why-waffle-db)
+- [📦 Installation](#-installation)
+- [🚀 Basic Usage](#-basic-usage)
+- [🔬 Advanced Usage](#-advanced-usage)
+- [🧠 Architecture](#-architecture)
+- [🖥️ Showcase Demo](#-showcase-demo)
+- [🏎️ Performance Benchmarks](#-performance-benchmarks)
+- [📚 API Reference](#-api-reference)
+- [🤝 Contributing](#-contributing)
+- [⚖️ License](#-license)
+
+---
+
+## ✨ Key Features
+
+| Area | What you get |
+| :--- | :--- |
+| **Retrieval** | Dense k-NN, BM25 keywords (EN+AR stemming), and RRF hybrid fusion with alpha blending and offset pagination |
+| **Filtering** | `eq`/`in`/`and`/`or` pre-filters evaluated as bitmap predicates during search — never after it |
+| **Storage** | ACID transactions, dual String↔u32 ID mapping with FreeList recycling, crash recovery by index rebuild |
+| **Chunks** | Parent/neighbor window context for LLM prompts, batch upserts, filtered bulk deletes |
+| **Collections** | Logical namespaces backed by an indexed `_collection` pre-filter, so searches never leak across collections |
+| **DX** | Mandatory versioned schemas, fluent query builder, UUIDv7 ID helper, measured (not claimed) benchmarks |
 
 ---
 
@@ -425,17 +465,139 @@ Design decisions:
 
 ---
 
-## 📱 Example Apps
+### System diagrams
 
-The `example/` app ships five runnable demos, each backed by a real on-device database:
+### Engine architecture
 
-| Demo | What it shows |
-| :--- | :--- |
-| **Colors** (dense baseline) | Euclidean k-NN over RGB space, up to 12M vectors |
-| **Docs RAG** | Chunked guides, hybrid retrieval, section pre-filters, citable window context |
-| **Code Search** | Exact symbol lookup (where vectors fail), language/kind pre-filters, file context |
-| **Support** | Ticket triage with priority/status pre-filters, resolve via upsert, sweep via deleteWhere |
-| **Glossary** | Bilingual EN↔AR term lookup with domain pre-filters |
+```mermaid
+flowchart LR
+    %% Dart surface builds requests; Rust owns all four engines
+    subgraph Dart["Dart / Flutter"]
+        API[WaffleDatabase<br/>WaffleQueryBuilder]
+        DSL[WaffleSchema<br/>WaffleFilter DSL]
+    end
+    subgraph FFI["FFI bridge"]
+        FRB[flutter_rust_bridge<br/>sync search, async writes]
+    end
+    subgraph Rust["Rust core"]
+        REQ[WaffleSearchRequest]
+        VEC[usearch<br/>dense plus predicate]
+        TXT[tantivy<br/>BM25 EN plus AR]
+        FLT[roaring<br/>filter bitmaps]
+        STO[(redb<br/>chunks plus vectors plus indexes)]
+        RRF[RRF fusion]
+    end
+    API --> FRB
+    DSL --> FRB
+    FRB --> REQ
+    REQ --> VEC
+    REQ --> TXT
+    REQ --> FLT
+    FLT -.->|allowed ids| VEC
+    VEC --> RRF
+    TXT --> RRF
+    RRF --> STO
+    STO -->|WaffleHit list| FRB
+    style STO fill:#e8f5e9
+    style RRF fill:#fff3e0
+```
+
+### Search flow
+
+```mermaid
+sequenceDiagram
+    participant App
+    participant DB as WaffleDatabase
+    participant Core as Rust core
+    participant Dense as usearch
+    participant Sparse as tantivy
+    participant Store as redb
+    App->>DB: search with vector, text, filter, topK
+    DB->>Core: WaffleSearchRequest
+    Core->>Store: evaluate filter AST to bitmap
+    Store-->>Core: allowed-ids bitmap
+    par dense and sparse
+        Core->>Dense: filtered_search with predicate
+        Core->>Sparse: BM25 search with over-fetch
+    end
+    Dense-->>Core: ranked ids plus distances
+    Sparse-->>Core: ranked ids plus scores
+    Core->>Core: bitmap-filter sparse hits
+    Core->>Core: RRF fuse, skip offset, take topK
+    Core->>Store: point-fetch surviving chunks
+    Store-->>Core: text plus payload
+    Core-->>DB: WaffleHit list
+    DB-->>App: hits
+```
+
+### Storage layout
+
+```mermaid
+erDiagram
+    EXT2INT ||--o{ CHUNKS : maps
+    CHUNKS ||--o{ CHILDREN : parents
+    CHUNKS {
+        int internal_id PK
+        string external_id
+        string parent_id
+        int chunk_index
+        string text
+        string payload_json
+        bytes vector
+    }
+    EXT2INT {
+        string external_id PK
+        int internal_id
+    }
+    BITMAP_STR {
+        string field_value PK
+        bytes bitmap
+    }
+    NUMERIC_IDX {
+        int field_hash
+        int ordered_value
+        int internal_id
+    }
+    CHILDREN {
+        string parent_plus_index PK
+        int internal_id
+    }
+    FREELIST {
+        int free_id PK
+    }
+```
+
+### Measured latencies
+
+```mermaid
+xychart-beta
+    title "Query and read path (microseconds, lower is better)"
+    x-axis ["KNN k10", "Get vector", "Get metadata", "All IDs x1000"]
+    y-axis "us" 0 --> 3200
+    bar [288, 43, 40, 3065]
+```
+
+```mermaid
+xychart-beta
+    title "Write path (milliseconds, lower is better)"
+    x-axis ["Open plus close", "Insert single", "Batch x1000", "Delete"]
+    y-axis "ms" 0 --> 320
+    bar [56.5, 2.36, 303.8, 2.06]
+```
+
+---
+
+## 🖥️ Showcase Demo
+
+`example/` is a Flutter application exercising the public API only:
+
+| # | Demo | Everyday story | Technique |
+| :--- | :--- | :--- | :--- |
+| 1 | **Colors** | Find paints matching a target shade | Dense Euclidean k-NN, up to 12M vectors |
+| 2 | **Docs RAG** | Answer questions from guides with citations | Chunked docs, hybrid retrieval, section pre-filters, window context |
+| 3 | **Code Search** | Jump to a symbol definition | Exact keyword match, language/kind pre-filters, file context |
+| 4 | **Support** | Triage an incoming ticket, resolve it, sweep resolved ones | Priority/status pre-filters, upsert-to-resolve, deleteWhere |
+| 5 | **Glossary** | Look up a term in English or Arabic | Bilingual stemming search, domain pre-filters |
 
 Dense vectors in the demos come from a tiny hashed-trigram embedder (`demo_embed.dart`) so everything runs offline — see “Bringing Your Own Embeddings” before shipping.
 
