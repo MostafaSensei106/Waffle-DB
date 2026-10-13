@@ -147,18 +147,13 @@ fn insert_many(engine: &WaffleEngine, inputs: &[InsertInput<'_>]) -> Result<()> 
     }
     tx.commit()?;
 
-    let mut texts_added = false;
     for (input, item) in inputs.iter().zip(prepared.iter()) {
         engine.vector.add(item.internal, input.vector)?;
         if !input.text.trim().is_empty() {
             engine.text.add(item.internal, input.text)?;
-            texts_added = true;
         }
     }
-    if texts_added || inputs.iter().any(|i| i.commit_text) {
-        engine.text.commit()?;
-    }
-    Ok(())
+    Ok(mutation)
 }
 
 fn delete_internal(engine: &WaffleEngine, internal: u32, commit_text: bool) -> Result<bool> {

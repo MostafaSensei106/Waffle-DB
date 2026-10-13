@@ -21,6 +21,9 @@ const T_META: TableDefinition<&str, &[u8]> = TableDefinition::new("meta");
 const META_SCHEMA: &str = "schema_json";
 const META_NEXT_ID: &str = "next_id";
 const META_DIM: &str = "dimension";
+pub(crate) const META_MUTATION: &str = "mutation_seq";
+pub(crate) const META_VECTOR_SEQ: &str = "vector_seq";
+pub(crate) const META_TEXT_SEQ: &str = "text_seq";
 
 pub(crate) struct Store {
     db: Database,
@@ -72,6 +75,9 @@ impl Store {
                 store.meta_put(META_SCHEMA, canonical.as_bytes())?;
                 store.meta_put(META_DIM, &dimension.to_le_bytes())?;
                 store.meta_put(META_NEXT_ID, &0u64.to_le_bytes())?;
+                store.meta_put(META_MUTATION, &0u64.to_le_bytes())?;
+                store.meta_put(META_VECTOR_SEQ, &0u64.to_le_bytes())?;
+                store.meta_put(META_TEXT_SEQ, &0u64.to_le_bytes())?;
             }
         }
         Ok(store)
@@ -113,6 +119,51 @@ impl Store {
         let mut table = tx.open_table(T_META)?;
         table.insert(META_NEXT_ID, &next.to_le_bytes()[..])?;
         Ok(())
+    }
+
+    pub(crate) fn seq_triple(&self) -> Result<(Option<u64>, Option<u64>, Option<u64>)> {
+        let read = |key: &str| -> Result<Option<u64>> {
+            match self.meta_get(key)? {
+                Some(raw) if raw.len() >= 8 => {
+                    let mut arr = [0u8; 8];
+                    arr.copy_from_slice(&raw[0..8]);
+                    Ok(Some(u64::from_le_bytes(arr)))
+                }
+                _ => Ok(None),
+            }
+        };
+        Ok((read(META_MUTATION)?, read(META_VECTOR_SEQ)?, read(META_TEXT_SEQ)?))
+    }
+
+    pub(crate) fn stamp_sequences(&self, vector_seq: u64, text_seq: u64) -> Result<()> {
+        let tx = self.db.begin_write()?;
+        {
+            let mut table = tx.open_table(T_META)?;
+            table.insert(META_VECTOR_SEQ, &vector_seq.to_le_bytes()[..])?;
+            table.insert(META_TEXT_SEQ, &text_seq.to_le_bytes()[..])?;
+        }
+        tx.commit()?;
+        Ok(())
+    }
+
+    pub(crate) fn bump_mutation_tx(tx: &redb::WriteTransaction) -> Result<u64> {
+        let mut table = tx.open_table(T_META)?;
+        let current = match table.get(META_MUTATION)? {
+            Some(g) => {
+                let bytes = g.value();
+                if bytes.len() < 8 {
+                    0
+                } else {
+                    let mut arr = [0u8; 8];
+                    arr.copy_from_slice(&bytes[0..8]);
+                    u64::from_le_bytes(arr)
+                }
+            }
+            None => 0,
+        };
+        let next = current + 1;
+        table.insert(META_MUTATION, &next.to_le_bytes()[..])?;
+        Ok(next)
     }
 
     pub(crate) fn lookup_internal(&self, external: &str) -> Result<Option<u32>> {
@@ -442,6 +493,20 @@ impl Store {
                 }
                 out.push((external, internal, floats));
             }
+        }
+        Ok(out)
+    }
+
+    pub(crate) fn all_texts(&self) -> Result<Vec<(u32, String)>> {
+        let tx = self.db.begin_read()?;
+        let data = tx.open_table(T_DATA)?;
+        let mut out = Vec::new();
+        let iter = data.range::<u32>(..)?;
+        for entry in iter {
+            let (k, v) = entry?;
+            let internal = k.value();
+            let rec = unarchive_chunk(v.value())?;
+            out.push((internal, rec.text));
         }
         Ok(out)
     }
