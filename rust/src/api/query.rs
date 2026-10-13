@@ -58,13 +58,16 @@ mod tests {
     #[test]
     fn rrf_prefers_items_ranked_high_on_both_sides() {
         let dense = vec![(1u32, 0.1), (2, 0.2), (3, 0.3)];
-        let sparse = vec![(3u32, 9.0), (2, 8.0), (1, 7.0)];
+        let sparse = vec![(2u32, 9.0), (3, 8.0), (1, 7.0)];
         let fused = rrf_fuse(&dense, &sparse, 60, 0.5, 10);
         assert_eq!(fused.len(), 3);
-        // id 2 is rank 2 on both sides: 0.5/62 + 0.5/62
-        let expected = 0.5 / 62.0 + 0.5 / 62.0;
+        // id 2 is rank 2 dense and rank 1 sparse: 0.5/62 + 0.5/61,
+        // strictly above id 1 (0.5/61 + 0.5/63) and id 3 (0.5/63 + 0.5/62).
+        let expected = 0.5 / 62.0 + 0.5 / 61.0;
         assert!(approx(fused[0].1, expected), "got {:?}", fused);
         assert_eq!(fused[0].0, 2);
+        assert_eq!(fused[1].0, 1);
+        assert_eq!(fused[2].0, 3);
     }
 
     #[test]

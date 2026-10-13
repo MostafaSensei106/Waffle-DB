@@ -83,7 +83,7 @@ class WaffleCollection {
     int topK = 10,
     int efSearch = 0,
   }) async {
-    final results = _db.search(
+    final results = await _db.search(
       vector: queryVector,
       topK: topK,
       efSearch: efSearch,

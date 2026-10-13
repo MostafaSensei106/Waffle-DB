@@ -89,7 +89,11 @@ class WaffleDatabase {
   }
 
   /// Unified dense / sparse / hybrid search with pre-filtering.
-  List<WaffleHit> search({
+  ///
+  /// Runs on the bridge thread pool: safe to await from the UI isolate even
+  /// for large indexes. Point lookups ([getVector], [getMetadata], [count])
+  /// stay synchronous because they complete in microseconds.
+  Future<List<WaffleHit>> search({
     Float32List? vector,
     String? text,
     int topK = 10,
