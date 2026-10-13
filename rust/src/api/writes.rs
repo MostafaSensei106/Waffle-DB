@@ -87,6 +87,7 @@ fn insert_many(engine: &WaffleEngine, inputs: &[InsertInput<'_>]) -> Result<()> 
     }
     let tx = engine.store.begin_write()?;
     let mut prepared = Vec::with_capacity(inputs.len());
+    let mut seen_chunks = std::collections::HashSet::new();
     for input in inputs {
         if input.vector.len() != dim {
             return Err(anyhow!(
@@ -106,6 +107,21 @@ fn insert_many(engine: &WaffleEngine, inputs: &[InsertInput<'_>]) -> Result<()> 
             return Err(anyhow!("duplicate id: {}", input.id));
         }
         let internal = engine.store.alloc_id(&tx)?;
+        if let Some(parent) = input.parent_id.as_deref() {
+            let key = (parent.to_owned(), input.chunk_index);
+            if !seen_chunks.insert(key) {
+                return Err(anyhow!(
+                    "duplicate chunk index {} for parent {parent:?}",
+                    input.chunk_index
+                ));
+            }
+            if crate::api::store::Store::child_exists_in(&tx, parent, input.chunk_index)? {
+                return Err(anyhow!(
+                    "chunk index {} for parent {parent:?} already exists",
+                    input.chunk_index
+                ));
+            }
+        }
         let record = ChunkRecord {
             external_id: input.id.to_owned(),
             parent_id: input.parent_id.clone(),

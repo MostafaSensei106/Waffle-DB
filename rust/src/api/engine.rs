@@ -39,10 +39,13 @@ impl WaffleEngine {
         )
         .context("open vector engine")?;
         if vector.size() as u64 != store.count()? {
+            // Storage is the source of truth. Any size mismatch means a
+            // previous run crashed between engines (or the index file is
+            // foreign): rebuild from scratch so neither missing vectors
+            // nor stale entries survive.
+            vector.reset()?;
             for (_, internal, vec) in store.all_vectors(dim)? {
-                if !vector.contains(internal) {
-                    vector.add(internal, &vec)?;
-                }
+                vector.add(internal, &vec)?;
             }
             vector.save(&dir)?;
         }

@@ -786,15 +786,16 @@ fn wire__crate__api__waffle_db__waffle_open_impl(
     )
 }
 fn wire__crate__api__waffle_db__waffle_search_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
     rust_vec_len_: i32,
     data_len_: i32,
-) -> flutter_rust_bridge::for_generated::WireSyncRust2DartSse {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap_sync::<flutter_rust_bridge::for_generated::SseCodec, _>(
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
         flutter_rust_bridge::for_generated::TaskInfo {
             debug_name: "waffle_search",
-            port: None,
-            mode: flutter_rust_bridge::for_generated::FfiCallMode::Sync,
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
         },
         move || {
             let message = unsafe {
@@ -810,10 +811,12 @@ fn wire__crate__api__waffle_db__waffle_search_impl(
             let api_request =
                 <crate::api::query::WaffleSearchRequest>::sse_decode(&mut deserializer);
             deserializer.end();
-            transform_result_sse::<_, String>((move || {
-                let output_ok = crate::api::waffle_db::waffle_search(api_handle, api_request)?;
-                std::result::Result::Ok(output_ok)
-            })())
+            move |context| {
+                transform_result_sse::<_, String>((move || {
+                    let output_ok = crate::api::waffle_db::waffle_search(api_handle, api_request)?;
+                    std::result::Result::Ok(output_ok)
+                })())
+            }
         },
     )
 }
@@ -1263,6 +1266,7 @@ fn pde_ffi_dispatcher_primary_impl(
             wire__crate__api__waffle_db__waffle_insert_batch_impl(port, ptr, rust_vec_len, data_len)
         }
         21 => wire__crate__api__waffle_db__waffle_open_impl(port, ptr, rust_vec_len, data_len),
+        22 => wire__crate__api__waffle_db__waffle_search_impl(port, ptr, rust_vec_len, data_len),
         23 => wire__crate__api__waffle_db__waffle_upsert_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
@@ -1282,7 +1286,6 @@ fn pde_ffi_dispatcher_sync_impl(
         16 => wire__crate__api__waffle_db__waffle_get_neighbors_impl(ptr, rust_vec_len, data_len),
         17 => wire__crate__api__waffle_db__waffle_get_parent_impl(ptr, rust_vec_len, data_len),
         18 => wire__crate__api__waffle_db__waffle_get_vector_impl(ptr, rust_vec_len, data_len),
-        22 => wire__crate__api__waffle_db__waffle_search_impl(ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }

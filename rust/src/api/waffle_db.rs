@@ -54,7 +54,6 @@ pub fn waffle_insert_batch(
     })
 }
 
-#[flutter_rust_bridge::frb(sync)]
 pub fn waffle_search(
     handle: u64,
     request: WaffleSearchRequest,

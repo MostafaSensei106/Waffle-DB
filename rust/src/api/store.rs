@@ -388,6 +388,17 @@ impl Store {
         Ok(table.get(key.as_str())?.map(|g| g.value()))
     }
 
+    pub(crate) fn child_exists_in(
+        tx: &redb::WriteTransaction,
+        parent: &str,
+        chunk_index: u32,
+    ) -> Result<bool> {
+        let key = Self::child_key(parent, chunk_index);
+        let table = tx.open_table(T_CHILDREN)?;
+        let found = table.get(key.as_str())?.is_some();
+        Ok(found)
+    }
+
     pub(crate) fn count(&self) -> Result<u64> {
         let tx = self.db.begin_read()?;
         let table = tx.open_table(T_DATA)?;

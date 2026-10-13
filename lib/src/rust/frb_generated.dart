@@ -154,7 +154,7 @@ abstract class RustLibApi extends BaseApi {
   Future<BigInt> crateApiWaffleDbWaffleOpen(
       {required WaffleConfig config, required WaffleSchema schema});
 
-  List<WaffleHit> crateApiWaffleDbWaffleSearch(
+  Future<List<WaffleHit>> crateApiWaffleDbWaffleSearch(
       {required BigInt handle, required WaffleSearchRequest request});
 
   Future<bool> crateApiWaffleDbWaffleUpsert(
@@ -772,14 +772,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  List<WaffleHit> crateApiWaffleDbWaffleSearch(
+  Future<List<WaffleHit>> crateApiWaffleDbWaffleSearch(
       {required BigInt handle, required WaffleSearchRequest request}) {
-    return handler.executeSync(SyncTask(
-      callFfi: () {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_u_64(handle, serializer);
         sse_encode_box_autoadd_waffle_search_request(request, serializer);
-        return pdeCallFfi(generalizedFrbRustBinding, serializer, funcId: 22)!;
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 22, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_list_waffle_hit,

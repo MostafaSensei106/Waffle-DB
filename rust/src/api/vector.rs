@@ -44,7 +44,10 @@ impl VectorEngine {
             multi: false,
         };
         let index = Index::new(&options)?;
-        index.reserve(capacity.max(1024))?;
+        // Reserve a bounded initial capacity: usearch grows automatically on
+        // insert, while a full max_elements reservation would pin ~36 bytes
+        // per slot up front (hundreds of MB on server profiles).
+        index.reserve(capacity.clamp(1024, 65_536))?;
         Ok(Self { index })
     }
 
@@ -84,8 +87,9 @@ impl VectorEngine {
         Ok(self.index.remove(internal as u64)? > 0)
     }
 
-    pub(crate) fn contains(&self, internal: u32) -> bool {
-        self.index.contains(internal as u64)
+    pub(crate) fn reset(&self) -> Result<()> {
+        self.index.reset()?;
+        Ok(())
     }
 
     pub(crate) fn size(&self) -> usize {

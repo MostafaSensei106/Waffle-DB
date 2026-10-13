@@ -51,7 +51,7 @@ Future<void> waffleInsertBatch(
         parentIds: parentIds,
         chunkIndices: chunkIndices);
 
-List<WaffleHit> waffleSearch(
+Future<List<WaffleHit>> waffleSearch(
         {required BigInt handle, required WaffleSearchRequest request}) =>
     RustLib.instance.api
         .crateApiWaffleDbWaffleSearch(handle: handle, request: request);
