@@ -59,18 +59,18 @@ General-purpose local databases (SQLite, Hive) have no vector index, and pure-Da
 | **Sparse Indexing** | ❌ | ❌ | **BM25 full-text (`tantivy`, EN+AR)** |
 | **Hybrid Search** | ❌ | ❌ | **Dense + sparse with RRF fusion** |
 | **Filtered Search** | SQL WHERE | Post-filter in Dart | **Pre-filtering (`roaring` bitmaps)** |
-| **Storage Guarantees** | ACID | ❌ | **ACID (`redb`)** |
+| **Storage Guarantees** | ACID | ❌ | **ACID transactions for stored data** |
 | **Chunk Relations** | Manual joins | Manual | **Parent/neighbor chunk APIs** |
 | **FFI Model** | — | — | **Sync search, async writes** |
 | **Vector Dimensions** | ❌ | Limited | **Arbitrary (tested 3–1536)** |
 
 ### 🛠️ Tech Stack
 
-* **Host Languages**: Dart 3.4+ (Flutter) & Rust 1.75+
+* **Host Languages**: Dart 3.4+ (Flutter) & Rust stable (verified on 1.99.0; MSRV is not pinned  older toolchains are untested)
 * **Bridge Engine**: `flutter_rust_bridge` v2.13.0
 * **Vector Engine**: `usearch` (HNSW with predicate pre-filtering; `numkong` SIMD backend off for Android NDK compatibility)
 * **Text Engine**: `tantivy` (BM25 inverted index, English + Arabic stemming, positions indexed)
-* **Storage Engine**: `redb` (embedded ACID database)
+* **Storage Engine**: `redb` (embedded database with ACID transactions for stored records, bitmaps and indexes)
 * **Filter Engine**: `roaring` (compressed bitmaps for metadata filtering)
 * **Parallelism**: `rayon` (dense+sparse queries run side by side)
 * **Error Handling**: `anyhow` (single error type, surfaced as strings over FFI)
@@ -106,8 +106,10 @@ Add the package to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  waffle_db: ^0.1.0
+  waffle_db: 0.1.0-dev.1
 ```
+
+Pin the exact prerelease  the API is still evolving and `^` ranges on prereleases do not behave like stable ones.
 
 ---
 
@@ -367,7 +369,7 @@ WaffleDB stores vectors; it does not embed text. Use any embedding model (a loca
 
 ### Pre-filtering & Payloads
 
-Filters are evaluated to compressed bitmaps before any distance is computed, so constrained queries never come back empty when matches exist deeper in the ranking.
+Filters compile to compressed bitmaps before any distance is computed. Dense traversal skips non-matching nodes via predicate; text candidates are verified against the same bitmap with adaptive over-fetch. Constrained queries therefore do not come back empty when matches exist deeper in the ranking  up to the over-fetch bound (4 rounds, 10k ceiling).
 
 ```dart
 await db.insert(
