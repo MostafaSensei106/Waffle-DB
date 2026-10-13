@@ -41,6 +41,7 @@ impl WaffleEngine {
         }
         fresh.save(dir)?;
         store.set_vector_seq(mutation)?;
+        store.set_file_seq(mutation)?;
         Ok(fresh)
     }
 
@@ -57,8 +58,12 @@ impl WaffleEngine {
         // always ahead. Missing keys (pre-generation databases) force a
         // one-time rebuild of both indexes.
         let (mutation, vector_stale, text_stale) = store.ensure_generations()?;
+        // The vector FILE is only written on flush/close, while stamps cover
+        // in-memory state: a matching vector_seq with a stale file means a
+        // crash slipped between them, so the file generation joins the check.
+        let file_current = store.get_file_seq()? == mutation;
 
-        let vector = if vector_stale {
+        let vector = if vector_stale || !file_current {
             Self::rebuild_vectors(&dir, &config, dim, &store, mutation)?
         } else {
             match VectorEngine::open(
@@ -102,6 +107,11 @@ impl WaffleEngine {
     pub(crate) fn flush(&self) -> Result<()> {
         self.text.commit()?;
         self.vector.save(&self.dir)?;
+        let mutation = match self.store.seq_triple()? {
+            (Some(m), _, _) => m,
+            _ => 0,
+        };
+        self.store.set_file_seq(mutation)?;
         Ok(())
     }
 }
@@ -228,8 +238,46 @@ mod tests {
     }
 
     #[test]
-    fn recovery_after_index_files_deleted() {
-        let path = "/tmp/waffle_recovery_deleted";
+    fn recovery_after_upsert_without_flush_same_count_new_content() {
+        // The reviewer's exact scenario: same record count, different vector
+        // content, no flush before the crash. Generation + file tracking must
+        // still detect the stale vector file.
+        let path = "/tmp/waffle_recovery_upsert";
+        let _ = std::fs::remove_dir_all(path);
+        {
+            let engine = WaffleEngine::open(config(path), schema()).unwrap();
+            writes::insert(
+                &engine,
+                "a".to_owned(),
+                vec![1.0, 0.0, 0.0, 0.0],
+                "alpha".to_owned(),
+                r#"{"cat":"x"}"#.to_owned(),
+                None,
+                0,
+            )
+            .unwrap();
+            engine.flush().unwrap();
+            writes::upsert(
+                &engine,
+                "a".to_owned(),
+                vec![0.0, 0.0, 1.0, 0.0],
+                "alpha updated".to_owned(),
+                r#"{"cat":"x"}"#.to_owned(),
+                None,
+                0,
+            )
+            .unwrap();
+            // No flush, no close: the vector file still holds the old vector.
+        }
+
+        let reopened = WaffleEngine::open(config(path), schema()).unwrap();
+        let hits = dense_query(&reopened, vec![0.0, 0.0, 1.0, 0.0]);
+        assert_eq!(hits, vec!["a".to_owned()]);
+        let _ = std::fs::remove_dir_all(path);
+    }
+
+    #[test]
+    fn recovery_after_index_files_deleted() {        let path = "/tmp/waffle_recovery_deleted";
         let _ = std::fs::remove_dir_all(path);
         {
             let engine = seed(path);

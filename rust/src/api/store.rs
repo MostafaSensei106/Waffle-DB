@@ -24,6 +24,7 @@ const META_DIM: &str = "dimension";
 pub(crate) const META_MUTATION: &str = "mutation_seq";
 pub(crate) const META_VECTOR_SEQ: &str = "vector_seq";
 pub(crate) const META_TEXT_SEQ: &str = "text_seq";
+pub(crate) const META_FILE_SEQ: &str = "vector_file_seq";
 
 pub(crate) struct Store {
     db: Database,
@@ -78,6 +79,7 @@ impl Store {
                 store.meta_put(META_MUTATION, &0u64.to_le_bytes())?;
                 store.meta_put(META_VECTOR_SEQ, &0u64.to_le_bytes())?;
                 store.meta_put(META_TEXT_SEQ, &0u64.to_le_bytes())?;
+                store.meta_put(META_FILE_SEQ, &0u64.to_le_bytes())?;
             }
         }
         Ok(store)
@@ -121,8 +123,7 @@ impl Store {
         Ok(())
     }
 
-    pub(crate) fn seq_triple(&self) -> Result<(Option<u64>, Option<u64>, Option<u64>)> {
-        let read = |key: &str| -> Result<Option<u64>> {
+    pub(crate) fn seq_triple(&self) -> Result<(Option<u64>, Option<u64>, Option<u64>)> {        let read = |key: &str| -> Result<Option<u64>> {
             match self.meta_get(key)? {
                 Some(raw) if raw.len() >= 8 => {
                     let mut arr = [0u8; 8];
@@ -203,6 +204,28 @@ impl Store {
         Ok(())
     }
 
+    pub(crate) fn get_file_seq(&self) -> Result<u64> {
+        match self.meta_get(META_FILE_SEQ)? {
+            Some(raw) if raw.len() >= 8 => {
+                let mut arr = [0u8; 8];
+                arr.copy_from_slice(&raw[0..8]);
+                Ok(u64::from_le_bytes(arr))
+            }
+            _ => Ok(0),
+        }
+    }
+
+    pub(crate) fn set_file_seq(&self, value: u64) -> Result<()> {
+        let tx = self.db.begin_write()?;
+        {
+            let mut table = tx.open_table(T_META)?;
+            let current = Self::read_seq_guard(table.get(META_FILE_SEQ)?);
+            table.insert(META_FILE_SEQ, &value.max(current).to_le_bytes()[..])?;
+        }
+        tx.commit()?;
+        Ok(())
+    }
+
     /// Reads the generation triple, initializing pre-generation databases.
     /// Returns `(mutation, vector_stale, text_stale)`. Missing keys mean the
     /// database predates generation tracking: both indexes rebuild once,
@@ -217,6 +240,7 @@ impl Store {
                     table.insert(META_MUTATION, &1u64.to_le_bytes()[..])?;
                     table.insert(META_VECTOR_SEQ, &0u64.to_le_bytes()[..])?;
                     table.insert(META_TEXT_SEQ, &0u64.to_le_bytes()[..])?;
+                    table.insert(META_FILE_SEQ, &0u64.to_le_bytes()[..])?;
                 }
                 tx.commit()?;
                 Ok((1, true, true))
