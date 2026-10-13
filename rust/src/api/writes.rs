@@ -80,12 +80,13 @@ fn insert_one(engine: &WaffleEngine, input: InsertInput<'_>) -> Result<()> {
     insert_many(engine, &[input])
 }
 
-fn insert_many(engine: &WaffleEngine, inputs: &[InsertInput<'_>]) -> Result<()> {
+fn insert_many(engine: &WaffleEngine, inputs: &[InsertInput<'_>]) -> Result<u64> {
     let dim = engine.config.dimension as usize;
     struct Prepared {
         internal: u32,
     }
     let tx = engine.store.begin_write()?;
+    let mutation = crate::api::store::Store::bump_mutation_tx(&tx)?;
     let mut prepared = Vec::with_capacity(inputs.len());
     let mut seen_chunks = std::collections::HashSet::new();
     for input in inputs {
