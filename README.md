@@ -699,7 +699,6 @@ Contributions are welcome! Here’s how to get started:
     `git push origin feature/YourFeature`
 5.  Open a pull request.
 
-2
 
 ---
 ## ⚖️ License
